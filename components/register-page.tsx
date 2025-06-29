@@ -1,0 +1,104 @@
+'use client'
+
+import { FormProvider, useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Card, CardContent, CardDescription, CardFooter, CardTitle } from "@/components/ui/card";
+import { InputForm } from "@/components/form-hook";
+import { Button } from "@/components/ui/button";
+import { z } from "zod";
+import { registerAction } from "@/action/auth-action";
+import { SlideTransition } from "@/components/slide-transition";
+import { useRouter } from "next/navigation";
+import { RegisterFormData, registerSchema } from "@/lib/auth-schema";
+
+export default function RegisterPage() {
+    const route = useRouter()
+
+    const methods = useForm<RegisterFormData>({
+        resolver: zodResolver(registerSchema),
+        defaultValues: {
+            name: "",
+            email: "",
+            password: "",
+            confirmPassword: "",
+        },
+    });
+
+    const {
+        handleSubmit,
+        formState: { isSubmitting },
+    } = methods;
+
+    const onSubmit = handleSubmit(async (data) => {
+        console.log("Registering:", data);
+        await registerAction(data)
+    });
+
+    return (
+        <div className="w-full max-w-sm md:max-w-3xl">
+            <div className="flex flex-col gap-6">
+                <Card className="overflow-hidden p-0">
+                    {/*<CardHeader>*/ }
+                    {/*    <CardTitle>Register</CardTitle>*/ }
+                    {/*    <CardDescription>Create a new account ✨</CardDescription>*/ }
+                    {/*</CardHeader>*/ }
+
+                    <CardContent className="grid p-0 md:grid-cols-2">
+
+                        <SlideTransition name={ 'image-page' }>
+                            <div className="bg-muted relative hidden md:block">
+                                <img
+                                    src="https://images.pexels.com/photos/6963094/pexels-photo-6963094.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1"
+                                    alt="Image"
+                                    className="absolute inset-0 h-full w-full object-cover dark:brightness-[0.2] dark:grayscale"
+                                />
+                            </div>
+                        </SlideTransition>
+                        <FormProvider { ...methods }>
+                            <form onSubmit={ onSubmit } className="p-6 md:p-8">
+                                <div className="flex flex-col gap-6">
+
+                                    <div className="flex flex-col items-center text-center">
+
+                                        <CardTitle>Register</CardTitle>
+                                        <CardDescription>Create a new account ✨</CardDescription>
+                                    </div>
+                                    <InputForm name="name" title="Name" placeholder="Your full name"/>
+                                    <InputForm
+                                        name="email"
+                                        title="Email"
+                                        placeholder="you@example.com"
+                                        type="email"
+                                    />
+                                    <InputForm
+                                        name="password"
+                                        title="Password"
+                                        placeholder="********"
+                                        type="password"
+                                    />
+                                    <InputForm
+                                        name="confirmPassword"
+                                        title="Confirm Password"
+                                        placeholder="Repeat password"
+                                        type="password"
+                                    />
+                                    <CardFooter className="flex-col gap-2 w-full   p-0">
+                                        <Button type="submit" className="w-full" disabled={ isSubmitting }>
+                                            { isSubmitting ? "Registering..." : "Register" }
+                                        </Button>
+                                        <Button type="button"
+                                                variant={ 'outline' }
+                                                onClick={ () => route.push('/login') } className={ 'w-full' }>
+                                            Back
+                                        </Button>
+
+                                    </CardFooter>
+                                </div>
+                            </form>
+                        </FormProvider>
+                    </CardContent>
+                </Card>
+            </div>
+        </div>
+    );
+}

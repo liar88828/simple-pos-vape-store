@@ -1,0 +1,216 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+    provider = "prisma-client-js"
+    // output   = "../lib/generated/prisma"
+    output   = "../node_modules/.prisma/client"
+}
+
+generator zod {
+    provider                         = "zod-prisma-types"
+    output                           = "../lib/generated/zod_gen"
+    // output                           = "./generated/zod_types" // default is ./generated/zod
+    useMultipleFiles                 = true // default is false
+    // writeBarrelFiles                 = false // default is true
+    createInputTypes                 = false // default is true
+    // createModelTypes                 = false // default is true
+    addInputTypeValidation           = false // default is true
+    addIncludeType                   = false // default is true
+    addSelectType                    = false // default is true
+    validateWhereUniqueInput         = false // default is true
+    createOptionalDefaultValuesTypes = true // default is false
+    createRelationValuesTypes        = true // default is false
+    createPartialTypes               = true // default is false
+    // useDefaultValidators             = false // default is true
+    coerceDate                       = false // default is true
+    writeNullishInModelTypes         = true // default is false
+    // prismaClientPath                 = "./path/to/prisma/client" // default is client output path
+}
+
+// generator zod {
+//     provider = "zod-prisma"
+//     output   = "../lib/generated/zod"
+//
+//     relationModel = true // (default) Create and export both plain and related models.
+//     // relationModel         = "default" // Do not export model without relations.
+//     // relationModel         = false // Do not generate related model
+//
+//     modelCase = "PascalCase" // (default) Output models using pascal case (ex. UserModel, PostModel)
+//     // modelCase             = "camelCase" // Output models using camel case (ex. userModel, postModel)
+//
+//     modelSuffix = "Model" // (default) Suffix to apply to your prisma models when naming Zod schemas
+//
+//     // useDecimalJs          = false // (default) represent the prisma Decimal type using as a JS number
+//     useDecimalJs = true // represent the prisma Decimal type using Decimal.js (as Prisma does)
+//
+//     // imports = null // (default) will import the referenced file in generated schemas to be used via imports.someExportedVariable
+//
+//     // https://www.prisma.io/docs/concepts/components/prisma-client/working-with-fields/working-with-json-fields#filtering-by-null-values
+//     prismaJsonNullability = true // (default) uses prisma's scheme for JSON field nullability
+//     // prismaJsonNullability = false // allows null assignment to optional JSON fields
+// }
+
+datasource db {
+    provider = "sqlite"
+    url      = env("DATABASE_URL")
+}
+
+model Product {
+    id            Int     @id @default(autoincrement())
+    category      String /// @zod.string.min(1)
+    name          String /// @zod.string.min(1)
+    price         Int /// @zod.number.min(1)
+    stock         Int /// @zod.number.min(1)
+    minStock      Int     @default(5)
+    sold          Int     @default(0)
+    image         String /// @zod.string.min(1)
+    description   String /// @zod.string.min(1)
+    nicotineLevel String? // nullable
+    flavor        String? // nullable
+    type          String /// @zod.string.min(1)
+
+    PreOrders  PreOrder[]
+    SalesItems SalesItem[]
+
+    expired   DateTime?
+    createdAt DateTime  @default(now())
+    updatedAt DateTime  @updatedAt
+}
+
+model Customer {
+    id            Int      @id @default(autoincrement())
+    name          String /// @zod.string.min(1)
+    age           Int      @default(0) /// @zod.number.max(80)
+    totalPurchase Int      @default(0) /// @zod.number.min(0)
+    status        String   @default("Pending") /// @zod.string.min(1)
+    lastPurchase  DateTime
+
+    Sales     Sale[]
+    PreOrders PreOrder[]
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+}
+
+model PreOrder {
+    id            Int      @id @default(autoincrement())
+    customer      Customer @relation(fields: [customerId], references: [id])
+    customerId    Int
+    product       Product  @relation(fields: [productId], references: [id])
+    productId     Int
+    quantity      Int /// @zod.number.min(1)
+    estimatedDate DateTime
+    status        String /// @zod.string.min(1)
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+}
+
+model Sale {
+    id                Int         @id @default(autoincrement())
+    date              DateTime
+    total             Int /// @zod.number.min(1)
+    items             Int /// @zod.number.min(1)
+    customer          Customer    @relation(fields: [customerId], references: [id])
+    customerId        Int
+    SaleItems         SalesItem[]
+    /// @zod.string.min(1)
+    statusTransaction String //@default("Pending") // Pending , Accept
+    /// @zod.string.min(1)
+    typeTransaction   String //@default("Cash") // Cash, Transfer
+    createdAt         DateTime    @default(now())
+    updatedAt         DateTime    @updatedAt
+}
+
+model SalesItem {
+    id        Int     @id @default(autoincrement())
+    sale      Sale    @relation(fields: [saleId], references: [id])
+    saleId    Int
+    product   Product @relation(fields: [productId], references: [id])
+    productId Int
+    quantity  Int /// @zod.number.min(1)
+    price     Int /// @zod.number.min(1)
+    // category  String // redundant but helps snapshot data
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+}
+
+model MemberTier {
+    id       Int    @id @default(autoincrement())
+    name     String /// @zod.string.min(1)
+    range    String /// @zod.string.min(1)
+    progress Int /// @zod.number.min(1)
+    count    Int /// @zod.number.min(1)
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+}
+
+model User {
+    id        String   @id @default(uuid())
+    name      String /// @zod.string.min(1)
+    email     String   @unique
+    password  String /// @zod.string.min(1)
+    role      String   @default("USER") /// @zod.string.min(1)
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+}
+
+model Store {
+    id          String   @id @default(uuid())
+    name        String /// @zod.string.min(1)
+    currency    String /// @zod.string.min(1)
+    description String /// @zod.string.min(1)
+    phone       String /// @zod.string.min(1)
+    address     String /// @zod.string.min(1)
+    email       String   @unique /// @zod.string.email().min(1)
+    createdAt   DateTime @default(now())
+    updatedAt   DateTime @updatedAt
+}
+
+model Payment {
+    id          String        @id @default(uuid())
+    isCod       Boolean
+    valueCod    Int /// @zod.number.min(0)
+    PaymentList PaymentList[]
+}
+
+model PaymentList {
+    id        String   @id @default(uuid())
+    title     String /// @zod.string.min(1)
+    value     String /// @zod.string.min(1)
+    fee       Int /// @zod.number.min(0)
+    Payment   Payment? @relation(fields: [paymentId], references: [id])
+    paymentId String?
+}
+
+model Inventory {
+    id                String  @id @default(uuid())
+    trackInventory    Boolean
+    lowStockThreshold Int /// @zod.number.min(0)
+    allowBackorders   Boolean
+    autoReorder       Boolean
+}
+
+model Shipping {
+    id                    String         @id @default(uuid())
+    freeShippingThreshold Int /// @zod.number.min(0)
+    handlingFee           Int /// @zod.number.min(0)
+    internationalShipping Boolean
+    internationalRate     Int /// @zod.number.min(0)
+    ShippingList          ShippingList[]
+}
+
+model ShippingList {
+    id         String    @id @default(uuid())
+    name       String /// @zod.string.min(1)
+    price      Int /// @zod.number.min(0)
+    rates      Int /// @zod.number.min(0)
+    Shipping   Shipping? @relation(fields: [shippingId], references: [id])
+    shippingId String?
+}
