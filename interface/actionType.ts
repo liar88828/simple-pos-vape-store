@@ -16,7 +16,8 @@ export type CartItem = Product & {
 
 export type ContextPage = {
     params: Promise<{ slug: string }>
-    searchParams: Promise<{ range: string,
+    searchParams: Promise<{
+        range: string,
         productName: string
         customerName: string
     }>
@@ -35,5 +36,5 @@ export type SaleCustomers = Sale & {
 
 // session
 
-export type UserPayload = { userId: string, email: string, role: string };
+export type UserPayload = { userId: string, email: string, role: string, name: string };
 export type SESSION = JWTPayload & UserPayload

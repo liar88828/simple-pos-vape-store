@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="DataSourceManagerImpl" format="xml" multifile-model="true">
-    <data-source source="LOCAL" name="dev" uuid="7a2916a9-7d9b-4097-9e14-ba8725e37571">
+    <data-source source="LOCAL" name="dev" uuid="6954ae3a-de05-4594-b31f-111b155dc472">
       <driver-ref>sqlite.xerial</driver-ref>
       <synchronize>true</synchronize>
       <jdbc-driver>org.sqlite.JDBC</jdbc-driver>
-      <jdbc-url>jdbc:sqlite:E:\CODE\WEB\NEXT\vape-store\prisma\dev.db</jdbc-url>
+      <jdbc-url>jdbc:sqlite:E:\CODE\WEB\NEXT\vape-store - Copy\prisma\dev.db</jdbc-url>
       <working-dir>$ProjectFileDir$</working-dir>
       <libraries>
         <library>

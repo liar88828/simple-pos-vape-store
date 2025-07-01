@@ -1,7 +1,0 @@
-const ERROR = {
-    DATABASE: 'DATABASE',
-    VALIDATION: 'VALIDATION',
-    NOT_FOUND: 'NOT_FOUND',
-    SYSTEM: 'SYSTEM',
-
-}

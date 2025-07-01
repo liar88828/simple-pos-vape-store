@@ -5,11 +5,11 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Card, CardContent, CardDescription, CardFooter, CardTitle } from "@/components/ui/card";
 import { InputForm } from "@/components/form-hook";
 import { Button } from "@/components/ui/button";
-import { z } from "zod";
 import { registerAction } from "@/action/auth-action";
 import { SlideTransition } from "@/components/slide-transition";
 import { useRouter } from "next/navigation";
 import { RegisterFormData, registerSchema } from "@/lib/auth-schema";
+import { toastResponse } from "@/lib/my-utils";
 
 export default function RegisterPage() {
     const route = useRouter()
@@ -31,7 +31,7 @@ export default function RegisterPage() {
 
     const onSubmit = handleSubmit(async (data) => {
         console.log("Registering:", data);
-        await registerAction(data)
+        toastResponse({ response: await registerAction(data) })
     });
 
     return (

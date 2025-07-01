@@ -8,19 +8,26 @@ const protectedPaths = [
     '/reports',//
 ];
 
-const adminPaths = [ "/admin", "/admin/settings",
-    "/dashboard", '/pos', '/test', "/setting",//
-    '/products', '/inventory', '/customers',//
-    '/reports',//
+const adminPaths = ["/admin",
+    // "/admin/settings",
+    // "/dashboard", '/pos', '/test', "/setting",//
+    // '/products', '/inventory', '/customers',//
+    // '/reports',//
 ];
-const userPaths = [ "/user-dashboard", "/profile" ];
+const userPaths = ['/user',
+    '/user/home'
 
-const guestOnlyPaths = [ "/login", "/register" ];
+
+
+];
+
+const guestOnlyPaths = ["/login", "/register"];
 
 const REFRESH_THRESHOLD_SECONDS = 60 * 5; // 5 minutes before expiry, refresh token
 
 export async function middleware(request: NextRequest) {
-    // console.log('test')
+
+    console.log('test')
     const { pathname } = request.nextUrl;
     const token = request.cookies.get("token")?.value;
 
@@ -35,37 +42,53 @@ export async function middleware(request: NextRequest) {
     const payload = await verifyJwt(token);
     const isAuthenticated = payload && typeof payload !== "string";
 
-    if (guestOnlyPaths.includes(pathname) && isAuthenticated) {
-        return NextResponse.redirect(new URL("/dashboard", request.url));
+    if (guestOnlyPaths.some(path => path.includes(pathname))) {
+        if (isAuthenticated) {
+            if (payload.role === "USER") {
+                return NextResponse.redirect(new URL("/user/home", request.url));
+            } else if (payload.role === "ADMIN") {
+                return NextResponse.redirect(new URL("/admin/dashboard", request.url));
+            }
+        }
+        console.log('is guestOnlyPaths validate')
+        return NextResponse.redirect(new URL("/login", request.url));
     }
 
     if (!isAuthenticated) {
-        if (protectedPaths.some((path) => pathname.startsWith(path))) {
+        if (protectedPaths.some((path) => pathname.includes(path))) {
             return NextResponse.redirect(new URL("/login", request.url));
         }
         return NextResponse.next();
     }
     // console.log(` is  role: ${payload.role}`)
 
+    //FOR USER
     // Example: Block ADMIN from accessing /user-only routes (optional)
     // console.log(` is  admin: ${userPaths.some(path => pathname.startsWith(path))}`)
-    if (userPaths.some(path => pathname.startsWith(path)) && payload.role !== "USER") {
-        return NextResponse.redirect(new URL("/403", request.url));
+    if (userPaths.some(path => pathname.includes(path)) && payload.role !== "USER") {
+        return NextResponse.redirect(new URL("/user/home", request.url));
     }
     // if (pathname.startsWith("/user-dashboard") && payload.role !== "USER") {
     //     return NextResponse.redirect(new URL("/403", request.url));
     // }
 
+
+    //FOR ADMIN
     // Example: Block USER from accessing /admin routes
     // console.log(` is user : ${adminPaths.some(path => pathname.startsWith(path))}`)
-    if (adminPaths.some(path => pathname.startsWith(path)) && payload.role !== "ADMIN") {
-        return NextResponse.redirect(new URL("/403", request.url));
+    if (adminPaths.some(path => pathname.includes(path)) && payload.role !== "ADMIN") {
+        return NextResponse.redirect(new URL("/admin/dashboard", request.url));
         // return NextResponse.redirect(new URL("/profile", request.url));
 
     }
     // if (pathname.startsWith("/admin") && payload.role !== "ADMIN") {
     //     return NextResponse.redirect(new URL("/403", request.url)); // or show unauthorized
     // }
+
+
+    // console.log('is end : ' + payload.role)
+    console.log('is end : ')
+
 
     // ⬇️ Refresh token if needed
     const currentTimestamp = Math.floor(Date.now() / 1000);
@@ -89,7 +112,6 @@ export async function middleware(request: NextRequest) {
 
         return response;
     }
-
     return NextResponse.next();
 }
 export const config = {

@@ -1,8 +1,17 @@
 import Link from 'next/link'
 import { Button } from "@/components/ui/button";
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { match } from 'ts-pattern';
 
-export default function NotFound() {
+export default async function NotFound({ role }: { role?: string }) {
+    const homeLink = match(role)
+        .with("USER", () => "/user/home")
+        .with("ADMIN", () => "/admin/dashboard")
+        .otherwise(() => "/login");
+    console.log('role is : ' + role)
+
+
+
     return (
         <div className="w-full flex justify-center items-center mt-[20vw]">
             <div className="w-auto max-w-xl  ">
@@ -14,7 +23,7 @@ export default function NotFound() {
                     <CardContent>
                         <CardAction>
                             <Button>
-                                <Link href="/">Return Home</Link>
+                                <Link href={homeLink}>Return Home</Link>
                             </Button>
                         </CardAction>
                     </CardContent>

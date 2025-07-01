@@ -1,5 +1,5 @@
 import React from 'react';
-import SettingPage from "@/app/setting/setting-page";
+import SettingPage from "@/app/admin/setting/setting-page";
 import { getSettingInventory, getSettingPayment, getSettingShipping, getStoreLoader } from "@/action/setting-action";
 
 async function Page() {

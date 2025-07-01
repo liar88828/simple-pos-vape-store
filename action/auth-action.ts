@@ -8,6 +8,7 @@ import { signJwt, signRefreshJwt, verifyJwt, verifyRefreshJwt } from "@/action/j
 import { cookies } from "next/headers";
 import { ActionResponse } from "@/interface/actionType";
 import { LoginFormData, loginSchema, RegisterFormData, registerSchema } from "@/lib/auth-schema";
+import { revalidatePath } from "next/cache";
 
 export async function registerAction(rawData: RegisterFormData): Promise<ActionResponse> {
     const parsed = registerSchema.safeParse(rawData);
@@ -27,7 +28,7 @@ export async function registerAction(rawData: RegisterFormData): Promise<ActionR
         return {
             success: false,
             message: `User already exists`,
-            error: { email: [ "Email is already registered" ] }
+            error: { email: ["Email is already registered"] }
         };
     }
 
@@ -39,6 +40,9 @@ export async function registerAction(rawData: RegisterFormData): Promise<ActionR
     await prisma.customer.create({
         data: { name, age: 0, lastPurchase: new Date(), status: "Pending", totalPurchase: 0 }
     })
+
+
+
 
     redirect("/login"); // or wherever you want
 }
@@ -70,7 +74,7 @@ export async function loginAction(rawData: LoginFormData): Promise<ActionRespons
     }
 
     // Create access + refresh tokens
-    const accessToken = await signJwt({ userId: user.id, email: user.email, role: user.role });
+    const accessToken = await signJwt({ userId: user.id, email: user.email, role: user.role, name: user.name });
     const refreshToken = await signRefreshJwt({ userId: user.id });
 
     // Set cookie
@@ -96,7 +100,8 @@ export async function loginAction(rawData: LoginFormData): Promise<ActionRespons
         sameSite: "lax",
     });
 
-    redirect("/dashboard");
+    revalidatePath('/')
+    redirect("/");
 
     // return {
     //     success: true,
@@ -126,6 +131,7 @@ export async function refreshTokenAction() {
             id: true,
             email: true,
             role: true,
+            name: true
         }
     })
     if (!user) {
@@ -133,7 +139,7 @@ export async function refreshTokenAction() {
     }
 
     // Issue new access token
-    const newAccessToken = await signJwt({ userId: user.id, email: user.email, role: user.role });
+    const newAccessToken = await signJwt({ userId: user.id, email: user.email, role: user.role, name: user.name });
 
     cookieStore.set({
         name: "token",
@@ -165,3 +171,13 @@ export const deleteCookie = async () => {
     const cookieStore = await cookies()
     cookieStore.delete('token')
 }
+
+export async function getSessionUser() {
+    const cookieStore = await cookies()
+    const token = cookieStore.get("token")?.value ?? ''
+    // console.log("token : " + token)
+    const payload = await verifyJwt(token);
+    return payload
+}
+
+

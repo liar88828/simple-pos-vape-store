@@ -35,7 +35,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { addProduct, deleteProduct, updateProduct } from "@/action/product-action";
 import { toast } from "sonner";
 import { ProductModelType } from "@/lib/schema";
-import { useDebounceLoad,   } from "@/hooks/use-debounce";
+import { useDebounceLoad, } from "@/hooks/use-debounce";
 import { useRouter } from "next/navigation";
 
 interface ProductsPageProps {
@@ -46,11 +46,11 @@ export function ProductsPage({ products }: ProductsPageProps) {
     const router = useRouter()
 
     // Filters
-    const [ searchTerm, setSearchTerm ] = useState("");
-    const [ categoryFilter, setCategoryFilter ] = useState("all");
-    const [ nicotineFilter, setNicotineFilter ] = useState("all");
-    const [ deviceTypeFilter, setDeviceTypeFilter ] = useState("all");
-    const [ stockFilter, setStockFilter ] = useState("all");
+    const [searchTerm, setSearchTerm] = useState("");
+    const [categoryFilter, setCategoryFilter] = useState("all");
+    const [nicotineFilter, setNicotineFilter] = useState("all");
+    const [deviceTypeFilter, setDeviceTypeFilter] = useState("all");
+    const [stockFilter, setStockFilter] = useState("all");
 
     const { value, isLoading } = useDebounceLoad(searchTerm, 1000);
 
@@ -59,11 +59,11 @@ export function ProductsPage({ products }: ProductsPageProps) {
             router.push(newParam({ productName: value }));
             console.log('push')
         }
-    }, [ value, router ]);
+    }, [value, router]);
 
     // Pagination
-    const [ currentPage, setCurrentPage ] = useState(1);
-    const [ itemsPerPage, setItemsPerPage ] = useState(6);
+    const [currentPage, setCurrentPage] = useState(1);
+    const [itemsPerPage, setItemsPerPage] = useState(6);
 
     // Filtered Products
     const filteredProducts = useMemo(() => {
@@ -93,18 +93,18 @@ export function ProductsPage({ products }: ProductsPageProps) {
 
             return true;
         });
-    }, [ products, searchTerm, categoryFilter, nicotineFilter, deviceTypeFilter, stockFilter ]);
+    }, [products, searchTerm, categoryFilter, nicotineFilter, deviceTypeFilter, stockFilter]);
 
     // Total Pages
     const totalPages = useMemo(() => {
         return Math.ceil(filteredProducts.length / itemsPerPage);
-    }, [ filteredProducts.length, itemsPerPage ]);
+    }, [filteredProducts.length, itemsPerPage]);
 
     // Paginated Products
     const paginatedProducts = useMemo(() => {
         const start = (currentPage - 1) * itemsPerPage;
         return filteredProducts.slice(start, start + itemsPerPage);
-    }, [ filteredProducts, currentPage, itemsPerPage ]);
+    }, [filteredProducts, currentPage, itemsPerPage]);
     const onReset = () => {
         setSearchTerm("")
         setNicotineFilter("all")
@@ -117,13 +117,13 @@ export function ProductsPage({ products }: ProductsPageProps) {
         <div className="p-6 max-w-7xl mx-auto">
             <div className="flex justify-between items-center mb-6">
                 <h1 className="text-3xl font-bold">Katalog Produk</h1>
-                <ModalProductTambah/>
+                <ModalProductTambah />
             </div>
 
 
-            {/* Products Table */ }
+            {/* Products Table */}
             <Card>
-                {/* Filters */ }
+                {/* Filters */}
 
                 <CardHeader>
                     <CardTitle>Filter Produk</CardTitle>
@@ -133,19 +133,19 @@ export function ProductsPage({ products }: ProductsPageProps) {
                                 <Input
                                     placeholder="Cari produk..."
                                     // className="max-w-sm"
-                                    value={ searchTerm }
-                                    type={ 'search' }
-                                    onChange={ (e) => setSearchTerm(e.target.value) }
+                                    value={searchTerm}
+                                    type={'search'}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
                                 />
                             </div>
-                            {/*sm:justify-between*/ }
+                            {/*sm:justify-between*/}
                             <div className=" flex  gap-4 sm:gap-6 flex-wrap sm:flex-nowrap">
                                 <div>
                                     <Label>Kategori</Label>
                                     <Select
-                                        value={ categoryFilter } onValueChange={ setCategoryFilter }>
+                                        value={categoryFilter} onValueChange={setCategoryFilter}>
                                         <SelectTrigger>
-                                            <SelectValue placeholder="Semua kategori"/>
+                                            <SelectValue placeholder="Semua kategori" />
                                         </SelectTrigger>
                                         <SelectContent>
                                             <SelectItem value="all">Semua</SelectItem>
@@ -157,10 +157,10 @@ export function ProductsPage({ products }: ProductsPageProps) {
                                     </Select>
                                 </div>
                                 <div>
-                                    <Label className={ 'text-nowrap' }>Level Nikotin</Label>
-                                    <Select value={ nicotineFilter } onValueChange={ setNicotineFilter }>
+                                    <Label className={'text-nowrap'}>Level Nikotin</Label>
+                                    <Select value={nicotineFilter} onValueChange={setNicotineFilter}>
                                         <SelectTrigger>
-                                            <SelectValue placeholder="Semua level"/>
+                                            <SelectValue placeholder="Semua level" />
                                         </SelectTrigger>
                                         <SelectContent>
                                             <SelectItem value="all">Semua</SelectItem>
@@ -174,9 +174,9 @@ export function ProductsPage({ products }: ProductsPageProps) {
                                 </div>
                                 <div>
                                     <Label>Tipe Device</Label>
-                                    <Select value={ deviceTypeFilter } onValueChange={ setDeviceTypeFilter }>
+                                    <Select value={deviceTypeFilter} onValueChange={setDeviceTypeFilter}>
                                         <SelectTrigger>
-                                            <SelectValue placeholder="Semua tipe"/>
+                                            <SelectValue placeholder="Semua tipe" />
                                         </SelectTrigger>
                                         <SelectContent>
                                             <SelectItem value="all">Semua</SelectItem>
@@ -188,9 +188,9 @@ export function ProductsPage({ products }: ProductsPageProps) {
                                 </div>
                                 <div>
                                     <Label>Status Stok</Label>
-                                    <Select value={ stockFilter } onValueChange={ setStockFilter }>
+                                    <Select value={stockFilter} onValueChange={setStockFilter}>
                                         <SelectTrigger>
-                                            <SelectValue placeholder="Semua status"/>
+                                            <SelectValue placeholder="Semua status" />
                                         </SelectTrigger>
                                         <SelectContent>
                                             <SelectItem value="all">Semua</SelectItem>
@@ -202,17 +202,17 @@ export function ProductsPage({ products }: ProductsPageProps) {
                                 </div>
                                 <div>
                                     <Label>Reset</Label>
-                                    <Button onClick={ onReset }> <XIcon/> </Button>
+                                    <Button onClick={onReset}> <XIcon /> </Button>
                                 </div>
                             </div>
                         </div>
                         <div className="flex gap-4 sm:gap-4 ">
-                            <Select value={ String(itemsPerPage) } onValueChange={ (value) => {
+                            <Select value={String(itemsPerPage)} onValueChange={(value) => {
                                 setItemsPerPage(Number(value));
                                 setCurrentPage(1); // Reset ke halaman pertama
-                            } }>
+                            }}>
                                 <SelectTrigger>
-                                    <SelectValue placeholder="Tampil"/>
+                                    <SelectValue placeholder="Tampil" />
                                 </SelectTrigger>
                                 <SelectContent>
                                     <SelectItem value="6">6</SelectItem>
@@ -224,30 +224,30 @@ export function ProductsPage({ products }: ProductsPageProps) {
                             </Select>
                             <Button
                                 variant="outline"
-                                disabled={ currentPage === 1 }
-                                onClick={ () => setCurrentPage((prev) => prev - 1) }
+                                disabled={currentPage === 1}
+                                onClick={() => setCurrentPage((prev) => prev - 1)}
                             >
-                                <ChevronLeft/>
+                                <ChevronLeft />
                             </Button>
 
-                            {/*just for text*/ }
-                            <Button variant="outline" disabled={ true }>
-                                { currentPage } / { totalPages }
+                            {/*just for text*/}
+                            <Button variant="outline" disabled={true}>
+                                {currentPage} / {totalPages}
                             </Button>
 
                             <Button
                                 variant="outline"
-                                disabled={ currentPage === totalPages }
-                                onClick={ () => setCurrentPage((prev) => prev + 1) }
+                                disabled={currentPage === totalPages}
+                                onClick={() => setCurrentPage((prev) => prev + 1)}
                             >
-                                <ChevronRight/>
+                                <ChevronRight />
 
                             </Button>
                         </div>
                     </div>
                 </CardHeader>
 
-                {/* Products Table */ }
+                {/* Products Table */}
                 <CardContent>
                     <Table>
                         <TableHeader>
@@ -261,35 +261,35 @@ export function ProductsPage({ products }: ProductsPageProps) {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            { paginatedProducts.map((product) => (
+                            {paginatedProducts.map((product) => (
                                 <TableRow
-                                    key={ product.id }
-                                    // className={twMerge(
-                                    //     clsx(
-                                    //         product.stock === 0 && "bg-red-50",
-                                    //         product.stock > 0 && product.stock <= product.minStock && "bg-yellow-100/20",
-                                    //         product.stock > product.minStock && "bg-green-50"
-                                    //     )
-                                    // )}
+                                    key={product.id}
+                                // className={twMerge(
+                                //     clsx(
+                                //         product.stock === 0 && "bg-red-50",
+                                //         product.stock > 0 && product.stock <= product.minStock && "bg-yellow-100/20",
+                                //         product.stock > product.minStock && "bg-green-50"
+                                //     )
+                                // )}
                                 >
                                     <TableCell>
                                         <div className="flex items-center space-x-3">
                                             <picture>
                                                 <img
-                                                    src={ product.image }
-                                                    alt={ product.name }
+                                                    src={product.image}
+                                                    alt={product.name}
                                                     className="min-w-10 h-10 rounded object-cover"
                                                 />
                                             </picture>
                                             <div>
-                                                <p className="font-medium">{ product.name }</p>
-                                                <p className="text-sm text-muted-foreground">{ truncateText(product.description, 10) }</p>
+                                                <p className="font-medium">{product.name}</p>
+                                                <p className="text-sm text-muted-foreground">{truncateText(product.description, 10)}</p>
                                             </div>
                                         </div>
                                     </TableCell>
-                                    <TableCell>{ product.category }</TableCell>
-                                    <TableCell>{ formatRupiah(product.price) }</TableCell>
-                                    <TableCell>{ getValueLabel(product.stock) }</TableCell>
+                                    <TableCell>{product.category}</TableCell>
+                                    <TableCell>{formatRupiah(product.price)}</TableCell>
+                                    <TableCell>{getValueLabel(product.stock)}</TableCell>
                                     <TableCell>
                                         <Badge
                                             variant={
@@ -300,23 +300,23 @@ export function ProductsPage({ products }: ProductsPageProps) {
                                                 })
                                             }
                                         >
-                                            { choose(
-                                                [ product.stock === 0, "Habis" ],
-                                                [ product.stock <= product.minStock, "Stok Rendah" ],
-                                                [ true, "Tersedia" ]
-                                            ) }
+                                            {choose(
+                                                [product.stock === 0, "Habis"],
+                                                [product.stock <= product.minStock, "Stok Rendah"],
+                                                [true, "Tersedia"]
+                                            )}
 
                                         </Badge>
                                     </TableCell>
                                     <TableCell>
                                         <div className="flex space-x-2">
-                                            <ProductDetailDialog product={ product }/>
-                                            <ModalProductUpdate product={ product }/>
+                                            <ProductDetailDialog product={product} />
+                                            <ModalProductUpdate product={product} />
 
                                         </div>
                                     </TableCell>
                                 </TableRow>
-                            )) }
+                            ))}
                         </TableBody>
                     </Table>
                 </CardContent>
@@ -326,7 +326,7 @@ export function ProductsPage({ products }: ProductsPageProps) {
 }
 
 export function ModalProductTambah() {
-    const [ open, setOpen ] = useState(false);
+    const [open, setOpen] = useState(false);
 
     const methods = useForm<ProductModelType>({
         resolver: zodResolver(ProductModel),
@@ -343,7 +343,7 @@ export function ModalProductTambah() {
             flavor: '-',
             type: "Pod System",
             sold: 0
-        } satisfies   ProductModelType
+        } satisfies ProductModelType
     });
     // console.log(methods.formState.errors)
 
@@ -359,19 +359,19 @@ export function ModalProductTambah() {
             toast("You submitted the following values", {
                 description: (
                     <pre className="mt-2 w-[320px] rounded-md bg-neutral-950 p-4">
-                            <code className="text-white">{ JSON.stringify(data, null, 2) }</code>
-                            <code className="text-white">{ JSON.stringify(methods.formState.errors, null, 2) }</code>
-                        </pre>
+                        <code className="text-white">{JSON.stringify(data, null, 2)}</code>
+                        <code className="text-white">{JSON.stringify(methods.formState.errors, null, 2)}</code>
+                    </pre>
                 )
             })
         }
     });
 
     return (
-        <Dialog open={ open } onOpenChange={ setOpen }>
+        <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
                 <Button>
-                    <Plus className="h-4 w-4 mr-2"/>
+                    <Plus className="h-4 w-4 mr-2" />
                     Tambah Produk
                 </Button>
             </DialogTrigger>
@@ -380,59 +380,59 @@ export function ModalProductTambah() {
                     <DialogTitle>Tambah Produk Baru</DialogTitle>
                 </DialogHeader>
 
-                <FormProvider { ...methods }>
-                    <form onSubmit={ onSubmit } className={ 'space-y-4' }>
+                <FormProvider {...methods}>
+                    <form onSubmit={onSubmit} className={'space-y-4'}>
                         <div className="grid grid-cols-2 gap-4">
-                            <InputForm title="Nama Produk" name="name" placeholder="Nama produk"/>
+                            <InputForm title="Nama Produk" name="name" placeholder="Nama produk" />
 
                             <SelectForm
                                 name="category"
                                 label="Kategori"
                                 placeholder="Pilih kategori"
-                                options={ [
+                                options={[
                                     { label: "Device", value: "device" },
                                     { label: "Liquid", value: "liquid" },
                                     { label: "Coil", value: "coil" },
                                     { label: "Aksesoris", value: "aksesoris" },
-                                ] }
+                                ]}
                             />
 
-                            <InputNumForm name="price" title="Harga" placeholder="0" type="number"/>
-                            <InputForm name="stock" title="Stok Awal" placeholder="0" type="number"/>
-                            <InputForm name="minStock" title="Minimum Stok" placeholder="0" type="number"/>
+                            <InputNumForm name="price" title="Harga" placeholder="0" type="number" />
+                            <InputForm name="stock" title="Stok Awal" placeholder="0" type="number" />
+                            <InputForm name="minStock" title="Minimum Stok" placeholder="0" type="number" />
 
                             <SelectForm
                                 name="nicotineLevel"
                                 label="Level Nikotin (untuk liquid)"
                                 placeholder="Pilih level"
-                                options={ [
+                                options={[
                                     { label: "0mg", value: "0mg" },
                                     { label: "3mg", value: "3mg" },
                                     { label: "6mg", value: "6mg" },
                                     { label: "12mg", value: "12mg" },
                                     { label: "25mg (Salt Nic)", value: "25mg" },
                                     { label: "50mg (Salt Nic)", value: "50mg" },
-                                ] }
+                                ]}
                             />
 
-                            <InputForm name="flavor" title="Rasa (untuk liquid)" placeholder="Rasa liquid"/>
+                            <InputForm name="flavor" title="Rasa (untuk liquid)" placeholder="Rasa liquid" />
 
                             <SelectForm
                                 name="type"
                                 label="Tipe Device"
                                 placeholder="Tipe Device"
-                                options={ [
+                                options={[
                                     { label: "Pod System", value: "Pod System" },
                                     { label: "Mod", value: "Mod" },
                                     { label: "Disposable", value: "Disposable" },
-                                ] }
+                                ]}
                             />
-                            {/* <InputHook name="type" title="Tipe Produk" placeholder="Tipe produk" /> */ }
+                            {/* <InputHook name="type" title="Tipe Produk" placeholder="Tipe produk" /> */}
 
 
                         </div>
-                        <InputForm name="image" title="URL Gambar" placeholder="Link gambar produk" type="url"/>
-                        <TextareaForm name="description" title="Deskripsi" placeholder="Deskripsi produk"/>
+                        <InputForm name="image" title="URL Gambar" placeholder="Link gambar produk" type="url" />
+                        <TextareaForm name="description" title="Deskripsi" placeholder="Deskripsi produk" />
                         <DialogFooter className="pt-4">
                             <Button type="submit">Simpan Produk</Button>
                         </DialogFooter>
@@ -448,8 +448,8 @@ export function ProductDetailDialog({ product }: { product: ProductModelType }) 
     function DetailItem({ label, value }: { label: string; value: string | number }) {
         return (
             <div className="flex flex-col">
-                <span className="text-muted-foreground">{ label }</span>
-                <span className="font-medium">{ value }</span>
+                <span className="text-muted-foreground">{label}</span>
+                <span className="font-medium">{value}</span>
             </div>
         );
     }
@@ -458,56 +458,56 @@ export function ProductDetailDialog({ product }: { product: ProductModelType }) 
         <Dialog>
             <DialogTrigger asChild>
                 <Button size="sm" variant="outline">
-                    <Eye className="h-3 w-3"/>
+                    <Eye className="h-3 w-3" />
                 </Button>
             </DialogTrigger>
             <DialogContent className="max-w-2xl sm:rounded-2xl shadow-lg">
-                <DialogTitle className="text-2xl font-semibold">{ product.name }</DialogTitle>
+                <DialogTitle className="text-2xl font-semibold">{product.name}</DialogTitle>
                 <DialogDescription className="mb-4 text-sm text-muted-foreground">
-                    Kategori: <span className="font-medium text-primary">{ product.category }</span>
+                    Kategori: <span className="font-medium text-primary">{product.category}</span>
                 </DialogDescription>
 
                 <div className="space-y-6">
                     <div className="">
                         <picture>
                             <img
-                                src={ product.image }
-                                alt={ product.name }
-                                className="w-full h-80 object-cover rounded-xl border"
+                                src={product.image}
+                                alt={product.name}
+                                className="w-full h-80 object-contain rounded-xl border bg-white"
                             />
                         </picture>
                     </div>
 
                     <div className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
-                        <DetailItem label="Harga" value={ `Rp ${ product.price.toLocaleString() }` }/>
-                        <DetailItem label="Stok" value={ product.stock }/>
-                        <DetailItem label="Minimum Stok" value={ product.minStock }/>
-                        <DetailItem label="Tipe Produk" value={ product.type }/>
-                        { product.nicotineLevel && (
-                            <DetailItem label="Level Nikotin" value={ product.nicotineLevel }/>
-                        ) }
-                        { product.flavor && (
-                            <DetailItem label="Rasa" value={ product.flavor }/>
-                        ) }
+                        <DetailItem label="Harga" value={`Rp ${product.price.toLocaleString()}`} />
+                        <DetailItem label="Stok" value={product.stock} />
+                        <DetailItem label="Minimum Stok" value={product.minStock} />
+                        <DetailItem label="Tipe Produk" value={product.type} />
+                        {product.nicotineLevel && (
+                            <DetailItem label="Level Nikotin" value={product.nicotineLevel} />
+                        )}
+                        {product.flavor && (
+                            <DetailItem label="Rasa" value={product.flavor} />
+                        )}
                     </div>
 
                     <div>
                         <h4 className="font-medium text-base mb-1">Deskripsi</h4>
-                        <p className="text-sm text-muted-foreground whitespace-pre-wrap">{ product.description }</p>
+                        <p className="text-sm text-muted-foreground whitespace-pre-wrap">{product.description}</p>
                     </div>
                 </div>
                 <div className="flex items-end gap-2 justify-end">
 
                     <DialogClose asChild>
                         <Button variant="outline"
-                                className="min-w-24"
-                                onClick={ async () => {
-                                    if (confirm('Are you Sure to Delete ?')) {
-                                        toastResponse({ response: await deleteProduct(product.id) })
-                                    }
-                                } }
+                            className="min-w-24"
+                            onClick={async () => {
+                                if (confirm('Are you Sure to Delete ?')) {
+                                    toastResponse({ response: await deleteProduct(product.id) })
+                                }
+                            }}
                         >
-                            Hapus <Trash2 className="h-3 w-3"/>
+                            Hapus <Trash2 className="h-3 w-3" />
                         </Button>
                     </DialogClose>
                     <DialogClose asChild>
@@ -522,8 +522,95 @@ export function ProductDetailDialog({ product }: { product: ProductModelType }) 
     );
 }
 
+
+
+export function ProductDetailDialogOnly({ product, isOpen, setOpen, onAdd }: {
+    product: ProductModelType | null,
+    setOpen: (value: boolean) => void,
+    onAdd: () => void,
+    isOpen: boolean
+
+}) {
+
+    if (!product) {
+        return
+    }
+
+    function DetailItem({ label, value }: { label: string; value: string | number }) {
+        return (
+            <div className="flex flex-col">
+                <span className="text-muted-foreground">{label}</span>
+                <span className="font-medium">{value}</span>
+            </div>
+        );
+    }
+
+    return (
+        <Dialog
+            open={isOpen}
+            onOpenChange={setOpen}
+        >
+            <DialogContent className="max-w-2xl sm:rounded-2xl shadow-lg">
+                <DialogTitle className="text-2xl font-semibold">{product.name}</DialogTitle>
+                <DialogDescription className="mb-4 text-sm text-muted-foreground">
+                    Kategori: <span className="font-medium text-primary">{product.category}</span>
+                </DialogDescription>
+
+                <div className="space-y-6">
+                    <div className="">
+                        <picture>
+                            <img
+                                src={product.image}
+                                alt={product.name}
+                                className="w-full h-80 object-contain rounded-xl border bg-white"
+                            />
+                        </picture>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
+                        <DetailItem label="Harga" value={`Rp ${product.price.toLocaleString()}`} />
+                        <DetailItem label="Stok" value={product.stock} />
+                        <DetailItem label="Minimum Stok" value={product.minStock} />
+                        <DetailItem label="Tipe Produk" value={product.type} />
+                        {product.nicotineLevel && (
+                            <DetailItem label="Level Nikotin" value={product.nicotineLevel} />
+                        )}
+                        {product.flavor && (
+                            <DetailItem label="Rasa" value={product.flavor} />
+                        )}
+                    </div>
+
+                    <div>
+                        <h4 className="font-medium text-base mb-1">Deskripsi</h4>
+                        <p className="text-sm text-muted-foreground whitespace-pre-wrap">{product.description}</p>
+                    </div>
+                </div>
+                <div className="flex items-end gap-2 justify-end">
+
+                    <DialogClose asChild>
+                        <Button variant="outline"
+                            className="min-w-24"
+                            onClick={onAdd}
+                        >
+                            Add <Plus className="size-4" />
+                        </Button>
+                    </DialogClose>
+                    <DialogClose asChild>
+                        <Button variant="default" className="min-w-24">
+                            Tutup
+                        </Button>
+                    </DialogClose>
+                </div>
+
+            </DialogContent>
+        </Dialog>
+    );
+}
+
+
+
 export function ModalProductUpdate({ product }: { product: ProductModelType }) {
-    const [ open, setOpen ] = useState(false);
+    const [open, setOpen] = useState(false);
 
     const methods = useForm<ProductModelType>({
         resolver: zodResolver(ProductModel),
@@ -539,17 +626,17 @@ export function ModalProductUpdate({ product }: { product: ProductModelType }) {
             toast.error(response.message, {
                 description: (
                     <pre className="mt-2 w-[320px] rounded-md bg-neutral-950 p-4">
-                            <code className="text-white">{ JSON.stringify(data, null, 2) }</code>
-                        </pre>
+                        <code className="text-white">{JSON.stringify(data, null, 2)}</code>
+                    </pre>
                 ),
             });
         }
     });
     return (
-        <Dialog open={ open } onOpenChange={ setOpen }>
+        <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
                 <Button size="sm" variant="outline">
-                    <Pencil className="h-3 w-3"/>
+                    <Pencil className="h-3 w-3" />
                 </Button>
             </DialogTrigger>
             <DialogContent className="max-w-2xl">
@@ -557,47 +644,47 @@ export function ModalProductUpdate({ product }: { product: ProductModelType }) {
                     <DialogTitle>Perbarui Produk</DialogTitle>
                 </DialogHeader>
 
-                <FormProvider { ...methods }>
-                    <form onSubmit={ onSubmit } className="space-y-4">
+                <FormProvider {...methods}>
+                    <form onSubmit={onSubmit} className="space-y-4">
                         <div className="grid grid-cols-2 gap-4">
-                            <InputForm title="Nama Produk" name="name" placeholder="Nama produk"/>
+                            <InputForm title="Nama Produk" name="name" placeholder="Nama produk" />
 
                             <SelectForm
                                 name="category"
                                 label="Kategori"
                                 placeholder="Pilih kategori"
-                                options={ [
+                                options={[
                                     { label: "Device", value: "device" },
                                     { label: "Liquid", value: "liquid" },
                                     { label: "Coil", value: "coil" },
                                     { label: "Aksesoris", value: "aksesoris" },
-                                ] }
+                                ]}
                             />
 
-                            <InputForm name="price" title="Harga" placeholder="0" type="number"/>
-                            <InputForm name="stock" title="Stok Awal" placeholder="0" type="number"/>
-                            <InputForm name="minStock" title="Minimum Stok" placeholder="0" type="number"/>
+                            <InputNumForm name="price" title="Harga" placeholder="0" type="number" />
+                            <InputForm name="stock" title="Stok Awal" placeholder="0" type="number" />
+                            <InputForm name="minStock" title="Minimum Stok" placeholder="0" type="number" />
 
                             <SelectForm
                                 name="nicotineLevel"
                                 label="Level Nikotin (untuk liquid)"
                                 placeholder="Pilih level"
-                                options={ [
+                                options={[
                                     { label: "0mg", value: "0mg" },
                                     { label: "3mg", value: "3mg" },
                                     { label: "6mg", value: "6mg" },
                                     { label: "12mg", value: "12mg" },
                                     { label: "25mg (Salt Nic)", value: "25mg" },
                                     { label: "50mg (Salt Nic)", value: "50mg" },
-                                ] }
+                                ]}
                             />
 
-                            <InputForm name="flavor" title="Rasa (untuk liquid)" placeholder="Rasa liquid"/>
-                            <InputForm name="type" title="Tipe Produk" placeholder="Tipe produk"/>
+                            <InputForm name="flavor" title="Rasa (untuk liquid)" placeholder="Rasa liquid" />
+                            <InputForm name="type" title="Tipe Produk" placeholder="Tipe produk" />
                         </div>
 
-                        <InputForm name="image" title="URL Gambar" placeholder="Link gambar produk" type="text"/>
-                        <TextareaForm name="description" title="Deskripsi" placeholder="Deskripsi produk"/>
+                        <InputForm name="image" title="URL Gambar" placeholder="Link gambar produk" type="text" />
+                        <TextareaForm name="description" title="Deskripsi" placeholder="Deskripsi produk" />
 
                         <DialogFooter className="pt-4">
                             <Button type="submit">Perbarui Produk</Button>

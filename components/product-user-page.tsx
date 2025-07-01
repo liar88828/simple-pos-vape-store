@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label"
 import { ChevronLeft, ChevronRight, MinusIcon, Plus, PlusIcon, Search, ShoppingCart, Trash2, XIcon } from "lucide-react"
 import { Customer, Product } from "@prisma/client";
 import { chooseStatus, formatRupiah, getStatusVariant, newParam, toastResponse } from "@/lib/my-utils";
-import { CartItem } from "@/interface/actionType";
+import { CartItem, SaleCustomers, SESSION } from "@/interface/actionType";
 import {
     Dialog,
     DialogClose,
@@ -19,7 +19,7 @@ import {
     DialogTitle,
     DialogTrigger
 } from "@/components/ui/dialog";
-import { createTransaction } from "@/action/sale-action";
+import { createTransactionUser, createTransactionUserPending } from "@/action/sale-action";
 import { Badge } from "@/components/ui/badge";
 import { FormProvider, useForm } from "react-hook-form";
 import { InputForm } from "@/components/form-hook";
@@ -28,16 +28,27 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { createCustomerNew } from "@/action/customer-action";
 import { useRouter } from "next/navigation";
 import { useDebounce, } from "@/hooks/use-debounce";
+import { ProductPending } from "@/app/user/home/page"
 import { ProductDetailDialogOnly } from "./products-page"
 
-export function POSPage({ products, customers }: { customers: Customer[], products: Product[] }) {
+export function ProductUserPage(
+    {
+        productPending,
+        session,
+        products,
+
+    }: {
+        productPending: ProductPending
+        session: SESSION
+        products: Product[],
+
+    }) {
     const router = useRouter();
-    const [cartItems, setCartItems] = useState<CartItem[]>([])
-    const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null)
+    const [cartItems, setCartItems] = useState<CartItem[]>(productPending?.current)
     const [loading, setLoading] = useState(false)
     // const [ ageValid, setAgeValid ] = useState(false)
+
     const [searchProduct, setSearchProduct] = useState("")
-    const [searchCustomer, setSearchCustomer] = useState("")
     const [categoryFilter, setCategoryFilter] = useState("all")
     const [nicotineFilter, setNicotineFilter] = useState("all")
     const [deviceTypeFilter, setDeviceTypeFilter] = useState("all")
@@ -46,21 +57,15 @@ export function POSPage({ products, customers }: { customers: Customer[], produc
     const [isOpen, setIsOpen] = useState(false)
 
     const searchNameDebounce = useDebounce(searchProduct)
-    const searchCustomerDebounce = useDebounce(searchCustomer)
 
-    // usePushQueryObject({
-    //     productName: value,
-    //     customerName: searchCustomerDebounce,
-    // })
 
     useEffect(() => {
         console.log(`POS QUERY : ${searchNameDebounce.trim()}`)
         router.push(newParam({
             productName: searchNameDebounce,
-            customerName: searchCustomerDebounce,
         }));
         console.log('push')
-    }, [searchNameDebounce, router, searchCustomerDebounce]);
+    }, [searchNameDebounce, router]);
 
     // pagination
     const [currentPage, setCurrentPage] = useState(1);
@@ -104,6 +109,32 @@ export function POSPage({ products, customers }: { customers: Customer[], produc
         setCartItems(cartItems.filter((item) => item.id !== productId))
     }
 
+    const getTotalCart = () => {
+        return cartItems.reduce((total, item) => total + item.price * item.quantity, 0)
+    }
+    const onReset = () => {
+        setSearchProduct("")
+        setNicotineFilter("all")
+        setCategoryFilter("all")
+        setDeviceTypeFilter("all")
+    }
+
+    async function onTransaction() {
+        setLoading(true)
+        if (productPending.isPending) {
+            if (productPending.data) {
+                toastResponse({ response: await createTransactionUserPending(cartItems, productPending.data), })
+            }
+        } else {
+            toastResponse({ response: await createTransactionUser(cartItems), })
+
+        }
+
+
+        setLoading(false)
+
+    }
+
     const incrementItem = (id: number) => {
         setCartItems(prev =>
             prev.map(item =>
@@ -123,45 +154,19 @@ export function POSPage({ products, customers }: { customers: Customer[], produc
     };
 
 
-    const getTotalCart = () => {
-        return cartItems.reduce((total, item) => total + item.price * item.quantity, 0)
-    }
-    const onReset = () => {
-        setSearchProduct("")
-        setNicotineFilter("all")
-        setCategoryFilter("all")
-        setDeviceTypeFilter("all")
-    }
-
-    async function onTransaction() {
-        setLoading(true)
-        toastResponse({
-            response: await createTransaction(cartItems, selectedCustomer),
-            onSuccess: () => {
-                setSelectedCustomer(null)
-                setCartItems([])
-            }
-        })
-        setLoading(false)
-
-    }
-
     const getProductStock = (id: number) => {
         return products.find(product => product.id === id)?.stock || 0;
     };
-
-
     return (
         <div className="p-6 max-w-7xl mx-auto">
+
             <ProductDetailDialogOnly product={isProduct} isOpen={isOpen}
                 setOpen={setIsOpen}
                 onAdd={() => { if (isProduct) { incrementItem(isProduct.id) } }}
             />
+            <h1 className="text-3xl font-bold mb-6">User Home {session.name}</h1>
 
-
-            <h1 className="text-3xl font-bold mb-6">POS Kasir</h1>
-
-            <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 xl:grid-cols-3 space-y-6  xl:space-y-0 xl:space-x-6  ">
 
                 {/* Product Selection */}
                 <div className="lg:col-span-2 ">
@@ -285,7 +290,6 @@ export function POSPage({ products, customers }: { customers: Customer[], produc
                                         <Card key={product.id}
                                             className="cursor-pointer hover:shadow-md transition-shadow p-0 gap-0">
                                             <picture>
-
                                                 <img
                                                     onClick={() => {
                                                         setIsOpen(prev => { return !prev })
@@ -293,7 +297,7 @@ export function POSPage({ products, customers }: { customers: Customer[], produc
                                                     }}
                                                     src={product.image}
                                                     alt={product.name}
-                                                    className="w-full h-40 object-contain rounded bg-white "
+                                                    className="w-full h-40 object-contain rounded  bg-white"
                                                 />
                                             </picture>
                                             <CardContent className="p-4 md:p-6">
@@ -321,19 +325,18 @@ export function POSPage({ products, customers }: { customers: Customer[], produc
                 </div>
 
                 {/* Cart & Checkout */}
-                <div>
-                    <Card>
-                        <CardHeader>
+                <div >
+                    <Card >
+                        <CardHeader  >
                             <CardTitle>Keranjang Belanja</CardTitle>
                         </CardHeader>
-                        <CardContent>
-                            <div className="space-y-4">
+                        <CardContent  >
+                            <div className="space-y-4 ">
                                 {cartItems.length === 0 ? (
                                     <p className="text-muted-foreground text-center py-4">Keranjang kosong</p>
                                 ) : (
                                     <>
                                         {cartItems.map((product) => {
-
 
 
                                             return (
@@ -393,46 +396,10 @@ export function POSPage({ products, customers }: { customers: Customer[], produc
                                             </div>
                                         </div>
 
-                                        {/* Age Verification */}
-                                        {/*<div className="border-t pt-4">*/}
-                                        {/*    <Label className="text-sm font-medium">Verifikasi Umur</Label>*/}
-                                        {/*    <div className="flex items-center space-x-2 mt-2">*/}
-                                        {/*        <Checkbox id="age-verify" onClick={ () => setAgeValid(!ageValid) }/>*/}
-                                        {/*        <Label htmlFor="age-verify" className="text-sm">*/}
-                                        {/*            Pembeli berusia 18+ tahun*/}
-                                        {/*        </Label>*/}
-                                        {/*    </div>*/}
-                                        {/*</div>*/}
-                                        <div className="">
-                                            {selectedCustomer ? <div
-                                                className={'border rounded-xl p-2 flex  items-end justify-between'}>
-                                                <div className="">
-                                                    <h1 className="font-medium">{selectedCustomer.name}</h1>
-                                                    <p className="text-sm text-muted-foreground">
-                                                        Usia: {selectedCustomer.age} • Total
-                                                        Belanja : <Badge
-                                                            variant={getStatusVariant(selectedCustomer.status)}>
-                                                            {chooseStatus(selectedCustomer.status)}</Badge>
-                                                    </p>
-                                                </div>
 
-                                                <Button
-                                                    size="sm"
-                                                    onClick={() => setSelectedCustomer(null)}>
-                                                    <MinusIcon />
-                                                </Button>
-                                            </div>
-                                                : <SelectCustomer
-                                                    setCustomerNameAction={setSearchCustomer}
-                                                    customerName={searchCustomer}
-                                                    // ageValid={ ageValid }
-                                                    customers={customers}
-                                                    onSelectAction={(customer) => setSelectedCustomer(customer)}
-                                                />}
 
-                                        </div>
                                         <Button className="w-full" size="lg"
-                                            disabled={loading || !selectedCustomer}
+                                            disabled={loading}
                                             onClick={onTransaction}
                                         >
                                             <ShoppingCart
