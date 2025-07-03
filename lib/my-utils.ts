@@ -1,8 +1,11 @@
 import { ActionResponse } from "@/interface/actionType";
 import { toast } from "sonner";
 import { Product } from "@prisma/client";
+import { match } from "ts-pattern";
 
-export function variantStatus(flags: {
+export type Variant = "default" | "secondary" | "destructive" | "outline" | null | undefined;
+
+export function variantStatus_(flags: {
     default?: boolean;
     secondary?: boolean;
     destructive?: boolean
@@ -13,6 +16,17 @@ export function variantStatus(flags: {
     return "default"; // fallback
 }
 
+export function variantStatus(flags: {
+    default?: boolean;
+    secondary?: boolean;
+    destructive?: boolean;
+}): "default" | "secondary" | "destructive" | "outline" | null | undefined | string {
+    return match(flags)
+    .with({ default: true }, () => "default")
+    .with({ secondary: true }, () => "secondary")
+    .with({ destructive: true }, () => "destructive")
+    .otherwise(() => "default");
+}
 export function formatRupiah(amount: number): string {
     return amount.toLocaleString("id-ID", {
         style: "currency",
@@ -202,4 +216,17 @@ export function newParam(params: Record<string, string | undefined>) {
     return `?${ searchParams.toString() }`;
 }
 
+export const getBadgeVariant = (stock: number, minStock: number): "default" | "secondary" | "destructive" => {
+    return match(stock)
+    .when(s => s === 0, () => "destructive" as const)
+    .when(s => s > 0 && s <= minStock, () => "secondary" as const)
+    .when(s => s > minStock, () => "default" as const)
+    .otherwise(() => "default" as const);
+};
 
+export function getStockLabel(stock: number, minStock: number) {
+    return match(stock)
+    .with(0, () => "Habis")
+    .when((s) => s <= minStock, () => "Stok Rendah")
+    .otherwise(() => "Tersedia");
+}

@@ -19,6 +19,7 @@ type FormHookProps = {
     description?: string;
     placeholder?: string;
     disabled?: boolean;
+    minDate?: boolean;
 };
 
 export function InputNumForm({ name, description, placeholder, title, disabled, type = 'text' }: FormHookProps) {
@@ -62,6 +63,7 @@ export function InputNumForm({ name, description, placeholder, title, disabled, 
         </div>
     );
 }
+
 export function InputForm({ name, description, placeholder, title, disabled, type = 'text' }: FormHookProps) {
     const { control } = useFormContext(); // retrieve control from context
 
@@ -104,7 +106,8 @@ export function InputForm({ name, description, placeholder, title, disabled, typ
     );
 }
 
-export function InputDateForm({ name, title, description }: Omit<FormHookProps, 'type' | 'placeholder'>) {
+export function InputDateForm(
+    { name, title, description, minDate = true }: Omit<FormHookProps, 'type' | 'placeholder'>) {
     const { control } = useFormContext(); // retrieve control from context
 
     return (
@@ -116,12 +119,14 @@ export function InputDateForm({ name, title, description }: Omit<FormHookProps, 
                     <FormItem className="flex flex-col">
                         <FormLabel>{ title }</FormLabel>
                         <Popover>
-                            <PopoverTrigger asChild className={ 'w-full' }>
+                            <PopoverTrigger asChild
+                                // className={ 'w-full' }
+                            >
                                 <FormControl>
                                     <Button
                                         variant={ "outline" }
                                         className={ cn(
-                                            "w-full   pl-3 text-left font-normal",
+                                            "w-full pl-3 text-left font-normal",
                                             !field.value && "text-muted-foreground"
                                         ) }
                                     >
@@ -136,18 +141,23 @@ export function InputDateForm({ name, title, description }: Omit<FormHookProps, 
                             </PopoverTrigger>
                             <PopoverContent className="w-auto p-0" align="start">
                                 <Calendar
+                                    toYear={ new Date().getFullYear() + 10 }
                                     mode="single"
                                     selected={ field.value }
                                     onSelect={ field.onChange }
-                                    disabled={ (date) =>
-                                        date > new Date() || date < new Date("1900-01-01")
+                                    captionLayout={ 'dropdown' }
+                                    disabled={ (date) => {
+                                        if (minDate) {
+                                            return date > new Date() || date < new Date("1900-01-01")
+                                        } else {
+                                            return false
+                                        }
                                     }
-                                    initialFocus
+                                    }
                                 />
                             </PopoverContent>
                         </Popover>
                         <FormDescription>{ description }</FormDescription>
-
                         <FormMessage/>
                     </FormItem>
                 ) }
@@ -187,10 +197,12 @@ type SelectHookProps = {
     label: string;
     placeholder?: string;
     description?: string;
+    onChangeAction?: (value: string) => void;
     options: { label: string; value: string }[];
 };
 
-export function SelectForm({ name, label, placeholder = "Pilih...", options, description }: SelectHookProps) {
+export function SelectForm(
+    { name, label, placeholder = "Pilih...", options, description, onChangeAction }: SelectHookProps) {
     const { control } = useFormContext();
 
     return (
@@ -204,7 +216,12 @@ export function SelectForm({ name, label, placeholder = "Pilih...", options, des
                         <FormControl>
 
                             <Select
-                                onValueChange={ field.onChange }
+                                onValueChange={ (value) => {
+                                    if (onChangeAction) {
+                                        onChangeAction(value)
+                                    }
+                                    field.onChange(value)
+                                } }
                                 defaultValue={ field.value }
                                 value={ field.value }
                             >
@@ -230,44 +247,10 @@ export function SelectForm({ name, label, placeholder = "Pilih...", options, des
     );
 }
 
-type DatePickerProps = {
-    date: Date | undefined
-    setDate: (date: Date | undefined) => void
-}
-
-export function DatePickerForm({ date, setDate }: DatePickerProps) {
-    return (
-        <Popover>
-            <PopoverTrigger asChild>
-                <Button
-                    variant={ "outline" }
-                    className={ cn(
-                        "w-full justify-start text-left font-normal",
-                        !date && "text-muted-foreground"
-                    ) }
-                >
-                    <CalendarIcon className="mr-2 h-4 w-4"/>
-                    { date ? format(date, "PPP") : <span>Pick a date</span> }
-                </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                    mode="single"
-                    selected={ date }
-                    onSelect={ setDate }
-                    initialFocus
-                />
-            </PopoverContent>
-        </Popover>
-    )
-}
-
-export function SwitchForm({
-                               name,
-                               title,
-                               description,
-                               bordered = false
-                           }: Omit<FormHookProps, 'type' | 'placeholder'> & { bordered?: boolean }) {
+export function SwitchForm(
+    { name, title, description, bordered = false }: Omit<FormHookProps, 'type' | 'placeholder'> & {
+        bordered?: boolean
+    }) {
     const { control } = useFormContext(); // retrieve control from context
 
     return (
@@ -319,3 +302,4 @@ export function SwitchOnlyForm({ name, onChange }: { name: string, onChange?: (v
         />
     )
 }
+

@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label"
 import { ChevronLeft, ChevronRight, MinusIcon, Plus, PlusIcon, Search, ShoppingCart, Trash2, XIcon } from "lucide-react"
 import { Customer, Product } from "@prisma/client";
 import { chooseStatus, formatRupiah, getStatusVariant, newParam, toastResponse } from "@/lib/my-utils";
-import { CartItem, SaleCustomers, SESSION } from "@/interface/actionType";
+import { SESSION } from "@/interface/actionType";
 import {
     Dialog,
     DialogClose,
@@ -23,13 +23,15 @@ import { createTransactionUser, createTransactionUserPending } from "@/action/sa
 import { Badge } from "@/components/ui/badge";
 import { FormProvider, useForm } from "react-hook-form";
 import { InputForm } from "@/components/form-hook";
-import { CustomerModelNew, CustomerModelType, ProductModelType } from "@/lib/schema";
+import { CustomerModelNew, CustomerModelType } from "@/lib/schema";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { createCustomerNew } from "@/action/customer-action";
 import { useRouter } from "next/navigation";
 import { useDebounce, } from "@/hooks/use-debounce";
 import { ProductPending } from "@/app/user/home/page"
-import { ProductDetailDialogOnly } from "./products-page"
+
+import { ProductDetailDialogOnly } from "@/components/product-detail-dialog-only";
+import { useCart } from "@/hooks/use-cart";
 
 export function ProductUserPage(
     {
@@ -44,7 +46,6 @@ export function ProductUserPage(
 
     }) {
     const router = useRouter();
-    const [cartItems, setCartItems] = useState<CartItem[]>(productPending?.current)
     const [loading, setLoading] = useState(false)
     // const [ ageValid, setAgeValid ] = useState(false)
 
@@ -53,9 +54,9 @@ export function ProductUserPage(
     const [nicotineFilter, setNicotineFilter] = useState("all")
     const [deviceTypeFilter, setDeviceTypeFilter] = useState("all")
 
-    const [isProduct, setIsProduct] = useState<ProductModelType | null>(null)
+    const [ isProduct, setIsProduct ] = useState<Product | null>(null)
     const [isOpen, setIsOpen] = useState(false)
-
+    const { cartItems, incrementItem, decrementItem, removeFromCart, addToCart } = useCart(productPending.current)
     const searchNameDebounce = useDebounce(searchProduct)
 
 
@@ -91,23 +92,6 @@ export function ProductUserPage(
         return filteredProducts.slice(start, start + itemsPerPage);
     }, [filteredProducts, currentPage, itemsPerPage])
 
-    const addToCart = (product: Product) => {
-        const existingItem = cartItems.find((item) => item.id === product.id)
-        if (existingItem) {
-
-            setCartItems(cartItems.map((item) => (item.id === product.id ? {
-                ...item,
-                quantity: item.quantity + 1
-            } : item)))
-
-        } else {
-            setCartItems([...cartItems, { ...product, quantity: 1 }])
-        }
-    }
-
-    const removeFromCart = (productId: number) => {
-        setCartItems(cartItems.filter((item) => item.id !== productId))
-    }
 
     const getTotalCart = () => {
         return cartItems.reduce((total, item) => total + item.price * item.quantity, 0)
@@ -135,23 +119,7 @@ export function ProductUserPage(
 
     }
 
-    const incrementItem = (id: number) => {
-        setCartItems(prev =>
-            prev.map(item =>
-                item.id === id ? { ...item, quantity: item.quantity + 1 } : item
-            )
-        );
-    };
 
-    const decrementItem = (id: number) => {
-        setCartItems(prev =>
-            prev.map(item =>
-                item.id === id && item.quantity > 1
-                    ? { ...item, quantity: item.quantity - 1 }
-                    : item
-            )
-        );
-    };
 
 
     const getProductStock = (id: number) => {
@@ -160,9 +128,18 @@ export function ProductUserPage(
     return (
         <div className="p-6 max-w-7xl mx-auto">
 
-            <ProductDetailDialogOnly product={isProduct} isOpen={isOpen}
-                setOpen={setIsOpen}
-                onAdd={() => { if (isProduct) { incrementItem(isProduct.id) } }}
+            <ProductDetailDialogOnly
+                isAdd={ true }
+                product={ isProduct }
+                isOpen={ isOpen }
+                setOpenAction={ setIsOpen }
+                onAdd={ () => {
+                    if (isProduct) {
+                        // incrementItem(isProduct.id)
+                        addToCart(isProduct)
+                    }
+                }
+                }
             />
             <h1 className="text-3xl font-bold mb-6">User Home {session.name}</h1>
 

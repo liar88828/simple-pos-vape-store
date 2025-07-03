@@ -174,10 +174,9 @@ export const deleteCookie = async () => {
 
 export async function getSessionUser() {
     const cookieStore = await cookies()
-    const token = cookieStore.get("token")?.value ?? ''
+    const token = cookieStore.get("token")?.value
     // console.log("token : " + token)
-    const payload = await verifyJwt(token);
-    return payload
+    return verifyJwt(token)
 }
 
 

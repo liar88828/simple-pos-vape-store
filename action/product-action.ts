@@ -6,7 +6,7 @@ import { ProductModel, } from "@/lib/generated/zod";
 import { ActionResponse, LowStockProducts } from "@/interface/actionType";
 import { ProductModelType } from "@/lib/schema";
 import { Prisma, } from "@prisma/client";
-import { Customer, PreOrder, Product } from "@/lib/generated/zod_gen";
+import { Customer, PreOrder, Product, ProductOptionalDefaults } from "@/lib/generated/zod_gen";
 
 export type TopSellingProduct = Product & {
     totalSold: number;
@@ -58,7 +58,14 @@ export const deleteProduct = async (idProduct: ProductModelType['id']): Promise<
     }
 }
 
-export async function addProduct(formData: ProductModelType): Promise<ActionResponse> {
+export async function upsertProduct(formData: ProductOptionalDefaults): Promise<ActionResponse> {
+    if (formData.id) return await updateProduct(formData)
+    else return await addProduct(formData)
+
+}
+
+export async function addProduct(formData: ProductOptionalDefaults): Promise<ActionResponse> {
+    try {
 
     const valid = ProductModel.safeParse(formData)
 
@@ -83,9 +90,18 @@ export async function addProduct(formData: ProductModelType): Promise<ActionResp
         success: true,
         message: 'Produk berhasil ditambahkan'
     };
+    } catch (error) {
+        console.log(error)
+        return {
+            data: null,
+            success: false,
+            message: 'Something went wrong addProduct'
+        }
+    }
 }
 
-export async function updateProduct(formData: ProductModelType): Promise<ActionResponse> {
+export async function updateProduct(formData: ProductOptionalDefaults): Promise<ActionResponse> {
+    try {
 
     const valid = ProductModel.safeParse(formData)
     const productFound = await prisma.product.findUnique({ where: { id: formData.id }, select: { id: true } })
@@ -101,7 +117,7 @@ export async function updateProduct(formData: ProductModelType): Promise<ActionR
     if (!valid.success) {
         return {
             data: valid.data,
-            message: "Product Gagal di Tambahkan",
+            message: "Product Gagal diperbarui",
             error: valid.error.flatten().fieldErrors,
             success: false
         }
@@ -116,8 +132,18 @@ export async function updateProduct(formData: ProductModelType): Promise<ActionR
     return {
         data: valid.data,
         success: true,
-        message: 'Produk berhasil ditambahkan'
+        message: 'Produk berhasil diperbarui'
     };
+
+    } catch (error) {
+        console.log(error)
+        return {
+            data: null,
+            success: false,
+            message: 'Something went wrong updateProduct'
+        }
+    }
+
 }
 
 export type PreorderProduct = PreOrder & {

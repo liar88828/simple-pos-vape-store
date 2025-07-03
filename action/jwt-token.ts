@@ -23,20 +23,15 @@ export async function signRefreshJwt(payload: { userId: string }, expiresIn: str
         .sign(JWT_REFRESH_SECRET);
 }
 
-export async function verifyJwt(token: string): Promise<SESSION | null>
+export async function verifyJwt(token?: string): Promise<SESSION | null>
 // : Promise<(JWTPayload & { userId: number }) | null>
 {
     try {
+        if (!token) return null;
         const { payload } = await jwtVerify(token, JWT_SECRET, {
             algorithms: ['HS256'],
         });
-
-        // if (typeof payload.userId === "string") {
         return payload as SESSION
-        // }
-
-        // console.warn("JWT payload does not contain a valid userId.");
-        // return null;
     } catch (error) {
         console.log("Failed to verify JWT:", error);
         return null;

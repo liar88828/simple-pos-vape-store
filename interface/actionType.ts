@@ -38,3 +38,9 @@ export type SaleCustomers = Sale & {
 
 export type UserPayload = { userId: string, email: string, role: string, name: string };
 export type SESSION = JWTPayload & UserPayload
+
+
+export type ModalProps = {
+    setOpenAction: (value: boolean) => void,
+    isOpen: boolean
+}

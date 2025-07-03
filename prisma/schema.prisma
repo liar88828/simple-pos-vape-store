@@ -60,25 +60,27 @@ datasource db {
 }
 
 model Product {
-    id            Int     @id @default(autoincrement())
-    category      String /// @zod.string.min(1)
-    name          String /// @zod.string.min(1)
-    price         Int /// @zod.number.min(1)
-    stock         Int /// @zod.number.min(1)
-    minStock      Int     @default(5)
-    sold          Int     @default(0)
-    image         String /// @zod.string.min(1)
-    description   String /// @zod.string.min(1)
-    nicotineLevel String? // nullable
-    flavor        String? // nullable
-    type          String /// @zod.string.min(1)
-
-    PreOrders  PreOrder[]
-    SalesItems SalesItem[]
-
-    expired   DateTime?
-    createdAt DateTime  @default(now())
-    updatedAt DateTime  @updatedAt
+    id             Int         @id @default(autoincrement())
+    category       String /// @zod.string.min(1)
+    name           String /// @zod.string.min(1)
+    price          Int /// @zod.number.min(1)
+    stock          Int /// @zod.number.min(1)
+    minStock       Int         @default(5)
+    sold           Int         @default(0)
+    image          String /// @zod.string.min(1)
+    type           String /// @zod.string.min(1)
+    description    String /// @zod.string.min(1)
+    nicotineLevel  String? // nullable
+    flavor         String? // nullable
+    cottonSize     String?
+    batterySize    String?
+    resistanceSize String?
+    coilSize       String?
+    PreOrders      PreOrder[]
+    SalesItems     SalesItem[]
+    expired        DateTime?
+    createdAt      DateTime    @default(now())
+    updatedAt      DateTime    @updatedAt
 }
 
 model Customer {
