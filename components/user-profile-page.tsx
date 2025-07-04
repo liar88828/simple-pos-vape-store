@@ -1,9 +1,9 @@
 'use client'
-import React, { useState } from "react";
+import { CustomerComplete } from "@/action/customer-action";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { CustomerComplete } from "@/action/customer-action";
 import { formatDateIndo, formatRupiah } from "@/lib/my-utils";
+import React, { useState } from "react";
 
 export default function UserProfilePage({ customer }: { customer: CustomerComplete }) {
     const [ expandedSaleIds, setExpandedSaleIds ] = useState<number[]>([]);
@@ -96,7 +96,7 @@ export default function UserProfilePage({ customer }: { customer: CustomerComple
                                                     <td className="py-2 px-4">{ item.product.name }</td>
                                                     <td className="py-2 px-4">{ item.quantity }</td>
                                                     <td className="py-2 px-4">
-                                                        { formatRupiah(item.price) }
+                                                        { formatRupiah(item.priceAtBuy) }
                                                     </td>
                                                 </tr>
                                             )) }

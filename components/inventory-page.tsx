@@ -1,27 +1,38 @@
 "use client"
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { preOrderProduct } from "@/action/inventory-action";
+import { ProductPaging } from "@/action/product-action";
+import { InputDateForm, InputForm, SelectForm } from "@/components/form-hook";
+import { ResponsiveModalOnly } from "@/components/modal-components";
 import { Badge } from "@/components/ui/badge"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { AlertTriangle, Plus, SearchIcon } from "lucide-react"
-import { useEffect, useState } from "react"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { preOrderProduct } from "@/action/inventory-action";
-import { Button } from "@/components/ui/button"
-import { Product } from "@/lib/generated/zod_gen";
-import { formatRupiah, newParam } from "@/lib/my-utils";
-import { useRouter } from "next/navigation";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { useDebounceLoad } from "@/hooks/use-debounce";
+import { ModalProps } from "@/interface/actionType";
+import { PreOrderOptionalDefaults, PreOrderOptionalDefaultsSchema, Product } from "@/lib/generated/zod_gen";
+import { formatRupiah, newParam, toastResponse } from "@/lib/my-utils";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { AlertTriangle, Plus, SearchIcon } from "lucide-react"
+import { useRouter } from "next/navigation";
+import React, { useEffect, useState } from "react"
+import { FormProvider, useForm } from "react-hook-form";
 
 export function InventoryPage({ products, lowStockProducts, }: {
-    products: Product[],
+    products: ProductPaging,
     lowStockProducts: Product[]
 }) {
+    const [ isProduct, setIsProduct ] = useState<Product | null>(null)
+    const [ isModal, setIsModal ] = useState(false)
+
+
     return (
         <div className="p-6 max-w-7xl mx-auto">
             {/*<ShowModal>*/ }
+            <ReorderStockModal product={ isProduct } isOpen={ isModal } setOpenAction={ setIsModal }/>
 
             {/*</ShowModal>*/ }
             <div className="flex justify-between items-center mb-6 ">
@@ -29,7 +40,7 @@ export function InventoryPage({ products, lowStockProducts, }: {
                     <h1 className="text-3xl font-bold">Manajemen Inventori</h1>
                 </div>
                 <div className="flex gap-2 flex-col sm:flex-row">
-                    <StockModal products={ products }/>
+                    <StockModal products={ products.data }/>
                 </div>
             </div>
 
@@ -71,7 +82,18 @@ export function InventoryPage({ products, lowStockProducts, }: {
                                     <TableCell><Badge variant="destructive">{ product.stock }</Badge></TableCell>
                                     <TableCell>{ product.minStock }</TableCell>
                                     <TableCell>{ product.minStock - product.stock + 10 }</TableCell>
-                                    <TableCell><ReStockModal product={ product }/></TableCell>
+                                    <TableCell>
+                                        <Button
+                                            size="sm"
+                                            onClick={ () => {
+                                                setIsProduct(product)
+                                                setIsModal(true)
+                                            } }
+                                        >
+                                            Reorder
+                                        </Button>
+
+                                    </TableCell>
                                 </TableRow>
                             )) }
                         </TableBody>
@@ -84,69 +106,71 @@ export function InventoryPage({ products, lowStockProducts, }: {
     )
 }
 
-function ReStockModal({ product, }: { product: Product, }) {
-    const [ isStockModalOpen, setIsStockModalOpen ] = useState(false)
-    const [ stockQty, setStockQty ] = useState("")
+function ReorderStockModal(
+    { product, setOpenAction, isOpen }
+    : { product: Product | null } & ModalProps) {
 
-    const [ productToAddStock, setProductToAddStock ] = useState<Product | null>(null)
+    // const [ productToAddStock, setProductToAddStock ] = useState<Product | null>(null)
     const [ loading, setLoading ] = useState(false)
+
+    const methods = useForm<PreOrderOptionalDefaults>({
+            resolver: zodResolver(PreOrderOptionalDefaultsSchema),
+            defaultValues: {
+                status: '-',
+                estimatedDate: new Date(),
+                productId: 1,
+                quantity: 0,
+
+            } satisfies PreOrderOptionalDefaults
+        }
+    );
+
+    if (!product) {
+        return;
+    }
+
+    const onSubmit = methods.handleSubmit(async (data) => {
+
+        setLoading(true)
+        // if (productToAddStock) {
+        setOpenAction(false)
+        // setProductToAddStock(null)
+        toastResponse({ response: await preOrderProduct(product, data) })
+        setLoading(false)
+        // }
+        setLoading(false)
+
+    })
+
     return (
-        <Dialog open={ isStockModalOpen } onOpenChange={ setIsStockModalOpen }>
-            <DialogTrigger asChild>
-                <Button
-                    size="sm"
-                    onClick={ () => {
-                        setProductToAddStock(product)
-                        setIsStockModalOpen(true)
-                    } }
-                >
-                    Reorder
-                </Button>
-            </DialogTrigger>
-            <DialogContent>
-                <DialogHeader>
-                    <DialogTitle>Tambah Stok</DialogTitle>
-                </DialogHeader>
-
-                { productToAddStock && (
-                    <div className="space-y-4">
-                        <p>Produk: <strong>{ productToAddStock.name }</strong></p>
-                        <div>
-                            <Label htmlFor="stock">Jumlah Tambahan</Label>
-                            <Input
-                                id="stock"
-                                type="number"
-                                value={ stockQty }
-                                onChange={ (e) => setStockQty(e.target.value) }
-                            />
-                        </div>
+        <ResponsiveModalOnly title={ 'Tambah Stok' }
+                             isOpen={ isOpen } setOpenAction={ setOpenAction }
+                             footer={ <Button onClick={ onSubmit } disabled={ loading }>Simpan</Button> }
+        >
+            <FormProvider { ...methods }>
+                <form onSubmit={ onSubmit } className={ 'space-y-4' }>
+                    <div className="grid grid-cols-2 gap-4">
+                        <InputForm name="quantity" title="Jumlah Tambahan" placeholder="0" type="number"/>
+                        <SelectForm
+                            name="status"
+                            label="Status"
+                            placeholder="Pilih status"
+                            options={ [
+                                { label: "Pilih", value: "-" },
+                                { label: "Pending", value: "pending" },
+                                { label: "Success", value: "success" },
+                            ] }
+                        />
+                        <InputDateForm name={ 'estimatedDate' }
+                                       title={ "Tanggal" }
+                                       description={ 'Tambahkan Tanggal' }
+                                       minDate={ false }
+                        />
                     </div>
-                ) }
+                </form>
+            </FormProvider>
+        </ResponsiveModalOnly>
 
-                <DialogFooter>
-                    <Button
-                        onClick={ async () => {
-                            setLoading(true)
-                            const amount = parseInt(stockQty)
-                            if (!isNaN(amount) && productToAddStock) {
-                                productToAddStock.stock += amount
-                                alert(`Stok ${ productToAddStock.name } ditambah ${ amount }`)
-                                setIsStockModalOpen(false)
-                                setStockQty("")
-                                setProductToAddStock(null)
-                                await preOrderProduct(amount, productToAddStock)
-                                setLoading(false)
-                            }
-                            setLoading(false)
-
-                        } }
-                        disabled={ !stockQty || loading }
-                    >
-                        Simpan
-                    </Button>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
 
     );
 }
@@ -244,7 +268,7 @@ export default function StockModal({ products }: { products: Product[] }) {
                         </Button>
                     </Card>
                     :
-                    <div className="space-y-3">
+                    <div className="space-y-3 overflow-y-auto h-96">
                         {
 
                             isLoading

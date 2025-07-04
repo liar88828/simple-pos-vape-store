@@ -1,6 +1,6 @@
+import { getAllCustomerRelational } from "@/action/customer-action";
 import { CustomersPage } from "@/components/customers-page"
 import { MemberTier } from "@/lib/data";
-import { getAllCustomerRelational } from "@/action/customer-action";
 
 export default async function Customers() {
     const data = await getAllCustomerRelational()
@@ -8,7 +8,7 @@ export default async function Customers() {
     const silver = data.filter(item => item.totalPurchase >= 1_000_000 && item.totalPurchase <= 5_000_000);
     const gold = data.filter(item => item.totalPurchase > 5_000_000);
     const total = data.length;
-    const exampleMemberTierData: MemberTier[] = [
+    const _exampleMemberTierData: MemberTier[] = [
         {
             name: "Member Bronze",
             range: "Pembelian < Rp 1.000.000",
@@ -31,6 +31,6 @@ export default async function Customers() {
     ];
 
     return <CustomersPage customers={ data }
-                          members={ exampleMemberTierData }
+        // members={ exampleMemberTierData }
     />
 }

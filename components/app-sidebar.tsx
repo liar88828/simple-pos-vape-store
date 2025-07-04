@@ -1,8 +1,14 @@
 "use client"
-import { match } from "ts-pattern";
-import { usePathname } from "next/navigation"
-import Link from "next/link"
-import { ChevronsUpDown, LogOutIcon, Settings, } from "lucide-react"
+import { deleteCookie } from "@/action/auth-action";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuGroup,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import {
     Sidebar,
     SidebarContent,
@@ -18,18 +24,12 @@ import {
     SidebarRail,
     useSidebar,
 } from "@/components/ui/sidebar"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuGroup,
-    DropdownMenuItem,
-    DropdownMenuLabel,
-    DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { deleteCookie } from "@/action/auth-action";
-import React from "react";
 import { NavItems } from "@/lib/link-sidebar";
+import { ChevronsUpDown, LogOutIcon, Settings, } from "lucide-react"
+import Link from "next/link"
+import { usePathname } from "next/navigation"
+import React from "react";
+import { match } from "ts-pattern";
 
 export function AppSidebar(
     {
@@ -131,7 +131,7 @@ export function AppSidebar(
 
                                 >
                                     <Avatar className="h-8 w-8 rounded-lg">
-                                        <AvatarImage src="/placeholder.svg" alt="Admin" />
+                                        {/*<AvatarImage src="/placeholder.svg" alt="Admin" />*/ }
                                         <AvatarFallback>AD</AvatarFallback>
                                     </Avatar>
                                     <div className="grid flex-1 text-left text-sm leading-tight">
@@ -151,7 +151,7 @@ export function AppSidebar(
                                 <DropdownMenuLabel className="p-0 font-normal">
                                     <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
                                         <Avatar className="h-8 w-8 rounded-lg">
-                                            <AvatarImage src="/placeholder.svg" alt={'user'} />
+                                            {/*<AvatarImage src="/placeholder.svg" alt={'user'} />*/ }
                                             <AvatarFallback className="rounded-lg">CN</AvatarFallback>
                                         </Avatar>
                                         <div className="grid flex-1 text-left text-sm leading-tight">

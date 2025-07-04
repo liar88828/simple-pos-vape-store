@@ -1,11 +1,10 @@
-// 
-import React from "react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { RangeStats, SaleCustomers } from "@/interface/actionType";
+//
 import { DashboardStats, } from "@/action/sale-action";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
+import { RangeStats, SaleCustomers } from "@/interface/actionType";
 import { formatDateIndo, formatRupiah } from "@/lib/my-utils";
-import { DailySalesReport_x5_indonesia } from "@/components/daily-report";
+import React from "react";
 
 const salesData = {
     range: "today",

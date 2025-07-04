@@ -1,11 +1,8 @@
-import React, { useRef, useState } from 'react';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Separator } from '@/components/ui/separator';
-import { cn } from '@/lib/utils';
-import { twMerge } from 'tailwind-merge';
-import { Badge } from '@/components/ui/badge';
-import { formatDateIndo, formatRupiah } from '@/lib/my-utils';
 import { PreorderProduct } from '@/action/product-action';
+import { Badge } from '@/components/ui/badge';
+
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import {
     Dialog,
     DialogClose,
@@ -15,11 +12,14 @@ import {
     DialogTitle,
     DialogTrigger
 } from "@/components/ui/dialog"
-
-import { Button } from '@/components/ui/button';
-import { Droplets, Eye, Printer } from 'lucide-react';
-import { useReactToPrint } from 'react-to-print';
+import { Separator } from '@/components/ui/separator';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { formatDateIndo, formatRupiah } from '@/lib/my-utils';
+import { cn } from '@/lib/utils';
+import { Droplets, Eye, Printer } from 'lucide-react';
+import React, { useRef, useState } from 'react';
+import { useReactToPrint } from 'react-to-print';
+import { twMerge } from 'tailwind-merge';
 
 export function PreOrderDialog({ orderData }: { orderData: PreorderProduct }) {
     const [ open, setOpen ] = useState(false)

@@ -1,14 +1,15 @@
 "use client"
 
-import React, { useEffect, useMemo, useState } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { createCustomerNew } from "@/action/customer-action";
+import { ProductPaging } from "@/action/product-action";
+import { createTransaction } from "@/action/sale-action";
+import { InputForm } from "@/components/form-hook";
+import { ResponsiveModal } from "@/components/modal-components";
+import { ProductDetailDialogOnly } from "@/components/product-detail-dialog-only";
+import { BrandsProps, FilterSelect } from "@/components/products-page";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button"
-import { Label } from "@/components/ui/label"
-import { ChevronLeft, ChevronRight, MinusIcon, Plus, PlusIcon, Search, ShoppingCart, Trash2, XIcon } from "lucide-react"
-import { Customer, Product } from "@prisma/client";
-import { chooseStatus, formatRupiah, getStatusVariant, newParam, toastResponse } from "@/lib/my-utils";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
     Dialog,
     DialogClose,
@@ -18,84 +19,119 @@ import {
     DialogTitle,
     DialogTrigger
 } from "@/components/ui/dialog";
-import { createTransaction } from "@/action/sale-action";
-import { Badge } from "@/components/ui/badge";
-import { FormProvider, useForm } from "react-hook-form";
-import { InputForm } from "@/components/form-hook";
+import { Input } from "@/components/ui/input"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { useCart } from "@/hooks/use-cart";
+import { useDebounce, } from "@/hooks/use-debounce";
+import {
+    batterySizeOptions,
+    categoryOption,
+    coilSizeOption,
+    cottonSizeOption,
+    nicotineLevelsOptions,
+    pageSizeOptions,
+    resistanceSizeOption,
+    stockStatusOptions,
+    typeDeviceOption
+} from "@/lib/constants";
+import { Customer, Product } from "@/lib/generated/zod_gen";
+import { chooseStatus, formatRupiah, getStatusVariant, newParam, toastResponse } from "@/lib/my-utils";
 import { CustomerModelNew, CustomerModelType } from "@/lib/schema";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { createCustomerNew } from "@/action/customer-action";
+import {
+    ChevronLeft,
+    ChevronRight,
+    FilterIcon,
+    MinusIcon,
+    Plus,
+    PlusIcon,
+    Search,
+    ShoppingCart,
+    Trash2,
+    XIcon
+} from "lucide-react"
 import { useRouter } from "next/navigation";
-import { useDebounce, } from "@/hooks/use-debounce";
+import React, { useEffect, useMemo, useState } from "react"
+import { FormProvider, useForm } from "react-hook-form";
 
-import { ProductDetailDialogOnly } from "@/components/product-detail-dialog-only";
-import { useCart } from "@/hooks/use-cart";
-
-export function POSPage({ products, customers }: { customers: Customer[], products: Product[] }) {
+export function POSPage(
+    { products, customers, brands }:
+    { customers: Customer[], products: ProductPaging, brands: BrandsProps }) {
     const router = useRouter();
     const [ selectedCustomer, setSelectedCustomer ] = useState<Customer | null>(null)
     const [ loading, setLoading ] = useState(false)
+    const [ openDetail, setOpenDetail ] = useState(false);
 
-    const [ searchProduct, setSearchProduct ] = useState("")
     const [ searchCustomer, setSearchCustomer ] = useState("")
-    const [ categoryFilter, setCategoryFilter ] = useState("all")
-    const [ nicotineFilter, setNicotineFilter ] = useState("all")
-    const [ deviceTypeFilter, setDeviceTypeFilter ] = useState("all")
+    const [ searchProduct, setSearchProduct ] = useState("")
 
+    const [ productCategory, setProductCategory ] = useState("-")
+    const [ productNicotine, setProductNicotine ] = useState("-")
+    const [ productTypeDevice, setProductTypeDevice ] = useState("-")
+
+    const [ productResistant, setProductResistant ] = useState("-");
+    const [ productCoil, setProductCoil ] = useState("-");
+    const [ productCotton, setProductCotton ] = useState("-");
+    const [ productBattery, setProductBattery ] = useState("-");
+    const [ stockFilter, setStockFilter ] = useState("-");
+    const [ productBrand, setProductBrand ] = useState('-');
+    
     const [ isProduct, setIsProduct ] = useState<Product | null>(null)
     const [ isOpen, setIsOpen ] = useState(false)
     const searchNameDebounce = useDebounce(searchProduct)
     const searchCustomerDebounce = useDebounce(searchCustomer)
-    // pagination
-    const [ currentPage, setCurrentPage ] = useState(1);
-    const [ itemsPerPage, setItemsPerPage ] = useState(6);
 
     const { setCartItems, removeFromCart, incrementItem, decrementItem, cartItems, addToCart } = useCart([])
-    // usePushQueryObject({
-    //     productName: value,
-    //     customerName: searchCustomerDebounce,
-    // })
+
+    // Pagination
+    const [ itemsPerPage, setItemsPerPage ] = useState(10);
+    const [ page, setPage ] = useState(0);
+
+
 
     useEffect(() => {
-        console.log(`POS QUERY : ${ searchNameDebounce.trim() }`)
-        router.push(newParam({
-            productName: searchNameDebounce,
-            customerName: searchCustomerDebounce,
-        }));
-        console.log('push')
-    }, [ searchNameDebounce, router, searchCustomerDebounce ]);
+        // Convert "-" to undefined so the backend can ignore these filters
+        const filters = {
+            productName: searchNameDebounce.trim() || undefined,
+            customerName: searchCustomerDebounce.trim() || undefined,
+            productBrand,
+            productCotton,
+            productBattery,
+            productCategory,
+            productTypeDevice,
+            productNicotine,
+            productResistant,
+            productCoil,
+            productLimit: String(itemsPerPage),
+            productPage: String(page),
+        };
+        // Only push if at least one filter has value
+        const hasAnyFilter = Object.values(filters).some(Boolean);
 
+        if (hasAnyFilter) {
+            router.push(newParam(filters));
+            console.log('Filters applied:', filters);
+        }
+    }, [ router, productBrand, productCategory, productTypeDevice, productNicotine, itemsPerPage, page, productResistant, productCoil, productBattery, productCotton, searchNameDebounce, searchCustomerDebounce ]);
 
-
-    const filteredProducts = useMemo(() => {
-        const searchLower = searchProduct.toLowerCase();
-        const categoryLower = categoryFilter.toLowerCase();
-
-        return products.filter(product => {
-            const nameMatches = product.name.toLowerCase().includes(searchLower);
-            const categoryMatches = categoryFilter === "all" || product.category.toLowerCase() === categoryLower;
-            return nameMatches && categoryMatches;
-        });
-    }, [ products, searchProduct, categoryFilter ]);
-
-    const totalPages = useMemo(() => {
-        return Math.ceil(filteredProducts.length / itemsPerPage);
-    }, [ filteredProducts.length, itemsPerPage ]);
-
-    const paginatedProducts = useMemo(() => {
-        const start = (currentPage - 1) * itemsPerPage;
-        return filteredProducts.slice(start, start + itemsPerPage);
-    }, [ filteredProducts, currentPage, itemsPerPage ])
-
-    const getTotalCart = () => {
-        return cartItems.reduce((total, item) => total + item.price * item.quantity, 0)
-    }
+    const totalPages = Math.ceil(products.total / itemsPerPage);
 
     const onReset = () => {
-        setSearchProduct("")
-        setNicotineFilter("all")
-        setCategoryFilter("all")
-        setDeviceTypeFilter("all")
+        setSearchCustomer("-")
+        setSearchProduct("-")
+        setProductNicotine("-")
+        setProductCategory("-")
+        setProductTypeDevice("-")
+        setStockFilter("-")
+        setProductBrand("-")
+        setProductResistant("-")
+        setProductBattery("-")
+        setProductCoil("-")
+        setProductCotton("-")
+
+    }
+    const getTotalCart = () => {
+        return cartItems.reduce((total, item) => total + item.price * item.quantity, 0)
     }
 
     async function onTransaction() {
@@ -112,7 +148,7 @@ export function POSPage({ products, customers }: { customers: Customer[], produc
     }
 
     const getProductStock = (id: number) => {
-        return products.find(product => product.id === id)?.stock || 0;
+        return products.data.find(product => product.id === id)?.stock || 0;
     };
 
     return (
@@ -136,119 +172,159 @@ export function POSPage({ products, customers }: { customers: Customer[], produc
                 {/* Product Selection */ }
                 <div className="lg:col-span-2 ">
                     <Card>
-                        <CardHeader>
+                        {/* Filters */ }
+                        <CardHeader className={ 'space-y-2' }>
                             <CardTitle>Pilih Produk</CardTitle>
-                            <div className="flex  gap-4 sm:gap-6 justify-between flex-col sm:flex-row">
 
-                                <div className="grid grid-cols-1 gap-4 w-full  ">
-                                    <div className="w-full md:max-w-xl ">
-                                        <Input
-                                            placeholder="Cari produk..."
-                                            className="flex-1"
-                                            type={ 'search' }
-                                            value={ searchProduct }
-                                            onChange={ (e) => setSearchProduct(e.target.value) }
-                                        />
-                                    </div>
-                                    {/*sm:justify-between*/ }
-                                    <div className=" flex  gap-4 sm:gap-6 flex-wrap sm:flex-nowrap">
-                                        <div>
-                                            <Label>Kategori</Label>
-                                            <Select value={ categoryFilter } onValueChange={ setCategoryFilter }>
-                                                <SelectTrigger>
-                                                    <SelectValue placeholder="Kategori"/>
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem value="all">Semua</SelectItem>
-                                                    <SelectItem value="device">Device</SelectItem>
-                                                    <SelectItem value="liquid">Liquid</SelectItem>
-                                                    <SelectItem value="coil">Coil</SelectItem>
-                                                    <SelectItem value="aksesoris">Aksesoris</SelectItem>
-                                                </SelectContent>
-                                            </Select>
+                            <Input
+                                placeholder="Cari produk..."
+                                value={ searchProduct }
+                                type={ 'search' }
+                                onChange={ (e) => setSearchProduct(e.target.value) }
+                            />
+
+                            <div className="flex gap-4 flex-col sm:flex-row ">
+                                {/*Filter */ }
+                                <div className="">
+                                    <ResponsiveModal
+                                        title="Filter Produk"
+                                        description="Filter produk sesuai yang kamu inginkan"
+                                        trigger={ <Button variant="outline"><FilterIcon
+                                            className="w-4 h-4"/>Filter</Button> }
+                                        footer={ <Button onClick={ onReset } type="button"
+                                                         variant="destructive"> Reset
+                                            <XIcon className="w-4 h-4"/>
+                                        </Button> }
+                                    >
+                                        <div className="grid grid-cols-3 gap-3 ">
+                                            <FilterSelect
+                                                label="Kategori"
+                                                value={ productCategory }
+                                                onChangeAction={ setProductCategory }
+                                                placeholder="Semua kategori"
+                                                options={ categoryOption }
+                                            />
+                                            <FilterSelect
+                                                label="Resistensi"
+                                                value={ productResistant }
+                                                onChangeAction={ setProductResistant }
+                                                placeholder="Semua Resistensi"
+                                                options={ resistanceSizeOption }
+                                            />
+                                            <FilterSelect
+                                                label="Coil"
+                                                value={ productCoil }
+                                                onChangeAction={ setProductCoil }
+                                                placeholder="Semua Coil"
+                                                options={ coilSizeOption }
+                                            />
+                                            <FilterSelect
+                                                label="Cotton"
+                                                value={ productCotton }
+                                                onChangeAction={ setProductCotton }
+                                                placeholder="Semua Cotton"
+                                                options={ cottonSizeOption }
+                                            />
+                                            <FilterSelect
+                                                label="Battery"
+                                                value={ productBattery }
+                                                onChangeAction={ setProductBattery }
+                                                placeholder="Semua Battery"
+                                                options={ batterySizeOptions }
+                                            />
+                                            <FilterSelect
+                                                label="Merk"
+                                                value={ productBrand }
+                                                onChangeAction={ setProductBrand }
+                                                placeholder="Semua Merk"
+                                                options={ brands.map(item => ({
+                                                    label: item.brand ?? "-",
+                                                    value: item.brand ?? "-"
+                                                })) }
+                                            />
+                                            <FilterSelect
+                                                label="Nikotin"
+                                                labelClassName="text-nowrap"
+                                                value={ productNicotine }
+                                                onChangeAction={ setProductNicotine }
+                                                placeholder="Semua level"
+                                                options={ nicotineLevelsOptions }
+                                            />
+                                            <FilterSelect
+                                                label="Device"
+                                                value={ productTypeDevice }
+                                                onChangeAction={ setProductTypeDevice }
+                                                placeholder="Semua tipe"
+                                                options={ typeDeviceOption }
+                                            />
+                                            <FilterSelect
+                                                label="Stok"
+                                                value={ stockFilter }
+                                                onChangeAction={ setStockFilter }
+                                                placeholder="Semua status"
+                                                options={ stockStatusOptions }
+                                            />
+
+                                            {/*<div>*/ }
+                                            {/*    <Label>Reset</Label>*/ }
+                                            {/*    <Button onClick={ onReset } type="button" variant="destructive">*/ }
+                                            {/*        <XIcon className="w-4 h-4"/>*/ }
+                                            {/*    </Button>*/ }
+                                            {/*</div>*/ }
+
+                                        </div>
+                                    </ResponsiveModal>
                                         </div>
 
-                                        <div>
-                                            <Label>Level Nikotin</Label>
-                                            <Select value={ nicotineFilter } onValueChange={ setNicotineFilter }>
-                                                <SelectTrigger>
-                                                    <SelectValue placeholder="Semua level"/>
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem value="all">Semua</SelectItem>
-                                                    <SelectItem value="0mg">0mg</SelectItem>
-                                                    <SelectItem value="3mg">3mg</SelectItem>
-                                                    <SelectItem value="6mg">6mg</SelectItem>
-                                                    <SelectItem value="12mg">12mg</SelectItem>
-                                                    <SelectItem value="25mg">25mg+</SelectItem>
-                                                </SelectContent>
-                                            </Select>
-                                        </div>
-
-                                        <div>
-                                            <Label>Tipe Device</Label>
-                                            <Select value={ deviceTypeFilter }
-                                                    onValueChange={ setDeviceTypeFilter }>
-                                                <SelectTrigger>
-                                                    <SelectValue placeholder="Semua tipe"/>
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem value="all">Semua</SelectItem>
-                                                    <SelectItem value="Pod System">Pod System</SelectItem>
-                                                    <SelectItem value="Mod">Mod</SelectItem>
-                                                    <SelectItem value="Disposable">Disposable</SelectItem>
-                                                </SelectContent>
-                                            </Select>
-                                        </div>
-
-                                        <div>
-                                            <Label>Reset</Label>
-                                            <Button onClick={ onReset }> <XIcon/> </Button>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div className="flex gap-4 sm:gap-4 ">
-                                    <Select value={ String(itemsPerPage) } onValueChange={ (value) => {
-                                        setItemsPerPage(Number(value));
-                                        setCurrentPage(1); // Reset ke halaman pertama
-                                    } }>
+                                {/*Paging*/ }
+                                <div className="flex items-center gap-4">
+                                    <Select
+                                        value={ String(itemsPerPage) }
+                                        onValueChange={ (value) => {
+                                            setItemsPerPage(Number(value));
+                                            setPage(0); // Reset ke halaman pertama
+                                        } }>
                                         <SelectTrigger>
                                             <SelectValue placeholder="Tampil"/>
                                         </SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="6">6</SelectItem>
-                                            <SelectItem value="10">10</SelectItem>
-                                            <SelectItem value="15">15</SelectItem>
+                                            { pageSizeOptions.map((value) => (
+                                                <SelectItem key={ value } value={ value.toString() }>
+                                                    { value }
+                                                </SelectItem>
+                                            )) }
                                         </SelectContent>
                                     </Select>
                                     <Button
                                         variant="outline"
-                                        disabled={ currentPage === 1 }
-                                        onClick={ () => setCurrentPage((prev) => prev - 1) }
+                                        onClick={ () => setPage((prev) => Math.max(0, prev - 1)) }
+                                        disabled={ page === 0 }
                                     >
                                         <ChevronLeft/>
                                     </Button>
 
                                     {/*just for text*/ }
                                     <Button variant="outline" disabled={ true }>
-                                        { currentPage } / { totalPages }
+                                        { page + 1 } / { totalPages }
                                     </Button>
 
                                     <Button
                                         variant="outline"
-                                        disabled={ currentPage === totalPages }
-                                        onClick={ () => setCurrentPage((prev) => prev + 1) }
+                                        onClick={ () => setPage((prev) => prev + 1) }
+                                        disabled={ page + 1 >= totalPages }
                                     >
                                         <ChevronRight/>
 
                                     </Button>
                                 </div>
                             </div>
+
                         </CardHeader>
+
 
                         <CardContent>
                             <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-4">
-                                { paginatedProducts.map((product) => {
+                                { products.data.map((product) => {
                                     const cartItem = cartItems.find(item => item.id === product.id);
                                     const remainingStock = cartItem ? product.stock - cartItem.quantity : product.stock;
 
@@ -465,7 +541,7 @@ export function SelectCustomer(
         resolver: zodResolver(CustomerModelNew),
         defaultValues: {
             name: "",
-        },
+        } satisfies  CustomerModelType,
     });
 
     const onSubmit = methods.handleSubmit(async (data) => {

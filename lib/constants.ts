@@ -25,8 +25,8 @@ export const nicotineLevelsOptions = [
 
 export const batterySizeOptions = [
     { label: "-", value: "-" }, // Bisa diganti "Tidak Ditentukan" jika perlu
-    { label: "20A - 3000mAh", value: "ARUS_20A_3000" },
     { label: "20A - 2000mAh", value: "ARUS_20A_2000" },
+    { label: "20A - 3000mAh", value: "ARUS_20A_3000" },
     { label: "30A - 2000mAh", value: "ARUS_30A_2000" },
     { label: "30A - 3000mAh", value: "ARUS_30A_3000" },
     { label: "40A - 2000mAh", value: "ARUS_40A_2000" },
@@ -35,10 +35,8 @@ export const batterySizeOptions = [
 
 export const cottonSizeOption=[
     { label: "-", value: '-' },
-    { label: "24 AWG (0.51 mm)", value: "AWG_24_0.51" },
-    { label: "26 AWG (0.40 mm)", value: "AWG_26_0.40" },
-    { label: "28 AWG (0.32 mm)", value: "AWG_28_0.32" },
-    { label: "30 AWG (0.25 mm)", value: "AWG_30_0.25" },
+    { label: "2.5mm", value: "2.5mm" },
+    { label: "3.0mm", value: "3.0mm" },
 ]
 
 export const  coilSizeOption= [
@@ -93,4 +91,4 @@ export const stockStatusOptions = [
     { label: "Habis", value: "out" },
 ];
 
-export const pageSizeOptions = [10, 15, 50, 100];
+export const pageSizeOptions = [ 5, 10, 15, 50, 100 ];

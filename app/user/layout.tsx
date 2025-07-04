@@ -1,10 +1,10 @@
-import React from 'react';
-import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
-import { AppSidebar } from "@/components/app-sidebar";
 import { getProductLowStock } from "@/action/product-action";
-import { cookies } from "next/headers";
-import { userNavItems } from '@/lib/link-sidebar';
+import { AppSidebar } from "@/components/app-sidebar";
 import HeaderComponent from "@/components/header-page";
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
+import { userNavItems } from '@/lib/link-sidebar';
+import { cookies } from "next/headers";
+import React from 'react';
 
 export default async function Layout({ children }: { children: React.ReactNode }) {
     const cookieStore = await cookies()

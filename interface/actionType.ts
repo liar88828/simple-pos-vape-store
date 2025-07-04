@@ -19,6 +19,16 @@ export type ContextPage = {
     searchParams: Promise<{
         range: string,
         productName: string
+        productCoil: string
+        productCotton: string
+        productBattery: string
+        productCategory: string
+        productNicotine: string
+        productResistant: string
+        productTypeDevice: string
+        productBrand: string
+        productPage: string
+        productLimit: string
         customerName: string
     }>
 }

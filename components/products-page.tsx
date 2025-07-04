@@ -1,37 +1,19 @@
 "use client"
 
-import React, { useEffect, useMemo, useState } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Button } from "@/components/ui/button"
-// components/FilterSelect.tsx
-import { Label } from "@/components/ui/label"
-import { Badge } from "@/components/ui/badge"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { ChevronLeft, ChevronRight, Eye, Pencil, Plus, XIcon } from "lucide-react"
-import {
-    formatRupiah,
-    getBadgeVariant,
-    getStockLabel,
-    getValueLabel,
-    newParam,
-    toastResponse,
-    truncateText
-} from "@/lib/my-utils";
+import { ProductPaging, upsertProduct } from "@/action/product-action";
 import { InputDateForm, InputForm, InputNumForm, SelectForm, TextareaForm } from "@/components/form-hook";
-import { FormProvider, useForm } from "react-hook-form";
-import { ProductModel, } from "@/lib/generated/zod";
-import { zodResolver } from "@hookform/resolvers/zod"
-import { addProduct, updateProduct, upsertProduct } from "@/action/product-action";
-import { toast } from "sonner";
-import { ProductModelType } from "@/lib/schema";
-import { useDebounceLoad, } from "@/hooks/use-debounce";
-import { useRouter } from "next/navigation";
-import { Product, ProductOptionalDefaults, ProductOptionalDefaultsSchema } from "@/lib/generated/zod_gen";
-import { ModalProps } from "@/interface/actionType";
+import { ResponsiveModal } from "@/components/modal-components";
 import { ProductDetailDialogOnly } from "@/components/product-detail-dialog-only";
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { useDebounceLoad, } from "@/hooks/use-debounce";
+import { ModalProps } from "@/interface/actionType";
 import {
     batterySizeOptions,
     categoryOption,
@@ -43,6 +25,22 @@ import {
     stockStatusOptions,
     typeDeviceOption
 } from "@/lib/constants";
+import { Product, ProductOptionalDefaults, ProductOptionalDefaultsSchema } from "@/lib/generated/zod_gen";
+import {
+    formatRupiah,
+    getBadgeVariant,
+    getStockLabel,
+    getValueLabel,
+    newParam,
+    toastResponse,
+    truncateText
+} from "@/lib/my-utils";
+import { zodResolver } from "@hookform/resolvers/zod"
+import { ChevronLeft, ChevronRight, Eye, FilterIcon, Pencil, Plus, XIcon } from "lucide-react"
+import { useRouter } from "next/navigation";
+import React, { useEffect, useState } from "react"
+import { FormProvider, useForm } from "react-hook-form";
+import { toast } from "sonner";
 
 interface Option {
     label: string;
@@ -52,7 +50,7 @@ interface Option {
 interface FilterSelectProps {
     label: string;
     value: string;
-    onChange: (val: string) => void;
+    onChangeAction: (val: string) => void;
     placeholder: string;
     options: Option[];
     labelClassName?: string;
@@ -62,7 +60,7 @@ export function FilterSelect(
     {
         label,
         value,
-        onChange,
+        onChangeAction,
         placeholder,
         options,
         labelClassName
@@ -70,8 +68,8 @@ export function FilterSelect(
     return (
         <div>
             <Label className={ labelClassName }>{ label }</Label>
-            <Select value={ value } onValueChange={ onChange }>
-                <SelectTrigger>
+            <Select value={ value } onValueChange={ onChangeAction }>
+                <SelectTrigger className="w-[6rem]">
                     <SelectValue placeholder={ placeholder }/>
                 </SelectTrigger>
                 <SelectContent>
@@ -86,79 +84,77 @@ export function FilterSelect(
     );
 }
 
-export function ProductsPage({ products }: { products: Product[] }) {
+export type BrandsProps = { brand: string | null }[];
+
+export function ProductsPage({ products, brands }: {
+                                 products: ProductPaging,
+                                 brands: BrandsProps
+                             }
+) {
     const router = useRouter()
 
-    // Filters
-    const [searchTerm, setSearchTerm] = useState("");
-    const [ categoryFilter, setCategoryFilter ] = useState("-");
-    const [ nicotineFilter, setNicotineFilter ] = useState("-");
-    const [ deviceTypeFilter, setDeviceTypeFilter ] = useState("-");
-    const [ stockFilter, setStockFilter ] = useState("-");
     const [ openCreate, setOpenCreate ] = useState(false);
     const [ openUpdate, setOpenUpdate ] = useState(false);
     const [ openDetail, setOpenDetail ] = useState(false);
     const [ isProduct, setIsProduct ] = useState<Product | null>(null);
 
-    const { value, isLoading } = useDebounceLoad(searchTerm, 1000);
+    // Pagination
+    const [ itemsPerPage, setItemsPerPage ] = useState(10);
+    const [ page, setPage ] = useState(0);
+
+    // Filters
+    const [ searchTerm, setSearchTerm ] = useState("");
+    const [ productCategory, setProductCategory ] = useState("-");
+    const [ productTypeDevice, setProductTypeDevice ] = useState("-");
+    const [ productNicotine, setProductNicotine ] = useState("-");
+    const [ productResistant, setProductResistant ] = useState("-");
+    const [ productCoil, setProductCoil ] = useState("-");
+    const [ productCotton, setProductCotton ] = useState("-");
+    const [ productBattery, setProductBattery ] = useState("-");
+    const [ stockFilter, setStockFilter ] = useState("-");
+    const [ productBrand, setProductBrand ] = useState('-');
+    const { value, } = useDebounceLoad(searchTerm, 1000);
 
     useEffect(() => {
-        if (value.trim()) {
-            router.push(newParam({ productName: value }));
-            console.log('push')
+        // Convert "-" to undefined so the backend can ignore these filters
+        const filters = {
+            productName: value.trim() || undefined,
+            productBrand,
+            productCotton,
+            productBattery,
+            productCategory,
+            productTypeDevice,
+            productNicotine,
+            productResistant,
+            productCoil,
+            productLimit: String(itemsPerPage),
+            productPage: String(page),
+        };
+        // Only push if at least one filter has value
+        const hasAnyFilter = Object.values(filters).some(Boolean);
+
+        if (hasAnyFilter) {
+            router.push(newParam(filters));
+            console.log('Filters applied:', filters);
         }
-    }, [value, router]);
+    }, [ value, router, productBrand, productCategory, productTypeDevice, productNicotine, itemsPerPage, page, productResistant, productCoil, productBattery, productCotton ]);
 
-    // Pagination
-    const [currentPage, setCurrentPage] = useState(1);
-    const [ itemsPerPage, setItemsPerPage ] = useState(10);
+    const totalPages = Math.ceil(products.total / itemsPerPage);
 
-    // Filtered Products
-    const filteredProducts = useMemo(() => {
-        const searchLower = searchTerm.toLowerCase();
-        const categoryLower = categoryFilter.toLowerCase();
-
-        return products.filter(({ name, category, nicotineLevel, type, stock, minStock }) => {
-            if (!name.toLowerCase().includes(searchLower)) return false;
-
-            if (categoryFilter !== "-" && category.toLowerCase() !== categoryLower) return false;
-
-            if (nicotineFilter !== "-" && nicotineLevel !== nicotineFilter) return false;
-
-            if (deviceTypeFilter !== "-" && type !== deviceTypeFilter) return false;
-
-            switch (stockFilter) {
-                case "available":
-                    if (stock <= 0) return false;
-                    break;
-                case "low":
-                    if (stock === 0 || stock > minStock) return false;
-                    break;
-                case "out":
-                    if (stock !== 0) return false;
-                    break;
-            }
-
-            return true;
-        });
-    }, [products, searchTerm, categoryFilter, nicotineFilter, deviceTypeFilter, stockFilter]);
-
-    // Total Pages
-    const totalPages = useMemo(() => {
-        return Math.ceil(filteredProducts.length / itemsPerPage);
-    }, [filteredProducts.length, itemsPerPage]);
-
-    // Paginated Products
-    const paginatedProducts = useMemo(() => {
-        const start = (currentPage - 1) * itemsPerPage;
-        return filteredProducts.slice(start, start + itemsPerPage);
-    }, [filteredProducts, currentPage, itemsPerPage]);
     const onReset = () => {
+        // console.log('will execute start')
         setSearchTerm("")
-        setNicotineFilter("-")
-        setCategoryFilter("-")
-        setDeviceTypeFilter("-")
+        setProductNicotine("-")
+        setProductCategory("-")
+        setProductTypeDevice("-")
         setStockFilter("-")
+        setProductBrand("-")
+        setProductResistant("-")
+        setProductBattery("-")
+        setProductCoil("-")
+        setProductCotton("-")
+        // console.log('will execute end')
+
     }
 
     return (
@@ -177,70 +173,119 @@ export function ProductsPage({ products }: { products: Product[] }) {
             </div>
 
 
-            {/* Products Table */}
+            {/* Products Header */ }
             <Card>
-                {/* Filters */}
-
-                <CardHeader>
+                {/* Filters */ }
+                <CardHeader className={ 'space-y-2' }>
                     <CardTitle>Filter Produk</CardTitle>
-                    <div className="flex gap-4 sm:gap-6 justify-between flex-col sm:flex-row ">
-                        <div className="grid sm:grid-cols-1  gap-4 w-full ">
-                            <div className="w-full md:max-w-xl">
-                                <Input
-                                    placeholder="Cari produk..."
-                                    // className="max-w-sm"
-                                    value={searchTerm}
-                                    type={'search'}
-                                    onChange={(e) => setSearchTerm(e.target.value)}
-                                />
-                            </div>
-                            {/*sm:justify-between*/}
-                            <div className=" flex  gap-4 sm:gap-6 flex-wrap sm:flex-nowrap">
+                    <Input
+                        placeholder="Cari produk..."
+                        value={ searchTerm }
+                        type={ 'search' }
+                        onChange={ (e) => setSearchTerm(e.target.value) }
+                    />
 
+                    <div className="flex gap-4 flex-col sm:flex-row ">
+                        {/*Filter */ }
+                        <div className="">
+                            <ResponsiveModal
+                                title="Filter Produk"
+                                description="Filter produk sesuai yang kamu inginkan"
+                                trigger={ <Button variant="outline"><FilterIcon className="w-4 h-4"/>Filter</Button> }
+                                footer={ <Button onClick={ onReset } type="button" variant="destructive"> Reset
+                                    <XIcon className="w-4 h-4"/>
+                                </Button> }
+                            >
+                                <div className="grid grid-cols-3 gap-3 ">
                                 <FilterSelect
                                     label="Kategori"
-                                    value={ categoryFilter }
-                                    onChange={ setCategoryFilter }
+                                    value={ productCategory }
+                                    onChangeAction={ setProductCategory }
                                     placeholder="Semua kategori"
                                     options={ categoryOption }
                                 />
-
+                                    <FilterSelect
+                                        label="Resistensi"
+                                        value={ productResistant }
+                                        onChangeAction={ setProductResistant }
+                                        placeholder="Semua Resistensi"
+                                        options={ resistanceSizeOption }
+                                    />
+                                    <FilterSelect
+                                        label="Coil"
+                                        value={ productCoil }
+                                        onChangeAction={ setProductCoil }
+                                        placeholder="Semua Coil"
+                                        options={ coilSizeOption }
+                                    />
+                                    <FilterSelect
+                                        label="Cotton"
+                                        value={ productCotton }
+                                        onChangeAction={ setProductCotton }
+                                        placeholder="Semua Cotton"
+                                        options={ cottonSizeOption }
+                                    />
+                                    <FilterSelect
+                                        label="Battery"
+                                        value={ productBattery }
+                                        onChangeAction={ setProductBattery }
+                                        placeholder="Semua Battery"
+                                        options={ batterySizeOptions }
+                                    />
+                                    <FilterSelect
+                                        label="Merk"
+                                        value={ productBrand }
+                                        onChangeAction={ setProductBrand }
+                                        placeholder="Semua Merk"
+                                        options={ brands.map(item => ({
+                                            label: item.brand ?? "-",
+                                            value: item.brand ?? "-"
+                                        })) }
+                                    />
                                 <FilterSelect
                                     label="Nikotin"
                                     labelClassName="text-nowrap"
-                                    value={ nicotineFilter }
-                                    onChange={ setNicotineFilter }
+                                    value={ productNicotine }
+                                    onChangeAction={ setProductNicotine }
                                     placeholder="Semua level"
                                     options={ nicotineLevelsOptions }
                                 />
                                 <FilterSelect
                                     label="Device"
-                                    value={ deviceTypeFilter }
-                                    onChange={ setDeviceTypeFilter }
+                                    value={ productTypeDevice }
+                                    onChangeAction={ setProductTypeDevice }
                                     placeholder="Semua tipe"
                                     options={ typeDeviceOption }
                                 />
-
                                 <FilterSelect
                                     label="Stok"
                                     value={ stockFilter }
-                                    onChange={ setStockFilter }
+                                    onChangeAction={ setStockFilter }
                                     placeholder="Semua status"
                                     options={ stockStatusOptions }
                                 />
-                                <div>
-                                    <Label>Reset</Label>
-                                    <Button onClick={onReset}> <XIcon /> </Button>
+
+                                    {/*<div>*/ }
+                                    {/*    <Label>Reset</Label>*/ }
+                                    {/*    <Button onClick={ onReset } type="button" variant="destructive">*/ }
+                                    {/*        <XIcon className="w-4 h-4"/>*/ }
+                                    {/*    </Button>*/ }
+                                    {/*</div>*/ }
+
                                 </div>
-                            </div>
+                            </ResponsiveModal>
                         </div>
-                        <div className="flex gap-4 sm:gap-4 ">
-                            <Select value={String(itemsPerPage)} onValueChange={(value) => {
+
+                        {/*Paging*/ }
+                        <div className="flex items-center gap-4">
+                            <Select
+                                value={ String(itemsPerPage) }
+                                onValueChange={ (value) => {
                                 setItemsPerPage(Number(value));
-                                setCurrentPage(1); // Reset ke halaman pertama
-                            }}>
+                                    setPage(0); // Reset ke halaman pertama
+                                } }>
                                 <SelectTrigger>
-                                    <SelectValue placeholder="Tampil" />
+                                    <SelectValue placeholder="Tampil"/>
                                 </SelectTrigger>
                                 <SelectContent>
                                     { pageSizeOptions.map((value) => (
@@ -252,30 +297,31 @@ export function ProductsPage({ products }: { products: Product[] }) {
                             </Select>
                             <Button
                                 variant="outline"
-                                disabled={currentPage === 1}
-                                onClick={() => setCurrentPage((prev) => prev - 1)}
+                                onClick={ () => setPage((prev) => Math.max(0, prev - 1)) }
+                                disabled={ page === 0 }
                             >
-                                <ChevronLeft />
+                                <ChevronLeft/>
                             </Button>
 
-                            {/*just for text*/}
-                            <Button variant="outline" disabled={true}>
-                                {currentPage} / {totalPages}
+                            {/*just for text*/ }
+                            <Button variant="outline" disabled={ true }>
+                                { page + 1 } / { totalPages }
                             </Button>
 
                             <Button
                                 variant="outline"
-                                disabled={currentPage === totalPages}
-                                onClick={() => setCurrentPage((prev) => prev + 1)}
+                                onClick={ () => setPage((prev) => prev + 1) }
+                                disabled={ page + 1 >= totalPages }
                             >
-                                <ChevronRight />
+                                <ChevronRight/>
 
                             </Button>
                         </div>
                     </div>
+
                 </CardHeader>
 
-                {/* Products Table */}
+                {/* Products Table */ }
                 <CardContent>
                     <Table>
                         <TableHeader>
@@ -289,35 +335,35 @@ export function ProductsPage({ products }: { products: Product[] }) {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {paginatedProducts.map((product) => (
+                            { products.data.map((product) => (
                                 <TableRow
-                                    key={product.id}
-                                // className={twMerge(
-                                //     clsx(
-                                //         product.stock === 0 && "bg-red-50",
-                                //         product.stock > 0 && product.stock <= product.minStock && "bg-yellow-100/20",
-                                //         product.stock > product.minStock && "bg-green-50"
-                                //     )
-                                // )}
+                                    key={ product.id }
+                                    // className={twMerge(
+                                    //     clsx(
+                                    //         product.stock === 0 && "bg-red-50",
+                                    //         product.stock > 0 && product.stock <= product.minStock && "bg-yellow-100/20",
+                                    //         product.stock > product.minStock && "bg-green-50"
+                                    //     )
+                                    // )}
                                 >
                                     <TableCell>
                                         <div className="flex items-center space-x-3">
                                             <picture>
                                                 <img
-                                                    src={product.image}
-                                                    alt={product.name}
+                                                    src={ product.image }
+                                                    alt={ product.name }
                                                     className="min-w-10 h-10 rounded object-cover"
                                                 />
                                             </picture>
                                             <div>
-                                                <p className="font-medium">{product.name}</p>
-                                                <p className="text-sm text-muted-foreground">{truncateText(product.description, 10)}</p>
+                                                <p className="font-medium">{ product.name }</p>
+                                                <p className="text-sm text-muted-foreground">{ truncateText(product.description, 10) }</p>
                                             </div>
                                         </div>
                                     </TableCell>
-                                    <TableCell>{product.category}</TableCell>
-                                    <TableCell>{formatRupiah(product.price)}</TableCell>
-                                    <TableCell>{getValueLabel(product.stock)}</TableCell>
+                                    <TableCell>{ product.category }</TableCell>
+                                    <TableCell>{ formatRupiah(product.price) }</TableCell>
+                                    <TableCell>{ getValueLabel(product.stock) }</TableCell>
                                     <TableCell>
                                         <Badge variant={ getBadgeVariant(product.stock, product.minStock) }>
                                             { getStockLabel(product.stock, product.minStock) }
@@ -343,7 +389,7 @@ export function ProductsPage({ products }: { products: Product[] }) {
                                         </div>
                                     </TableCell>
                                 </TableRow>
-                            ))}
+                            )) }
                         </TableBody>
                     </Table>
                 </CardContent>
@@ -355,7 +401,7 @@ export function ProductsPage({ products }: { products: Product[] }) {
 export function ModalProductForm({ isOpen, setOpenAction, product }: ModalProps & {
     product: ProductOptionalDefaults | null
 }) {
-    const [ selectCategory, setSelectCategory ] = useState<string | null>(null);
+    const [ _selectCategory, setSelectCategory ] = useState<string | null>(null);
     // console.log(product)
 
     const methods = useForm<ProductOptionalDefaults>({
@@ -367,6 +413,7 @@ export function ModalProductForm({ isOpen, setOpenAction, product }: ModalProps 
                 category: "device",
                 price: 0,
                 stock: 0,
+                brand: '-',
                 minStock: 5,
                 image: "https://picsum.photos/200/300",
                 description: "-",
@@ -378,7 +425,7 @@ export function ModalProductForm({ isOpen, setOpenAction, product }: ModalProps 
                 cottonSize: '-',
                 resistanceSize: '-',
                 batterySize: '-',
-            }
+            } satisfies ProductOptionalDefaults
         }
     );
     // console.log(methods.formState.errors)
@@ -401,10 +448,10 @@ export function ModalProductForm({ isOpen, setOpenAction, product }: ModalProps 
                     toast("You submitted the following values", {
                         description: (
                             <pre className="mt-2 w-[320px] rounded-md bg-neutral-950 p-4">
-                                <code className="text-white">{ JSON.stringify(data, null, 2) }</code>
-                                <code
-                                    className="text-white">{ JSON.stringify(methods.formState.errors, null, 2) }</code>
-                            </pre>
+                                    <code className="text-white">{ JSON.stringify(data, null, 2) }</code>
+                                    <code
+                                        className="text-white">{ JSON.stringify(methods.formState.errors, null, 2) }</code>
+                                </pre>
                         )
                     })
                 }
@@ -425,6 +472,7 @@ export function ModalProductForm({ isOpen, setOpenAction, product }: ModalProps 
                     <form onSubmit={ onSubmit } className={ 'space-y-4' }>
                         <div className="grid grid-cols-2 gap-4">
                             <InputForm title="Nama Produk" name="name" placeholder="Nama produk"/>
+                            <InputForm title='Merk' name="brand" placeholder="Nama Merk"/>
 
                             <SelectForm
                                 onChangeAction={ setSelectCategory }
@@ -467,14 +515,14 @@ export function ModalProductForm({ isOpen, setOpenAction, product }: ModalProps 
                             <SelectForm
                                 name="cottonSize"
                                 label="Cotton"
-                                placeholder="Ukuran Kapas"
+                                placeholder="Ukuran Cotton"
                                 options={ cottonSizeOption }
                             />
 
                             <SelectForm
                                 name="batterySize"
                                 label="Arus & Kapasitas (mAh)"
-                                placeholder="Ukuran Kapas"
+                                placeholder="Ukuran Kapasitas"
                                 options={ batterySizeOptions }
                             />
 
@@ -495,295 +543,6 @@ export function ModalProductForm({ isOpen, setOpenAction, product }: ModalProps 
                         <TextareaForm name="description" title="Deskripsi" placeholder="Deskripsi produk"/>
                         <DialogFooter className="pt-4">
                             <Button type="submit">Simpan Produk</Button>
-                        </DialogFooter>
-                    </form>
-                </FormProvider>
-            </DialogContent>
-        </Dialog>
-    );
-}
-
-export function ModalProductTambah() {
-    const [ open, setOpen ] = useState(false);
-    const [ selectCategory, setSelectCategory ] = useState<string | null>(null);
-
-    const methods = useForm<ProductOptionalDefaults>({
-        resolver: zodResolver(ProductOptionalDefaultsSchema),
-        defaultValues: {
-            expired: null,
-            id: 0,
-            name: "",
-            category: "device",
-            price: 0,
-            stock: 0,
-            minStock: 5,
-            image: "https://picsum.photos/200/300",
-            description: "-",
-            nicotineLevel: '-',
-            flavor: '-',
-            type: "-",
-            sold: 0,
-            coilSize: '-',
-            cottonSize: '-',
-            resistanceSize: '-',
-            batterySize: '-',
-
-        } satisfies ProductOptionalDefaults
-    });
-    // console.log(methods.formState.errors)
-
-    const onSubmit = methods.handleSubmit(async (data) => {
-        // console.log(data)
-        const response = await addProduct(data);
-        if (response.success) {
-            toast(response.message);
-            setOpen(false); // ✅ Close the dialog
-            methods.reset()
-        } else {
-
-            toast("You submitted the following values", {
-                description: (
-                    <pre className="mt-2 w-[320px] rounded-md bg-neutral-950 p-4">
-                        <code className="text-white">{ JSON.stringify(data, null, 2) }</code>
-                        <code className="text-white">{ JSON.stringify(methods.formState.errors, null, 2) }</code>
-                    </pre>
-                )
-            })
-        }
-    });
-
-    return (
-        <Dialog open={ open } onOpenChange={ setOpen }>
-            <DialogTrigger asChild>
-                <Button>
-                    <Plus className="h-4 w-4 mr-2"/>
-                    Tambah Produk
-                </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-2xl">
-                <DialogHeader>
-                    <DialogTitle>Tambah Produk Baru</DialogTitle>
-                </DialogHeader>
-
-                <FormProvider { ...methods }>
-                    <form onSubmit={ onSubmit } className={ 'space-y-4' }>
-                        <div className="grid grid-cols-2 gap-4">
-                            <InputForm title="Nama Produk" name="name" placeholder="Nama produk"/>
-
-                            <SelectForm
-                                onChangeAction={ setSelectCategory }
-                                name="category"
-                                label="Kategori"
-                                placeholder="Pilih kategori"
-                                options={ [
-                                    { label: "Aksesoris", value: "aksesoris" },
-                                    { label: "Battery", value: "battery" },
-                                    { label: "Atomizer", value: "atomizer" },
-                                    { label: "Cartridge", value: "cartridge" },
-                                    { label: "Tank", value: "tank" },
-                                    { label: "Coil", value: "coil" },
-                                    { label: "Cotton", value: "cotton" },
-                                    { label: "Device", value: "device" },
-                                    { label: "Drip Tip", value: "drip-tip" },
-                                    { label: "Liquid", value: "liquid" },
-                                ] }
-                            />
-
-
-                            <InputNumForm name="price" title="Harga" placeholder="0" type="number"/>
-                            <InputForm name="stock" title="Stok Awal" placeholder="0" type="number"/>
-                            <InputForm name="minStock" title="Minimum Stok" placeholder="0" type="number"/>
-
-
-                            <SelectForm
-                                name="type"
-                                label="Tipe Device"
-                                placeholder="Tipe Device"
-                                options={ [
-                                    { label: "Vape Pod", value: "Pod" },
-                                    { label: "Vape Mod", value: "Mod" },
-                                    { label: "Vape Disposable", value: "Disposable" },
-                                    { label: "-", value: "-" },
-                                ] }
-                            />
-                            <InputForm name="flavor" title="Rasa (untuk liquid)" placeholder="Rasa liquid"/>
-
-
-                            {/*{ selectCategory }*/ }
-                            <SelectForm
-                                name="resistanceSize"
-                                label="Resistansi (ohm)"
-                                placeholder="Ukuran Resistensi"
-                                options={ [
-                                    { label: "0.15 Ohm low", value: "0.15_OHM_low" },
-                                    { label: "0.2 Ohm low", value: "0.2_OHM_low" },
-                                    { label: "0.3 Ohm low", value: "0.3_OHM_low" },
-
-                                    { label: "0.8 Ohm med", value: "0.8_OHM_med" },
-                                    { label: "1.2 Ohm med", value: "1.2_OHM_med" },
-
-                                    { label: "2.0 Ohm hig", value: "2.0_OHM_hig" },
-                                    { label: "2.5 Ohm hig", value: "2.5_OHM_hig" },
-
-                                    { label: "0.6 Ohm cat", value: "0.6_OHM_cat" },
-                                    { label: "0.8 Ohm cat", value: "0.8_OHM_cat" },
-                                    { label: "-", value: '-' },
-                                ] }
-                            />
-
-                            <SelectForm
-                                name="coilSize"
-                                label="Coil"
-                                placeholder="Ukuran Coil"
-                                options={ [
-                                    { label: "24 AWG (0.51 mm)", value: "AWG_24_0.51" },
-                                    { label: "26 AWG (0.40 mm)", value: "AWG_26_0.40" },
-                                    { label: "28 AWG (0.32 mm)", value: "AWG_28_0.32" },
-                                    { label: "30 AWG (0.25 mm)", value: "AWG_30_0.25" },
-                                    { label: "-", value: '-' },
-                                ] }
-                            />
-
-                            <SelectForm
-                                name="cottonSize"
-                                label="Cotton"
-                                placeholder="Ukuran Kapas"
-                                options={ [
-                                    { label: "24 AWG (0.51 mm)", value: "AWG_24_0.51" },
-                                    { label: "26 AWG (0.40 mm)", value: "AWG_26_0.40" },
-                                    { label: "28 AWG (0.32 mm)", value: "AWG_28_0.32" },
-                                    { label: "30 AWG (0.25 mm)", value: "AWG_30_0.25" },
-                                    { label: "-", value: '-' },
-                                ] }
-                            />
-
-                            <SelectForm
-                                name="batterySize"
-                                label="Arus & Kapasitas (mAh)"
-                                placeholder="Ukuran Kapas"
-                                options={ [
-                                    { label: "20A - 3000mAh", value: "ARUS_20A_3000" },
-                                    { label: "20A - 2000mAh", value: "ARUS_20A_2000" },
-                                    { label: "30A - 2000mAh", value: "ARUS_30A_2000" },
-                                    { label: "30A - 3000mAh", value: "ARUS_30A_3000" },
-                                    { label: "40A - 2000mAh", value: "ARUS_40A_2000" },
-                                    { label: "40A - 3000mAh", value: "ARUS_40A_3000" },
-                                    { label: "-", value: '-' },
-                                ] }
-                            />
-
-                            <SelectForm
-                                name="nicotineLevel"
-                                label="Level Nikotin (untuk liquid)"
-                                placeholder="Pilih level"
-                                options={ [
-                                    { label: "0mg", value: "0mg" },
-                                    { label: "3mg", value: "3mg" },
-                                    { label: "6mg", value: "6mg" },
-                                    { label: "12mg", value: "12mg" },
-                                    { label: "25mg (Salt Nic)", value: "25mg" },
-                                    { label: "50mg (Salt Nic)", value: "50mg" },
-                                    { label: '-', value: '-' },
-                                ] }
-                            />
-
-                            <InputDateForm name={ 'expired' }
-                                           title={ "Expired" }
-                                           description={ 'Tambahkan Kadaluarsa' }
-                                           minDate={ false }
-                            />
-                        </div>
-                        <InputForm name="image" title="URL Gambar" placeholder="Link gambar produk" type="url"/>
-                        <TextareaForm name="description" title="Deskripsi" placeholder="Deskripsi produk"/>
-                        <DialogFooter className="pt-4">
-                            <Button type="submit">Simpan Produk</Button>
-                        </DialogFooter>
-                    </form>
-                </FormProvider>
-            </DialogContent>
-        </Dialog>
-    );
-}
-
-export function ModalProductUpdate({ product }: { product: ProductModelType }) {
-    const [ open, setOpen ] = useState(false);
-
-    const methods = useForm<ProductModelType>({
-        resolver: zodResolver(ProductModel),
-        defaultValues: product,
-    });
-
-    const onSubmit = methods.handleSubmit(async (data) => {
-        const response = await updateProduct(data);
-        if (response.success) {
-            toast.success(response.message);
-            setOpen(false); // ✅ Close the dialog
-        } else {
-            toast.error(response.message, {
-                description: (
-                    <pre className="mt-2 w-[320px] rounded-md bg-neutral-950 p-4">
-                        <code className="text-white">{ JSON.stringify(data, null, 2) }</code>
-                    </pre>
-                ),
-            });
-        }
-    });
-    return (
-        <Dialog open={ open } onOpenChange={ setOpen }>
-            <DialogTrigger asChild>
-                <Button size="sm" variant="outline">
-                    <Pencil className="h-3 w-3"/>
-                </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-2xl">
-                <DialogHeader>
-                    <DialogTitle>Perbarui Produk</DialogTitle>
-                </DialogHeader>
-
-                <FormProvider { ...methods }>
-                    <form onSubmit={ onSubmit } className="space-y-4">
-                        <div className="grid grid-cols-2 gap-4">
-                            <InputForm title="Nama Produk" name="name" placeholder="Nama produk"/>
-
-                            <SelectForm
-                                name="category"
-                                label="Kategori"
-                                placeholder="Pilih kategori"
-                                options={ [
-                                    { label: "Device", value: "device" },
-                                    { label: "Liquid", value: "liquid" },
-                                    { label: "Coil", value: "coil" },
-                                    { label: "Aksesoris", value: "aksesoris" },
-                                ] }
-                            />
-
-                            <InputNumForm name="price" title="Harga" placeholder="0" type="number"/>
-                            <InputForm name="stock" title="Stok Awal" placeholder="0" type="number"/>
-                            <InputForm name="minStock" title="Minimum Stok" placeholder="0" type="number"/>
-
-                            <SelectForm
-                                name="nicotineLevel"
-                                label="Level Nikotin (untuk liquid)"
-                                placeholder="Pilih level"
-                                options={ [
-                                    { label: "0mg", value: "0mg" },
-                                    { label: "3mg", value: "3mg" },
-                                    { label: "6mg", value: "6mg" },
-                                    { label: "12mg", value: "12mg" },
-                                    { label: "25mg (Salt Nic)", value: "25mg" },
-                                    { label: "50mg (Salt Nic)", value: "50mg" },
-                                ] }
-                            />
-
-                            <InputForm name="flavor" title="Rasa (untuk liquid)" placeholder="Rasa liquid"/>
-                            <InputForm name="type" title="Tipe Produk" placeholder="Tipe produk"/>
-                        </div>
-
-                        <InputForm name="image" title="URL Gambar" placeholder="Link gambar produk" type="text"/>
-                        <TextareaForm name="description" title="Deskripsi" placeholder="Deskripsi produk"/>
-
-                        <DialogFooter className="pt-4">
-                            <Button type="submit">Perbarui Produk</Button>
                         </DialogFooter>
                     </form>
                 </FormProvider>

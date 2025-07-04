@@ -1,28 +1,48 @@
 'use server'
-import { prisma } from "@/lib/prisma";
 import { ActionResponse } from "@/interface/actionType";
+import { PreOrderOptionalDefaults, Product } from "@/lib/generated/zod_gen";
+import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
-import { Product } from "@/lib/generated/zod_gen";
 
 export async function preOrderProduct(
-    amount: number,
     product: Product,
+    preorder: PreOrderOptionalDefaults
 ): Promise<ActionResponse> {
+    try {
 
-    const dataPreorder = await prisma.product.update({
-        where: { id: product.id },
-        data: {
-            stock: { increment: amount },
-        }
-    })
+        await prisma.$transaction(async (tx) => {
+            const dataPreorder = await tx.product.update({
+                where: { id: product.id },
+                data: {
+                    stock: { increment: preorder.quantity },
+                }
+            })
+            await tx.preOrder.create({
+                data: {
+                    productId: product.id,
+                    quantity: preorder.quantity,
+                    estimatedDate: preorder.estimatedDate,
+                    status: preorder.status,
+                }
+            })
+
+        })
 
     revalidatePath('/')
 
     return {
         success: true,
         message: "Successfully ordered",
-        data: dataPreorder
+        // data: dataPreorder
     }
+    } catch (error) {
+        console.error(error)
+        return {
+            success: false,
+            message: 'Something went wrong preOrderProduct'
+        }
+    }
+
 }
 
 export async function oldpreOrderProduct(

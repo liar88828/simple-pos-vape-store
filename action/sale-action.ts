@@ -1,41 +1,19 @@
 'use server'
+import { ActionResponse, CartItem, LastBuyer, RangeStats, SaleCustomers } from "@/interface/actionType";
+import { ERROR, STATUS_TRANSACTION } from "@/lib/constants";
+import { Customer, Product, Sale, SalesItemOptionalDefaults } from "@/lib/generated/zod_gen";
 import { prisma } from "@/lib/prisma";
-import { ActionResponse, CartItem, ChartData, LastBuyer, RangeStats, SaleCustomers } from "@/interface/actionType";
-import { revalidatePath } from "next/cache";
-import { Customer, Product, Sale } from "@/lib/generated/zod_gen";
-import { SalesItemModelType } from "@/lib/schema";
 import { Prisma } from "@prisma/client";
-import PrismaClientKnownRequestError = Prisma.PrismaClientKnownRequestError;
+import { revalidatePath } from "next/cache";
 import { getSessionUser } from "./auth-action";
-import { STATUS_TRANSACTION } from "@/lib/constants";
-import { ERROR } from "@/lib/constants";
-
-
-const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-
-const MONTH_NAMES = [
-    "January", "February", "March", "April", "May", "June",
-    "July", "August", "September", "October", "November", "December"
-];
+import PrismaClientKnownRequestError = Prisma.PrismaClientKnownRequestError;
 
 export type TopSellingProducts = {
     productId: number,
     totalSold: number,
-    // actualPrice: number,
+    totalPrice: number,
     product: Product | undefined,
 };
-
-// type RangeStats = "today" | "week" | "month" | "year"
-// export async function SaleCustomers(range: RangeStats): Promise<SaleCustomers[]> {
-//     return prisma.sale.findMany({
-//         take: 10,
-//         orderBy: { date: 'desc' },
-//         include: {
-//             customer: true,
-//             SaleItems: { include: { product: true } }
-//         }
-//     })
-// }
 
 export async function saleCustomersAction(range: RangeStats) {
     const now = new Date();
@@ -86,227 +64,6 @@ export async function saleCustomersAction(range: RangeStats) {
     });
 }
 
-// export async function getMonthlyChartData(range: RangeStats,) {
-//     const now = new Date();
-//     const chartData = [];
-
-//     for (let offset = 5; offset >= 0; offset--) {
-//         const year = new Date(now.getFullYear(), now.getMonth() - offset, 1).getFullYear();
-//         const month = new Date(now.getFullYear(), now.getMonth() - offset, 1).getMonth();
-
-//         const start = new Date(year, month, 1, 0, 0, 0, 0);
-//         const end = new Date(year, month + 1, 1, 0, 0, 0, 0);
-
-//         const sales = await prisma.salesItem.aggregate({
-//             _sum: { price: true },
-//             where: {
-//                 sale: {
-//                     date: {
-//                         gte: start,
-//                         lt: end,
-//                     },
-//                 },
-//             },
-//         });
-
-//         chartData.push({
-//             month: MONTH_NAMES[month],
-//             desktop: sales._sum.price ?? 0,
-//         });
-//     }
-
-//     return chartData;
-// }
-
-
-// Main dispatcher (make async)
-export async function getChartData(range: RangeStats): Promise<ChartData[]> {
-    if (range === "today") {
-        return await getTodayChartData();
-    }
-    if (range === "week") {
-        return await getWeekChartData();
-    }
-    if (range === "month") {
-        return await getMonthChartData();
-    }
-    if (range === "year") {
-        return await getYearChartData();
-    }
-    throw new Error("Invalid range");
-}
-
-// Today: sales by hour (0-23)
-export async function getTodayChartData() {
-    const now = new Date();
-    const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const chartData = [];
-
-    for (let hour = 0; hour < 24; hour++) {
-        const start = new Date(startOfDay);
-        start.setHours(hour);
-
-        const end = new Date(startOfDay);
-        end.setHours(hour + 1);
-
-        const sales = await prisma.sale.aggregate({
-            _sum: { total: true },
-            where: { date: { gte: start, lt: end } },
-        });
-
-        chartData.push({
-            name: String(hour),
-            desktop: sales._sum.total ?? 0,
-        });
-    }
-
-    return chartData
-}
-
-// Week: sales by day name (Sunday-Saturday)
-export async function getWeekChartData() {
-    const now = new Date();
-    const dayOfWeek = now.getDay(); // 0-6 Sunday-Saturday
-
-    // Start of current week (Sunday)
-    const startOfWeek = new Date(now);
-    startOfWeek.setHours(0, 0, 0, 0);
-    startOfWeek.setDate(now.getDate() - dayOfWeek);
-
-    const chartData = [];
-
-    for (let i = 0; i < 7; i++) {
-        const start = new Date(startOfWeek);
-        start.setDate(startOfWeek.getDate() + i);
-
-        const end = new Date(start);
-        end.setDate(start.getDate() + 1);
-
-        const sales = await prisma.sale.aggregate({
-            _sum: { total: true },
-            where: { date: { gte: start, lt: end } },
-        });
-
-        chartData.push({
-            name: DAY_NAMES[start.getDay()],
-            desktop: sales._sum.total ?? 0,
-        });
-    }
-
-    return chartData;
-}
-
-// Month: sales by day number (1-31)
-export async function getMonthChartData() {
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = now.getMonth();
-
-    const daysInMonth = new Date(year, month + 1, 0).getDate();
-
-    const chartData = [];
-
-    for (let day = 1; day <= daysInMonth; day++) {
-        const start = new Date(year, month, day, 0, 0, 0, 0);
-        const end = new Date(year, month, day + 1, 0, 0, 0, 0);
-
-        const sales = await prisma.sale.aggregate({
-            _sum: { total: true },
-            where: { date: { gte: start, lt: end } },
-        });
-
-        chartData.push({
-            name: String(day),
-            desktop: sales._sum.total ?? 0,
-        });
-    }
-
-    return chartData;
-}
-
-// Year: sales by month name (last 6 months)
-export async function getYearChartData() {
-    const now = new Date();
-    const chartData = [];
-
-    for (let offset = 5; offset >= 0; offset--) {
-        const year = new Date(now.getFullYear(), now.getMonth() - offset, 1).getFullYear();
-        const month = new Date(now.getFullYear(), now.getMonth() - offset, 1).getMonth();
-
-        const start = new Date(year, month, 1, 0, 0, 0, 0);
-        const end = new Date(year, month + 1, 1, 0, 0, 0, 0);
-
-        const sales = await prisma.sale.aggregate({
-            _sum: { total: true },
-            where: { date: { gte: start, lt: end } },
-        });
-
-        chartData.push({
-            name: MONTH_NAMES[month],
-            desktop: sales._sum.total ?? 0,
-        });
-    }
-
-    return chartData;
-}
-
-// export async function getMonthlyChartData(range: RangeStats) {
-//     const now = new Date();
-//     const chartData = [];
-
-//     // Determine how many months to go back, default 6 for 'month'
-//     let monthsBack = 6;
-
-//     if (range === "year") {
-//         monthsBack = 12;
-//     } else if (range === "week" || range === "today") {
-//         // For 'week' or 'today' you might want to show daily data instead or just return empty monthly data
-//         // Here, let's return last 1 month for simplicity
-//         monthsBack = 1;
-//     }
-
-//     for (let offset = monthsBack - 1; offset >= 0; offset--) {
-//         const date = new Date(now.getFullYear(), now.getMonth() - offset, 1);
-//         const year = date.getFullYear();
-//         const month = date.getMonth();
-
-//         const start = new Date(year, month, 1, 0, 0, 0, 0);
-//         const end = new Date(year, month + 1, 1, 0, 0, 0, 0);
-
-//         const sales = await prisma.salesItem.aggregate({
-//             _sum: { price: true },
-//             where: {
-//                 sale: {
-//                     date: {
-//                         gte: start,
-//                         lt: end,
-//                     },
-//                 },
-//             },
-//         });
-
-//         chartData.push({
-//             month: MONTH_NAMES[month],
-//             desktop: sales._sum.price ?? 0,
-//         });
-//     }
-
-//     return chartData;
-// }
-
-// export type SalesData = Sale & { customer: Customer };
-//
-// export async function getSales(): Promise<SalesData[]> {
-//     return prisma.sale.findMany({
-//         orderBy: {
-//             date: 'desc'
-//         },
-//         include: {
-//             customer: true
-//         }
-//     })
-// }
-
 export async function createTransaction(product: CartItem[], customer: Customer | null): Promise<ActionResponse> {
     // console.log('execute');
     try {
@@ -336,10 +93,10 @@ export async function createTransaction(product: CartItem[], customer: Customer 
                     saleId: saleDB.id,
                     productId: item.id,
                     quantity: item.quantity, // from origin product
-                    price: item.price,// from origin product
+                    priceAtBuy: item.price,// from origin product
 
                     // category: item.category,
-                } satisfies Omit<SalesItemModelType, 'id'>
+                } satisfies Omit<SalesItemOptionalDefaults, 'id'>
             })
             const saleItemDB = await tx.salesItem.createMany({ data: saleItemList })
 
@@ -358,7 +115,7 @@ export async function createTransaction(product: CartItem[], customer: Customer 
                 where: { id: customer.id },
                 data: {
                     lastPurchase: new Date(),
-                    totalPurchase: { increment: saleItemList.reduce((a, b) => a + b.price * b.quantity, 0) },
+                    totalPurchase: { increment: saleItemList.reduce((a, b) => a + b.priceAtBuy * b.quantity, 0) },
                 },
             });
 
@@ -426,8 +183,8 @@ export async function createTransactionUserPending(
                     saleId: saleDB.id,
                     productId: item.productId,
                     quantity: item.quantity, // from origin product
-                    price: item.price,// from origin product
-                } satisfies Omit<SalesItemModelType, 'id'>
+                    priceAtBuy: item.priceAtBuy,// from origin product
+                } satisfies Omit<SalesItemOptionalDefaults, 'id'>
             })
 
             for (const item of saleItemListOld) {
@@ -451,10 +208,10 @@ export async function createTransactionUserPending(
                     saleId: saleDB.id,
                     productId: item.id,
                     quantity: item.quantity, // from origin product
-                    price: item.price,// from origin product
+                    priceAtBuy: item.price,// from origin product
 
                     // category: item.category,
-                } satisfies Omit<SalesItemModelType, 'id'>
+                } satisfies Omit<SalesItemOptionalDefaults, 'id'>
             })
 
             const saleItemDB = await tx.salesItem.createMany({ data: saleItemListNew })
@@ -468,8 +225,8 @@ export async function createTransactionUserPending(
                     },
                 });
             }
-            const totalBuyNow = saleItemListNew.reduce((a, b) => a + b.price * b.quantity, 0);
-            const totalBuyOld = saleItemListOld.reduce((a, b) => a + b.price * b.quantity, 0);
+            const totalBuyNow = saleItemListNew.reduce((a, b) => a + b.priceAtBuy * b.quantity, 0);
+            const totalBuyOld = saleItemListOld.reduce((a, b) => a + b.priceAtBuy * b.quantity, 0);
             // console.log('execute customer.update')
             await tx.customer.update({
                 where: { id: salePending.customerId },
@@ -551,10 +308,10 @@ export async function createTransactionUser(product: CartItem[]): Promise<Action
                     saleId: saleDB.id,
                     productId: item.id,
                     quantity: item.quantity, // from origin product
-                    price: item.price,// from origin product
+                    priceAtBuy: item.price,// from origin product
 
                     // category: item.category,
-                } satisfies Omit<SalesItemModelType, 'id'>
+                } satisfies Omit<SalesItemOptionalDefaults, 'id'>
             })
             const saleItemDB = await tx.salesItem.createMany({ data: saleItemList })
 
@@ -573,7 +330,7 @@ export async function createTransactionUser(product: CartItem[]): Promise<Action
                 where: { id: customerId },
                 data: {
                     lastPurchase: new Date(),
-                    totalPurchase: { increment: saleItemList.reduce((a, b) => a + b.price * b.quantity, 0) },
+                    totalPurchase: { increment: saleItemList.reduce((a, b) => a + b.priceAtBuy * b.quantity, 0) },
                 },
             });
 
@@ -756,7 +513,7 @@ export async function getMonthlySalesChange(range: RangeStats) {
     }
 
     const thisPeriod = await prisma.salesItem.aggregate({
-        _sum: { price: true },
+        _sum: { priceAtBuy: true },
         where: {
             sale: {
                 date: {
@@ -768,7 +525,7 @@ export async function getMonthlySalesChange(range: RangeStats) {
     });
 
     const lastPeriod = await prisma.salesItem.aggregate({
-        _sum: { price: true },
+        _sum: { priceAtBuy: true },
         where: {
             sale: {
                 date: {
@@ -779,8 +536,8 @@ export async function getMonthlySalesChange(range: RangeStats) {
         },
     });
 
-    const currentTotal = thisPeriod._sum.price ?? 0;
-    const previousTotal = lastPeriod._sum.price ?? 0;
+    const currentTotal = thisPeriod._sum.priceAtBuy ?? 0;
+    const previousTotal = lastPeriod._sum.priceAtBuy ?? 0;
 
     const percentageChange =
         previousTotal === 0
@@ -809,133 +566,6 @@ export type DashboardStats = {
         unitsSold: number;     // e.g. 45
     };
 }
-
-// export async function getDashboardStats(range: RangeStats) {
-//     const now = new Date();
-//     const currentYear = now.getFullYear();
-//     const currentMonth = now.getMonth(); // 0-based
-
-//     // Helper to get month start and end dates
-//     function getMonthDateRange(year: number, month: number) {
-//         const start = new Date(year, month, 1, 0, 0, 0, 0);
-//         const end = new Date(year, month + 1, 1, 0, 0, 0, 0);
-//         return { start, end };
-//     }
-
-//     // Current month range
-//     const { start: thisMonthStart, end: thisMonthEnd } = getMonthDateRange(currentYear, currentMonth);
-//     // Last month range
-//     const { start: lastMonthStart, end: lastMonthEnd } = getMonthDateRange(currentYear, currentMonth - 1);
-
-//     // 1. Total Penjualan this month
-//     const thisMonthSales = await prisma.sale.aggregate({
-//         _sum: {
-//             total: true,
-//         },
-//         where: {
-//             date: {
-//                 gte: thisMonthStart,
-//                 lt: thisMonthEnd,
-//             },
-//         },
-//     });
-
-//     // 2. Total Penjualan last month
-//     const lastMonthSales = await prisma.sale.aggregate({
-//         _sum: {
-//             total: true,
-//         },
-//         where: {
-//             date: {
-//                 gte: lastMonthStart,
-//                 lt: lastMonthEnd,
-//             },
-//         },
-//     });
-
-//     // 3. Total Transaksi this month (count of sales)
-//     const thisMonthTransactionCount = await prisma.sale.count({
-//         where: {
-//             date: {
-//                 gte: thisMonthStart,
-//                 lt: thisMonthEnd,
-//             },
-//         },
-//     });
-
-//     // 4. Total Transaksi last month
-//     const lastMonthTransactionCount = await prisma.sale.count({
-//         where: {
-//             date: {
-//                 gte: lastMonthStart,
-//                 lt: lastMonthEnd,
-//             },
-//         },
-//     });
-
-//     // 5. Average transaction this month
-//     const avgTransactionThisMonth = thisMonthTransactionCount > 0
-//         ? (thisMonthSales._sum.total ?? 0) / thisMonthTransactionCount
-//         : 0;
-
-//     // 6. Average transaction last month
-//     const avgTransactionLastMonth = lastMonthTransactionCount > 0
-//         ? (lastMonthSales._sum.total ?? 0) / lastMonthTransactionCount
-//         : 0;
-
-//     // 7. Top selling product this month by units sold
-//     // Join SaleItems with Sale filtered by this month
-//     const topProduct = await prisma.salesItem.groupBy({
-//         by: ['productId'],
-//         _sum: {
-//             quantity: true,
-//         },
-//         where: {
-//             sale: {
-//                 date: {
-//                     gte: thisMonthStart,
-//                     lt: thisMonthEnd,
-//                 },
-//             },
-//         },
-//         orderBy: {
-//             _sum: {
-//                 quantity: 'desc',
-//             },
-//         },
-//         take: 1,
-//     });
-
-//     // Extract the top product info or fallback
-//     const topProductInfo = topProduct.length > 0
-//         ? {
-//             product: await prisma.product.findUnique({ where: { id: topProduct[0].productId } }),
-//             unitsSold: topProduct[0]._sum.quantity ?? 0,
-//         }
-//         : {
-//             product: null,
-//             unitsSold: 0,
-//         };
-
-//     // Helper to calculate growth percentage
-//     function calculateGrowth(current: number, previous: number) {
-//         if (previous === 0) return 100;
-//         return ((current - previous) / previous) * 100;
-//     }
-//     const responseData: DashboardStats = {
-//         totalSales: thisMonthSales._sum.total ?? 0,
-//         salesGrowth: calculateGrowth(thisMonthSales._sum.total ?? 0, lastMonthSales._sum.total ?? 0),
-
-//         transactions: thisMonthTransactionCount,
-//         transactionsGrowth: calculateGrowth(thisMonthTransactionCount, lastMonthTransactionCount),
-
-//         avgTransaction: avgTransactionThisMonth,
-//         avgTransactionGrowth: calculateGrowth(avgTransactionThisMonth, avgTransactionLastMonth),
-
-//         topProduct: topProductInfo,
-//     }
-//     return responseData
-// }
 
 export async function getDashboardStats(range: RangeStats) {
     const now = new Date();
@@ -1069,51 +699,6 @@ export async function getDashboardStats(range: RangeStats) {
 
     return responseData;
 }
-
-
-
-export async function getTopSellingProductsLastMonth(limit = 5, range: RangeStats) {
-    const oneMonthAgo = new Date();
-    oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
-
-    // Step 1: Group sales items by productId, filter by last month
-    const grouped = await prisma.salesItem.groupBy({
-        by: ["productId", 'price'],
-        where: {
-            createdAt: {
-                gte: oneMonthAgo,
-            },
-        },
-        _sum: {
-            quantity: true,
-        },
-        orderBy: {
-            _sum: {
-                quantity: "desc",
-            },
-        },
-        take: limit,
-    });
-
-    // Step 2: Get product details
-    const productIds = grouped.map((item) => item.productId);
-
-    const products = await prisma.product.findMany({
-        where: { id: { in: productIds } },
-    });
-
-    // Step 3: Combine and return
-    return grouped.map((item): TopSellingProducts => {
-        const productsData = products.find((p) => p.id === item.productId)
-        return {
-            productId: item.productId,
-            totalSold: item._sum.quantity ?? 0,
-            // actualPrice: productsData?.price,
-            product: productsData,
-        }
-    });
-}
-
 function getRangeDate(range: RangeStats): Date {
     const date = new Date();
 
@@ -1142,6 +727,7 @@ export async function getTopSellingProductsByRange(
     const startDate = getRangeDate(range);
 
     const grouped = await prisma.salesItem.groupBy({
+
         by: ["productId"],
         where: {
             createdAt: {
@@ -1150,14 +736,14 @@ export async function getTopSellingProductsByRange(
         },
         _sum: {
             quantity: true,
+            priceAtBuy: true,
         },
         orderBy: {
-            _sum: {
-                quantity: "desc",
-            },
+            _sum: { quantity: "desc", },
         },
         take: limit,
     });
+    // console.log(grouped);
     const productIds = grouped.map((item) => item.productId);
 
     const products = await prisma.product.findMany({
@@ -1167,7 +753,7 @@ export async function getTopSellingProductsByRange(
     return grouped.map((item): TopSellingProducts => ({
         productId: item.productId,
         totalSold: item._sum.quantity ?? 0,
-        // actualPrice: item.price ?? 0,
+        totalPrice: item._sum.priceAtBuy ?? 0,
         product: products.find((p) => p.id === item.productId),
     }));
 }
@@ -1196,3 +782,10 @@ export async function transactionStatus(
         }
     }
 }
+
+// const datas={
+//     productId: number,// produk id
+//     totalSold: number,// _sum semua
+//     actualPrice: number, // data asli
+//     product: Product ,
+// }

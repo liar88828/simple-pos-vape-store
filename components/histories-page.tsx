@@ -1,10 +1,10 @@
 "use client"
 
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
+import { DashboardStats } from "@/action/sale-action";
 import { Badge } from "@/components/ui/badge"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { BarChart3, Eye, ReceiptText, TrendingDown, TrendingUp } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent, } from "@/components/ui/chart"
 import {
     Dialog,
     DialogClose,
@@ -15,15 +15,15 @@ import {
     DialogTitle,
     DialogTrigger,
 } from "@/components/ui/dialog";
-import { formatDateIndo, formatRupiah } from "@/lib/my-utils";
-import { DashboardStats } from "@/action/sale-action";
-import { Bar, BarChart, CartesianGrid, XAxis } from "recharts"
-import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent, } from "@/components/ui/chart"
-import clsx from "clsx"
-import { Invoice } from "./invoice"
-import React, { useRef, useState } from "react"
-import { useReactToPrint } from "react-to-print";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { ChartData, RangeStats, SaleCustomers } from "@/interface/actionType"
+import { formatDateIndo, formatRupiah } from "@/lib/my-utils";
+import clsx from "clsx"
+import { Eye, ReceiptText, TrendingDown, TrendingUp } from "lucide-react"
+import React, { useRef } from "react"
+import { useReactToPrint } from "react-to-print";
+import { Bar, BarChart, CartesianGrid, XAxis } from "recharts"
+import { Invoice } from "./invoice"
 
 const chartConfig = {
     desktop: {
@@ -129,8 +129,8 @@ export function ModalSalesDetail({ sale }: { sale: SaleCustomers }) {
                     <ul className="space-y-1">
                         {sale.SaleItems.map((item) => (
                             <li key={item.id} className="flex justify-between">
-                                <span>{item.product.name} : {item.quantity} × {formatRupiah(item.price)}</span>
-                                <span>{formatRupiah(item.price * item.quantity)}</span>
+                                <span>{ item.product.name } : { item.quantity } × { formatRupiah(item.priceAtBuy) }</span>
+                                <span>{ formatRupiah(item.priceAtBuy * item.quantity) }</span>
                             </li>
                         ))}
                     </ul>

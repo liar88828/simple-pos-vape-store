@@ -1,7 +1,6 @@
 'use client'
 
-import { unstable_ViewTransition as ViewTransition } from 'react'
-import { cx } from "class-variance-authority";
+import React, { unstable_ViewTransition as ViewTransition } from 'react'
 
 export function SlideTransition(
     {

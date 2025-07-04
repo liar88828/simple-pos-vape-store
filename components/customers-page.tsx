@@ -1,99 +1,39 @@
 'use client'
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { createCustomer, CustomerRelational, deleteCustomer, updateCustomer } from "@/action/customer-action";
+import { InputDateForm, InputForm, SelectForm } from "@/components/form-hook";
 import { Button } from "@/components/ui/button"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Label } from "@/components/ui/label"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { ChevronLeft, ChevronRight, Edit, Eye, Plus, SearchIcon, Users, XIcon } from "lucide-react"
-import { MemberTier } from "@/lib/data";
-import { calculateAverage, formatDateIndo, formatRupiah, toastResponse } from "@/lib/my-utils";
-import { FormProvider, useForm } from "react-hook-form";
-import { CustomerModel } from "@/lib/generated/zod";
+import {
+    Customer,
+    CustomerOptionalDefaults,
+    CustomerOptionalDefaultsSchema,
+    CustomerSchema
+} from "@/lib/generated/zod_gen";
+import { formatDateIndo, formatRupiah, toastResponse } from "@/lib/my-utils";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { InputDateForm, InputForm, SelectForm } from "@/components/form-hook";
-import { CustomerModelComplete } from "@/lib/schema";
-import { createCustomer, CustomerRelational, deleteCustomer, updateCustomer } from "@/action/customer-action";
-import { useState } from "react";
+import { ChevronLeft, ChevronRight, Edit, Eye, Plus, SearchIcon, XIcon } from "lucide-react"
+import React, { useState } from "react";
+import { FormProvider, useForm } from "react-hook-form";
 
-interface CustomersPageProps {
+export function CustomersPage({ customers, }: {
     customers: CustomerRelational[],
-    members: MemberTier[]
-}
-
-function VerificationAge(props: { length: number, filter: CustomerRelational[], numbers: any[] }) {
-    return <>
-        {/* Age Verification System */ }
-        <Card className="mb-6">
-            <CardHeader>
-                <CardTitle className="flex items-center">
-                    <Users className="h-5 w-5 mr-2"/>
-                    Sistem Verifikasi Umur
-                </CardTitle>
-            </CardHeader>
-            <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                        <h3 className="font-medium mb-4">Pengaturan Verifikasi</h3>
-                        <div className="space-y-3">
-                            <div className="flex items-center space-x-2">
-                                <Checkbox id="require-id" defaultChecked/>
-                                <Label htmlFor="require-id">Wajib verifikasi KTP</Label>
-                            </div>
-                            <div className="flex items-center space-x-2">
-                                <Checkbox id="photo-verification"/>
-                                <Label htmlFor="photo-verification">Verifikasi foto</Label>
-                            </div>
-                            <div className="flex items-center space-x-2">
-                                <Checkbox id="age-reminder" defaultChecked/>
-                                <Label htmlFor="age-reminder">Reminder umur di setiap transaksi</Label>
-                            </div>
-                        </div>
-                    </div>
-                    <div>
-                        <h3 className="font-medium mb-4">Statistik Verifikasi</h3>
-                        <div className="space-y-2">
-                            <div className="flex justify-between">
-                                <span>Total pelanggan terverifikasi:</span>
-                                <span className="font-medium">{ props.length }</span>
-                            </div>
-                            <div className="flex justify-between">
-                                <span>Verifikasi ditolak bulan ini:</span>
-                                <span
-                                    className="font-medium text-red-600">{ props.filter.length }</span>
-                            </div>
-                            <div className="flex justify-between">
-                                <span>Rata-rata umur pelanggan:</span>
-                                <span
-                                    className="font-medium">{ calculateAverage(props.numbers) } tahun</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </CardContent>
-        </Card>
-    </>;
-}
-
-export function CustomersPage({ customers, members }: CustomersPageProps) {
-    const [ selectStatusCustomer, setSelectStatusCustomer ] = useState('all')
+}) {
+    // const [ selectStatusCustomer, setSelectStatusCustomer ] = useState('all')
     const [ searchTerm, setSearchTerm ] = useState("")
     const [ currentPage, setCurrentPage ] = useState(1);
     const [ itemsPerPage, setItemsPerPage ] = useState(6);
 
     const filteredCustomer = customers.filter((customer: CustomerRelational) => {
-        const matchesSearch = customer.name.toLowerCase().includes(searchTerm.toLowerCase());
-
-        const matchesCategory =
-            selectStatusCustomer === "all" ||
-            customer.status === selectStatusCustomer;
-
-        return matchesSearch && matchesCategory;
+        return customer.name.toLowerCase().includes(searchTerm.toLowerCase())
     });
+
     const totalPages = Math.ceil(filteredCustomer.length / itemsPerPage);
+
     const paginatedCustomer = filteredCustomer.slice(
         (currentPage - 1) * itemsPerPage,
         currentPage * itemsPerPage
@@ -127,17 +67,17 @@ export function CustomersPage({ customers, members }: CustomersPageProps) {
                             </Button>
                         </div>
 
-                        <Select defaultValue="all" onValueChange={ setSelectStatusCustomer }>
-                            <SelectTrigger className="w-40">
-                                <SelectValue placeholder="Status"/>
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="all">Semua</SelectItem>
-                                <SelectItem value="verified">Valid</SelectItem>
-                                <SelectItem value="pending">Pending</SelectItem>
-                                <SelectItem value="rejected">Ditolak</SelectItem>
-                            </SelectContent>
-                        </Select>
+                        {/*<Select defaultValue="all" onValueChange={ setSelectStatusCustomer }>*/ }
+                        {/*    <SelectTrigger className="w-40">*/ }
+                        {/*        <SelectValue placeholder="Status"/>*/ }
+                        {/*    </SelectTrigger>*/ }
+                        {/*    <SelectContent>*/ }
+                        {/*        <SelectItem value="all">Semua</SelectItem>*/ }
+                        {/*        <SelectItem value="verified">Valid</SelectItem>*/ }
+                        {/*        <SelectItem value="pending">Pending</SelectItem>*/ }
+                        {/*        <SelectItem value="rejected">Ditolak</SelectItem>*/ }
+                        {/*    </SelectContent>*/ }
+                        {/*</Select>*/ }
 
                     </div>
                 </CardHeader>
@@ -251,40 +191,44 @@ export function CustomerDetailDialog({ customer }: { customer: CustomerRelationa
                         <div><strong>Total Purchase:</strong> { formatRupiah(customer.totalPurchase) }</div>
                         <div><strong>Last Purchase:</strong> { formatDateIndo(customer.lastPurchase) }</div>
                     </section>
-                    <div className="grid grid-cols-2 gap-4">
 
-                        <section>
-                            <h3 className="text-lg font-semibold mt-4">Sales History</h3>
-                            <ul className="mt-2 space-y-2 h-96 overflow-y-auto">
-                                { customer.Sales.map(sale => (
-                                    <li key={ sale.id } className="border p-2 rounded shadow-sm">
-                                        <div><strong>Date:</strong> { formatDateIndo(sale.date) }</div>
-                                        <div><strong>Total:</strong> { formatRupiah(sale.total) }</div>
-                                        <div><strong>Items:</strong> { sale.items }</div>
-                                    </li>
-                                )) }
-                                { customer.Sales.length === 0 &&
-										<p className="text-gray-500 italic">No sales data.</p> }
-                            </ul>
-                        </section>
+                    <section>
+                        <h3 className="text-lg font-semibold mt-4">Sales History</h3>
 
-                        <section>
-                            <h3 className="text-lg font-semibold mt-4">Pre-Orders</h3>
-                            <ul className="mt-2 space-y-2 h-96 overflow-y-auto">
-                                { customer.PreOrders.map(po => (
-                                    <li key={ po.id } className="border p-2 rounded shadow-sm">
-                                        <div><strong>Product:</strong> { po.product.name }</div>
-                                        <div><strong>Quantity:</strong> { po.quantity }</div>
-                                        <div><strong>Estimated
-                                            Date:</strong> { new Date(po.estimatedDate).toLocaleDateString() }</div>
-                                        <div><strong>Status:</strong> { po.status }</div>
-                                    </li>
-                                )) }
-                                { customer.PreOrders.length === 0 &&
-										<p className="text-gray-500 italic">No pre-orders.</p> }
-                            </ul>
-                        </section>
-                    </div>
+                        { customer.Sales.length === 0 ? (
+                            <p className="text-gray-500 italic mt-2">No sales data.</p>
+                        ) : (
+                            <div className="overflow-auto h-96 mt-2 border rounded-md">
+                                <Table>
+                                    <TableHeader className="sticky top-0 bg-muted z-10">
+                                        <TableRow>
+                                            <TableHead className="w-[150px]">Tanggal</TableHead>
+                                            <TableHead>Total</TableHead>
+                                            <TableHead>Jumlah Item</TableHead>
+                                            <TableHead>Aksi</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        { customer.Sales.map((sale) => (
+                                            <TableRow key={ sale.id }>
+                                                <TableCell>{ formatDateIndo(sale.date) }</TableCell>
+                                                <TableCell>{ formatRupiah(sale.total) }</TableCell>
+                                                <TableCell>{ sale.items }</TableCell>
+                                                <TableCell>
+                                                    <Button size={ 'sm' }>
+                                                        Proses
+                                                    </Button>
+                                                    {/*<ModalSalesDetail sale={sale} />*/ }
+                                                </TableCell>
+                                            </TableRow>
+                                        )) }
+                                    </TableBody>
+                                </Table>
+                            </div>
+                        ) }
+                    </section>
+
+
                 </div>
             </DialogContent>
         </Dialog>
@@ -295,8 +239,8 @@ export function ModalTambahCustomer() {
     const [ open, setOpen ] = useState(false)
     const [ loading, setLoading ] = useState(false)
 
-    const methods = useForm<CustomerModelComplete>({
-        resolver: zodResolver(CustomerModel),
+    const methods = useForm<CustomerOptionalDefaults>({
+        resolver: zodResolver(CustomerOptionalDefaultsSchema),
         defaultValues: {
             id: 0,
             name: "",
@@ -304,7 +248,7 @@ export function ModalTambahCustomer() {
             totalPurchase: 0,
             status: "pending",
             lastPurchase: new Date(),
-        },
+        } satisfies CustomerOptionalDefaults,
     });
 
     const onSubmit = methods.handleSubmit(async (data) => {
@@ -361,12 +305,12 @@ export function ModalTambahCustomer() {
     );
 }
 
-export function ModalEditCustomer({ customer }: { customer: CustomerModelComplete }) {
+export function ModalEditCustomer({ customer }: { customer: CustomerOptionalDefaults }) {
     const [ open, setOpen ] = useState(false)
     const [ loading, setLoading ] = useState(false)
 
-    const methods = useForm<CustomerModelComplete>({
-        resolver: zodResolver(CustomerModel),
+    const methods = useForm<Customer>({
+        resolver: zodResolver(CustomerSchema),
         defaultValues: customer
     });
 

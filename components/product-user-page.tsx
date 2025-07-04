@@ -1,37 +1,21 @@
 "use client"
 
-import React, { useEffect, useMemo, useState } from "react"
+import { createTransactionUser, createTransactionUserPending } from "@/action/sale-action";
+import { ProductPending } from "@/app/user/home/page"
+import { ProductDetailDialogOnly } from "@/components/product-detail-dialog-only";
+import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
-import { ChevronLeft, ChevronRight, MinusIcon, Plus, PlusIcon, Search, ShoppingCart, Trash2, XIcon } from "lucide-react"
-import { Customer, Product } from "@prisma/client";
-import { chooseStatus, formatRupiah, getStatusVariant, newParam, toastResponse } from "@/lib/my-utils";
-import { SESSION } from "@/interface/actionType";
-import {
-    Dialog,
-    DialogClose,
-    DialogContent,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-    DialogTrigger
-} from "@/components/ui/dialog";
-import { createTransactionUser, createTransactionUserPending } from "@/action/sale-action";
-import { Badge } from "@/components/ui/badge";
-import { FormProvider, useForm } from "react-hook-form";
-import { InputForm } from "@/components/form-hook";
-import { CustomerModelNew, CustomerModelType } from "@/lib/schema";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { createCustomerNew } from "@/action/customer-action";
-import { useRouter } from "next/navigation";
-import { useDebounce, } from "@/hooks/use-debounce";
-import { ProductPending } from "@/app/user/home/page"
-
-import { ProductDetailDialogOnly } from "@/components/product-detail-dialog-only";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useCart } from "@/hooks/use-cart";
+import { useDebounce, } from "@/hooks/use-debounce";
+import { SESSION } from "@/interface/actionType";
+import { formatRupiah, newParam, toastResponse } from "@/lib/my-utils";
+import { Product } from "@prisma/client";
+import { ChevronLeft, ChevronRight, MinusIcon, Plus, PlusIcon, ShoppingCart, Trash2, XIcon } from "lucide-react"
+import { useRouter } from "next/navigation";
+import React, { useEffect, useMemo, useState } from "react"
 
 export function ProductUserPage(
     {
@@ -331,8 +315,6 @@ export function ProductUserPage(
                                                         {/* Total price */}
                                                         <span
                                                             className="font-medium text-sm">{formatRupiah(product.price * product.quantity)}</span>
-
-
                                                         {/* Counter */}
                                                         <div className="grid grid-cols-4 gap-2">
                                                             <Button
@@ -392,154 +374,4 @@ export function ProductUserPage(
             </div>
         </div>
     )
-}
-
-export function SelectCustomer(
-    {
-        customers,
-        onSelectAction,
-        ageValid,
-        customerName,
-        setCustomerNameAction
-    }: {
-        customers: Customer[],
-        onSelectAction: (customer: Customer) => void,
-        ageValid?: boolean,
-        customerName: string,
-        setCustomerNameAction: (value: string) => void,
-
-    }) {
-    const [open, setOpen] = useState(false);
-    const [search, setSearch] = useState(customerName);
-    const [loading, setLoading] = useState(false)
-    const router = useRouter()
-
-    // const { value, isLoading } = useDebounceLoad(search, 1000);
-    // usePushQueryObject({ customerName: value })
-    // // useEffect(() => {
-    // //     if (value.trim()) {
-    // //         router.push(newParam({ customerName: value }));
-    // //     }
-    // // }, [ value, router ]);
-
-    const filteredCustomers = useMemo(() =>
-        customers.filter(({ name, status }) =>
-            name.toLowerCase().includes(search.toLowerCase()) &&
-            (ageValid ? status !== 'rejected' :
-                // status === 'verified'
-                true
-            )
-        ),
-        [customers, search, ageValid]
-    );
-
-    const methods = useForm<CustomerModelType>({
-        resolver: zodResolver(CustomerModelNew),
-        defaultValues: {
-            name: "",
-        },
-    });
-
-    const onSubmit = methods.handleSubmit(async (data) => {
-        setLoading(true)
-        const response = await createCustomerNew(data)
-        toastResponse({
-            response,
-            onSuccess: () => {
-                if (response.success && response.data) {
-                    onSelectAction(response.data);
-                    setOpen(false)
-                    setLoading(false)
-                }
-            }
-        }
-        )
-        setLoading(false)
-    });
-
-    return (
-        <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>
-                <Button>
-                    Pilih Pelanggan
-                    <Plus className="h-3 w-3 ml-2" />
-                </Button>
-            </DialogTrigger>
-
-            <DialogContent className="">
-                <DialogHeader>
-                    <DialogTitle>Pilih Pelanggan</DialogTitle>
-                </DialogHeader>
-                <div className="grid grid-cols-1 gap-10">
-
-                    <div className="space-y-4">
-                        <div className="flex gap-2 ">
-                            <Input
-                                name={'customerName'}
-                                placeholder="Cari nama pelanggan..."
-                                value={search}
-                                onChange={(e) => {
-                                    setSearch(e.target.value)
-                                    setCustomerNameAction(e.target.value)
-                                }}
-                            />
-                            <Button
-                                onClick={() => router.push(newParam({ name: search }))}
-                                type="button">
-                                <Search />
-                            </Button>
-                        </div>
-
-                        <div className="space-y-2 max-h-[300px] overflow-y-auto">
-                            {filteredCustomers.length === 0 ? (
-                                <p className="text-sm text-muted-foreground">Tidak ada pelanggan ditemukan.</p>
-                            ) : (
-                                filteredCustomers.map((customer) => (
-                                    <DialogClose asChild key={customer.id}>
-                                        <Button
-                                            variant="outline"
-                                            className="w-full justify-start text-left h-14"
-                                            onClick={() => {
-                                                onSelectAction?.(customer);
-                                            }}
-                                        >
-                                            <div>
-                                                <h1 className="font-medium">{customer.name}</h1>
-                                                <p className="text-sm text-muted-foreground">
-                                                    Usia: {customer.age} • Total: {customer.totalPurchase} •
-                                                    Status:{" "}
-                                                    <Badge variant={getStatusVariant(customer.status)}>
-                                                        {chooseStatus(customer.status)}
-                                                    </Badge>
-                                                </p>
-                                            </div>
-                                        </Button>
-                                    </DialogClose>
-                                ))
-                            )}
-                        </div>
-                    </div>
-
-
-                    <div className="">
-
-
-                        <FormProvider {...methods}>
-                            <form onSubmit={onSubmit} className="grid gap-4">
-                                <InputForm name="name" title="Tambah Pelangan Baru" placeholder="Nama pelanggan" />
-                                <DialogFooter>
-                                    <Button type="submit"
-                                        disabled={loading}
-                                    >{loading ? 'Loading...' : "Simpan"}
-                                    </Button>
-                                </DialogFooter>
-                            </form>
-                        </FormProvider>
-                    </div>
-
-                </div>
-
-            </DialogContent>
-        </Dialog>
-    );
 }

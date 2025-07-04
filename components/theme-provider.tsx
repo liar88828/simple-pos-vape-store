@@ -1,9 +1,5 @@
 "use client"
 
-import * as React from "react"
-import { ThemeProvider as NextThemesProvider, useTheme } from "next-themes"
-import { Moon, Sun } from "lucide-react"
-
 import { Button } from "@/components/ui/button"
 import {
     DropdownMenu,
@@ -11,6 +7,9 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { Moon, Sun } from "lucide-react"
+import { ThemeProvider as NextThemesProvider, useTheme } from "next-themes"
+import * as React from "react"
 
 export function ThemeProvider({
     children,

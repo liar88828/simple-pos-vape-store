@@ -1,4 +1,3 @@
-
 import { getSessionUser } from '@/action/auth-action';
 import { HistoriesPage } from '@/components/histories-page';
 import { ContextPage, SaleCustomers } from '@/interface/actionType';

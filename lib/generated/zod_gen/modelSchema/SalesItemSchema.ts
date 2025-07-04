@@ -1,8 +1,20 @@
 import { z } from 'zod';
-import { SaleWithRelationsSchema, SalePartialWithRelationsSchema, SaleOptionalDefaultsWithRelationsSchema } from './SaleSchema'
-import type { SaleWithRelations, SalePartialWithRelations, SaleOptionalDefaultsWithRelations } from './SaleSchema'
-import { ProductWithRelationsSchema, ProductPartialWithRelationsSchema, ProductOptionalDefaultsWithRelationsSchema } from './ProductSchema'
-import type { ProductWithRelations, ProductPartialWithRelations, ProductOptionalDefaultsWithRelations } from './ProductSchema'
+import type {
+    ProductOptionalDefaultsWithRelations,
+    ProductPartialWithRelations,
+    ProductWithRelations
+} from './ProductSchema'
+import {
+    ProductOptionalDefaultsWithRelationsSchema,
+    ProductPartialWithRelationsSchema,
+    ProductWithRelationsSchema
+} from './ProductSchema'
+import type { SaleOptionalDefaultsWithRelations, SalePartialWithRelations, SaleWithRelations } from './SaleSchema'
+import {
+    SaleOptionalDefaultsWithRelationsSchema,
+    SalePartialWithRelationsSchema,
+    SaleWithRelationsSchema
+} from './SaleSchema'
 
 /////////////////////////////////////////
 // SALES ITEM SCHEMA
@@ -13,7 +25,7 @@ export const SalesItemSchema = z.object({
   saleId: z.number().int(),
   productId: z.number().int(),
   quantity: z.number().min(1),
-  price: z.number().min(1),
+    priceAtBuy: z.number().min(1),
   createdAt: z.date(),
   updatedAt: z.date(),
 })

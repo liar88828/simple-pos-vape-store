@@ -1,14 +1,13 @@
 "use server";
 
-import { prisma } from "@/lib/prisma"; // Adjust this path
-import bcrypt from "bcrypt";
-import { redirect } from "next/navigation";
-
 import { signJwt, signRefreshJwt, verifyJwt, verifyRefreshJwt } from "@/action/jwt-token";
-import { cookies } from "next/headers";
 import { ActionResponse } from "@/interface/actionType";
 import { LoginFormData, loginSchema, RegisterFormData, registerSchema } from "@/lib/auth-schema";
+import { prisma } from "@/lib/prisma"; // Adjust this path
+import bcrypt from "bcrypt";
 import { revalidatePath } from "next/cache";
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 
 export async function registerAction(rawData: RegisterFormData): Promise<ActionResponse> {
     const parsed = registerSchema.safeParse(rawData);

@@ -1,6 +1,6 @@
 import { CartItem } from "@/interface/actionType";
+import { Product } from "@/lib/generated/zod_gen";
 import { useState } from "react";
-import { Product } from "@prisma/client";
 
 export function useCart(initialItems?: CartItem[]) {
     const [ cartItems, setCartItems ] = useState<CartItem[]>(initialItems ?? []);

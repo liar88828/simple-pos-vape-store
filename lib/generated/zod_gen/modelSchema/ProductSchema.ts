@@ -1,8 +1,24 @@
 import { z } from 'zod';
-import { PreOrderWithRelationsSchema, PreOrderPartialWithRelationsSchema, PreOrderOptionalDefaultsWithRelationsSchema } from './PreOrderSchema'
-import type { PreOrderWithRelations, PreOrderPartialWithRelations, PreOrderOptionalDefaultsWithRelations } from './PreOrderSchema'
-import { SalesItemWithRelationsSchema, SalesItemPartialWithRelationsSchema, SalesItemOptionalDefaultsWithRelationsSchema } from './SalesItemSchema'
-import type { SalesItemWithRelations, SalesItemPartialWithRelations, SalesItemOptionalDefaultsWithRelations } from './SalesItemSchema'
+import type {
+    PreOrderOptionalDefaultsWithRelations,
+    PreOrderPartialWithRelations,
+    PreOrderWithRelations
+} from './PreOrderSchema'
+import {
+    PreOrderOptionalDefaultsWithRelationsSchema,
+    PreOrderPartialWithRelationsSchema,
+    PreOrderWithRelationsSchema
+} from './PreOrderSchema'
+import type {
+    SalesItemOptionalDefaultsWithRelations,
+    SalesItemPartialWithRelations,
+    SalesItemWithRelations
+} from './SalesItemSchema'
+import {
+    SalesItemOptionalDefaultsWithRelationsSchema,
+    SalesItemPartialWithRelationsSchema,
+    SalesItemWithRelationsSchema
+} from './SalesItemSchema'
 
 /////////////////////////////////////////
 // PRODUCT SCHEMA
@@ -13,10 +29,11 @@ export const ProductSchema = z.object({
   category: z.string().min(1),
   name: z.string().min(1),
   price: z.number().min(1),
-  stock: z.number().min(1),
+    stock: z.number().min(0),
   minStock: z.number().int(),
   sold: z.number().int(),
   image: z.string().min(1),
+    brand: z.string().min(1).nullish(),
   type: z.string().min(1),
   description: z.string().min(1),
   nicotineLevel: z.string().nullish(),

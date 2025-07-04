@@ -1,6 +1,6 @@
-import Link from 'next/link'
 import { Button } from "@/components/ui/button";
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import Link from 'next/link'
 import { match } from 'ts-pattern';
 
 export default async function NotFound({ role }: { role?: string }) {
@@ -8,7 +8,7 @@ export default async function NotFound({ role }: { role?: string }) {
         .with("USER", () => "/user/home")
         .with("ADMIN", () => "/admin/dashboard")
         .otherwise(() => "/login");
-    console.log('role is : ' + role)
+    // console.log('role is : ' + role)
 
 
 

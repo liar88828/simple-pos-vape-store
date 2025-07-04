@@ -64,10 +64,11 @@ model Product {
     category       String /// @zod.string.min(1)
     name           String /// @zod.string.min(1)
     price          Int /// @zod.number.min(1)
-    stock          Int /// @zod.number.min(1)
+    stock          Int /// @zod.number.min(0)
     minStock       Int         @default(5)
     sold           Int         @default(0)
     image          String /// @zod.string.min(1)
+    brand          String? /// @zod.string.min(1)
     type           String /// @zod.string.min(1)
     description    String /// @zod.string.min(1)
     nicotineLevel  String? // nullable
@@ -91,8 +92,8 @@ model Customer {
     status        String   @default("Pending") /// @zod.string.min(1)
     lastPurchase  DateTime
 
-    Sales     Sale[]
-    PreOrders PreOrder[]
+    Sales Sale[]
+    // PreOrders PreOrder[]
 
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt
@@ -100,43 +101,44 @@ model Customer {
 
 model PreOrder {
     id            Int      @id @default(autoincrement())
-    customer      Customer @relation(fields: [customerId], references: [id])
-    customerId    Int
+    // customer      Customer @relation(fields: [customerId], references: [id])
+    // customerId    Int
     product       Product  @relation(fields: [productId], references: [id])
     productId     Int
     quantity      Int /// @zod.number.min(1)
     estimatedDate DateTime
-    status        String /// @zod.string.min(1)
+    status        String /// @zod.string.min(1)//Pending, Terima
 
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt
 }
 
 model Sale {
-    id                Int         @id @default(autoincrement())
-    date              DateTime
-    total             Int /// @zod.number.min(1)
-    items             Int /// @zod.number.min(1)
-    customer          Customer    @relation(fields: [customerId], references: [id])
-    customerId        Int
-    SaleItems         SalesItem[]
+    id         Int         @id @default(autoincrement())
+    date       DateTime
+    total      Int /// @zod.number.min(1)
+    items      Int /// @zod.number.min(1)
+    customer   Customer    @relation(fields: [customerId], references: [id])
+    customerId Int
+    SaleItems  SalesItem[]
+
     /// @zod.string.min(1)
     statusTransaction String //@default("Pending") // Pending , Accept
+
     /// @zod.string.min(1)
-    typeTransaction   String //@default("Cash") // Cash, Transfer
-    createdAt         DateTime    @default(now())
-    updatedAt         DateTime    @updatedAt
+    typeTransaction String //@default("Cash") // Cash, Transfer
+    createdAt       DateTime @default(now())
+    updatedAt       DateTime @updatedAt
 }
 
 model SalesItem {
-    id        Int     @id @default(autoincrement())
-    sale      Sale    @relation(fields: [saleId], references: [id])
-    saleId    Int
-    product   Product @relation(fields: [productId], references: [id])
-    productId Int
-    quantity  Int /// @zod.number.min(1)
-    price     Int /// @zod.number.min(1)
-    // category  String // redundant but helps snapshot data
+    id         Int     @id @default(autoincrement())
+    sale       Sale    @relation(fields: [saleId], references: [id])
+    saleId     Int
+    product    Product @relation(fields: [productId], references: [id])
+    productId  Int
+    quantity   Int /// @zod.number.min(1)
+    priceAtBuy Int /// @zod.number.min(1)
 
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt

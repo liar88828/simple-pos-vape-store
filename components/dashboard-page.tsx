@@ -1,16 +1,16 @@
 "use client"
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { TopSellingProduct } from "@/action/product-action";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { LastBuyer } from "@/interface/actionType";
+import { Product } from "@/lib/generated/zod_gen";
+import { formatDateIndo, formatRupiah, formatRupiahShort } from "@/lib/my-utils";
+import { cn } from "@/lib/utils"
 import { AlertTriangle, Clock, DollarSign, Package, ShoppingCart, Star, TrendingUp, Users } from "lucide-react"
 import Link from "next/link"
-import { formatDateIndo, formatRupiah, formatRupiahShort } from "@/lib/my-utils";
-import { Product } from "@/lib/generated/zod_gen";
-import { cn } from "@/lib/utils"
-import { TopSellingProduct } from "@/action/product-action";
-import { LastBuyer } from "@/interface/actionType";
 
 interface DashboardPageProps {
     topSelling: TopSellingProduct[],
@@ -41,7 +41,7 @@ export function DashboardPage(
                         Selamat datang di VapeStore Management System
                     </p>
                 </div>
-                <Button asChild><Link href="/pos"><ShoppingCart/> Buka POS</Link></Button>
+                <Button asChild><Link href="/admin/pos"><ShoppingCart/> Buka POS</Link></Button>
             </div>
 
             {/* Alert untuk stok rendah */ }
@@ -50,9 +50,8 @@ export function DashboardPage(
                     <AlertTriangle className="h-4 w-4"/>
                     <AlertTitle>Peringatan Stok Rendah!</AlertTitle>
                     <AlertDescription>
-                        { lowStockProducts.length } produk memiliki stok di bawah minimum.
-                        <Button variant="link" className="p-0 h-auto ml-2" asChild>
-                            <Link href="/inventory">Lihat detail</Link>
+                        { lowStockProducts.length } produk memiliki stok di bawah minimum. <Button variant="outline">
+                        <Link href="/admin/inventory">Lihat detail</Link>
                         </Button>
                     </AlertDescription>
                 </Alert>
@@ -157,7 +156,7 @@ export function DashboardPage(
                             <CardDescription className="mt-1"> Transaksi hari ini </CardDescription>
                         </div>
                         <Button variant="outline" size="sm" asChild>
-                            <Link href="/reports">Lihat Semua</Link>
+                            <Link href="/admin/reports">Lihat Semua</Link>
                         </Button>
                     </CardHeader>
                     <CardContent>
@@ -203,25 +202,25 @@ export function DashboardPage(
                     </CardHeader>
                     <CardContent className="space-y-3">
                         <Button className="w-full justify-start" asChild>
-                            <Link href="/pos">
+                            <Link href="/admin/pos">
                                 <ShoppingCart className="mr-2 h-4 w-4"/>
                                 Buka POS Kasir
                             </Link>
                         </Button>
                         <Button variant="outline" className="w-full justify-start" asChild>
-                            <Link href="/products">
+                            <Link href="/admin/products">
                                 <Package className="mr-2 h-4 w-4"/>
                                 Tambah Produk
                             </Link>
                         </Button>
                         <Button variant="outline" className="w-full justify-start" asChild>
-                            <Link href="/inventory">
+                            <Link href="/admin/inventory">
                                 <AlertTriangle className="mr-2 h-4 w-4"/>
                                 Cek Stok Rendah
                             </Link>
                         </Button>
                         <Button variant="outline" className="w-full justify-start" asChild>
-                            <Link href="/customers">
+                            <Link href="/admin/customers">
                                 <Users className="mr-2 h-4 w-4"/>
                                 Kelola Pelanggan
                             </Link>
@@ -243,7 +242,7 @@ export function DashboardPage(
                             <CardDescription className="mt-1">Produk yang perlu direstock</CardDescription>
                         </div>
                         <Button variant="outline" size="sm" asChild>
-                            <Link href="/inventory">Kelola</Link>
+                            <Link href="/admin/inventory">Kelola</Link>
                         </Button>
                     </CardHeader>
                     <CardContent>

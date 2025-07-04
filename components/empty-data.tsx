@@ -1,11 +1,11 @@
 'use client'
-// components/EmptyData.tsx
-import { AlertCircle, Ban, RefreshCw, SearchX } from "lucide-react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import React from 'react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+// components/EmptyData.tsx
+import { AlertCircle, Ban, RefreshCw, SearchX } from "lucide-react"
 import { useRouter } from "next/navigation";
+import React from 'react';
 
 export function EmptyData({ message = "No data available" }: { message?: string }) {
     return (

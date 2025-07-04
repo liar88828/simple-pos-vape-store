@@ -1,10 +1,9 @@
 'use server'
-import { prisma } from "@/lib/prisma";
-import { revalidatePath } from "next/cache";
-import { CustomerModel } from "@/lib/generated/zod";
 import { ActionResponse } from "@/interface/actionType";
-import { CustomerModelComplete, CustomerModelNew, CustomerModelType } from "@/lib/schema";
-import { Customer, PreOrder, Product, Sale, SalesItem } from "@/lib/generated/zod_gen";
+import { Customer, CustomerSchema, Product, Sale, SalesItem } from "@/lib/generated/zod_gen";
+import { prisma } from "@/lib/prisma";
+import { CustomerModelNew, CustomerModelType } from "@/lib/schema";
+import { revalidatePath } from "next/cache";
 
 // Create a new customer
 export async function createCustomerNew(formData: CustomerModelType): Promise<ActionResponse<Customer>> {
@@ -49,7 +48,7 @@ export async function createCustomerNew(formData: CustomerModelType): Promise<Ac
 export async function createCustomer(formData: CustomerModelType): Promise<ActionResponse> {
     try {
 
-        const valid = CustomerModel.safeParse(formData);
+        const valid = CustomerSchema.safeParse(formData);
         if (!valid.success) {
             return {
                 data: valid.data,
@@ -90,28 +89,24 @@ export async function getAllCustomers(name: string = ''): Promise<Customer[]> {
 
 export type CustomerRelational = Customer & {
     Sales: Sale[]
-    PreOrders: (PreOrder & { product: Product })[]
+    // PreOrders: (PreOrder & { product: Product })[]
 }
 
 export async function getAllCustomerRelational(): Promise<CustomerRelational[]> {
     return prisma.customer.findMany({
         include: {
             Sales: true,
-            PreOrders: {
-                include: {
-                    product: true
-                }
-            },
+            // PreOrders: {
+            //     include: {
+            //         product: true
+            //     }
+            // },
         }
     })
 }
 
-export async function getCustomerById(id: Customer['id']): Promise<Customer | null> {
-    return prisma.customer.findUnique({ where: { id } });
-}
-
-export async function updateCustomer(formData: CustomerModelComplete): Promise<ActionResponse> {
-    const valid = CustomerModel.safeParse(formData);
+export async function updateCustomer(formData: Customer): Promise<ActionResponse> {
+    const valid = CustomerSchema.safeParse(formData);
 
     const customerFound = await prisma.customer.findUnique({
         where: { id: formData.id },
@@ -151,6 +146,8 @@ export async function updateCustomer(formData: CustomerModelComplete): Promise<A
 }
 
 export async function deleteCustomer(id: Customer['id']): Promise<ActionResponse> {
+    try {
+
     const customerFound = await prisma.customer.findUnique({ where: { id } });
 
     if (!customerFound) {
@@ -167,6 +164,13 @@ export async function deleteCustomer(id: Customer['id']): Promise<ActionResponse
         success: true,
         message: "Pelanggan berhasil dihapus",
     };
+    } catch (error) {
+        return {
+            success: false,
+            message: "Something went wrong : deleteCustomer",
+        }
+    }
+
 }
 
 export type CustomerComplete = Customer & {

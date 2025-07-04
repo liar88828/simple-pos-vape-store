@@ -1,9 +1,9 @@
-import { Card } from "@/components/ui/card";
-import { formatDateIndo, formatRupiah } from "@/lib/my-utils";
-import { Separator } from "@/components/ui/separator";
-import React from "react";
-import { RangeStats, SaleCustomers } from "@/interface/actionType";
 import { DashboardStats, } from "@/action/sale-action";
+import { Card } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import { RangeStats, SaleCustomers } from "@/interface/actionType";
+import { formatDateIndo, formatRupiah } from "@/lib/my-utils";
+import React from "react";
 
 interface ReportsPageProps {
     range: RangeStats,
@@ -17,7 +17,7 @@ interface ReportsPageProps {
 }
 
 export function DailySalesReport_x5_indonesia(props: ReportsPageProps) {
-    const totalTransaction = props.sales.reduce((a, b) => a + (b.SaleItems.reduce((d, e) => d + (e.price * e.quantity), 0)), 0);
+    const totalTransaction = props.sales.reduce((a, b) => a + (b.SaleItems.reduce((d, e) => d + (e.priceAtBuy * e.quantity), 0)), 0);
     return (
         <Card className="p-6 max-w-5xl mx-auto  ">
             <div className="text-center">
@@ -95,7 +95,7 @@ export function DailySalesReport_x5_indonesia(props: ReportsPageProps) {
                                 <td className="px-2 py-2">
                                     { sale.SaleItems.map(item => (
                                         <span key={ item.id }
-                                              className="block text-nowrap text-end">{ formatRupiah(item.quantity * item.price) }</span>
+                                              className="block text-nowrap text-end">{ formatRupiah(item.quantity * item.priceAtBuy) }</span>
                                     )) }
                                 </td>
                                 <td className="px-2 py-2 text-end">{ formatRupiah(sale.total) }</td>

@@ -1,23 +1,88 @@
 'use server'
 
-import { revalidatePath } from 'next/cache'
-import { prisma } from "@/lib/prisma";
-import { ProductModel, } from "@/lib/generated/zod";
 import { ActionResponse, LowStockProducts } from "@/interface/actionType";
-import { ProductModelType } from "@/lib/schema";
+import {
+    Customer,
+    PreOrder,
+    Product,
+    ProductOptionalDefaults,
+    ProductOptionalDefaultsSchema
+} from "@/lib/generated/zod_gen";
+import { prisma } from "@/lib/prisma";
 import { Prisma, } from "@prisma/client";
-import { Customer, PreOrder, Product, ProductOptionalDefaults } from "@/lib/generated/zod_gen";
+import { revalidatePath } from 'next/cache'
 
 export type TopSellingProduct = Product & {
     totalSold: number;
 }
+
+export type ProductPaging = { data: Product[], total: number };
 export const getProduct = async (
-    name: string = '',
-    limit: number = 100,
-) => await prisma.product.findMany({
-    where: { name: { contains: name } },
-    take: limit
-})
+    filter: {
+        productBrand?: string,
+        productCategory?: string,
+        productTypeDevice?: string,
+        productCotton?: string,
+        productCoil?: string,
+        productBattery?: string,
+        productNicotine?: string,
+        productResistant?: string,
+        productName?: string,
+    },
+    limit: number = 10,
+    page: number = 0
+): Promise<ProductPaging> => {
+
+    if (!limit) {
+        limit = 10
+    }
+
+    if (!page) {
+        page = 0
+    }
+    const where: Prisma.ProductWhereInput = {
+        name: filter.productName && filter.productName !== '-'
+            ? { contains: filter.productName, }
+            : undefined,
+
+        resistanceSize: filter.productResistant && filter.productResistant !== '-'
+            ? { contains: filter.productResistant, }
+            : undefined,
+
+        cottonSize: filter.productCotton && filter.productCotton !== '-'
+            ? { contains: filter.productCotton, }
+            : undefined,
+
+        batterySize: filter.productBattery && filter.productBattery !== '-'
+            ? { contains: filter.productBattery, }
+            : undefined,
+
+        brand: filter.productBrand && filter.productBrand !== '-'
+            ? { contains: filter.productBrand, }
+            : undefined,
+
+        category: filter.productCategory && filter.productCategory !== '-'
+            ? { contains: filter.productCategory, }
+            : undefined,
+
+        coilSize: filter.productCoil && filter.productCoil !== '-'
+            ? { contains: filter.productCoil, }
+            : undefined,
+
+        type: filter.productTypeDevice && filter.productTypeDevice !== '-'
+            ? { contains: filter.productTypeDevice, }
+            : undefined,
+
+        nicotineLevel: filter.productNicotine && filter.productNicotine !== '-'
+            ? { contains: filter.productNicotine, }
+            : undefined,
+    }
+
+    return {
+        data: await prisma.product.findMany({ where, take: limit, skip: page * limit, }),
+        total: await prisma.product.count({ where }),
+    }
+}
 
 export async function getProductLowStock(): Promise<LowStockProducts[]> {
     return prisma.$queryRaw<
@@ -43,7 +108,7 @@ export async function getProductLowStockComplete(): Promise<Product[]> {
 //     return prisma.product.findMany({ where: { stock: { lte: 5 } } });
 // }
 
-export const deleteProduct = async (idProduct: ProductModelType['id']): Promise<ActionResponse> => {
+export const deleteProduct = async (idProduct: Product['id']): Promise<ActionResponse> => {
     if (await prisma.product.findUnique({ where: { id: idProduct }, select: { id: true } })) {
         revalidatePath('/') // agar halaman ter-refresh
         return {
@@ -67,29 +132,28 @@ export async function upsertProduct(formData: ProductOptionalDefaults): Promise<
 export async function addProduct(formData: ProductOptionalDefaults): Promise<ActionResponse> {
     try {
 
-    const valid = ProductModel.safeParse(formData)
+        const valid = ProductOptionalDefaultsSchema.safeParse(formData)
 
-    if (!valid.success) {
-        // console.error('Validation failed:', valid.error.flatten())
-        // throw new Error('Data produk tidak valid.')
+        if (!valid.success) {
+
+            console.error('Validation failed:', valid.error.flatten())
+            // throw new Error('Data produk tidak valid.')
+            return {
+                data: valid.data,
+                message: "Product Gagal di Tambahkan",
+                error: valid.error.flatten().fieldErrors,
+                success: false
+            }
+        }
+        const { id, ...data } = valid.data
+        await prisma.product.create({ data })
+
+        revalidatePath('/') // agar halaman ter-refresh
         return {
             data: valid.data,
-            message: "Product Gagal di Tambahkan",
-            error: valid.error.flatten().fieldErrors,
-            success: false
-        }
-    }
-    const { id, ...rest } = valid.data
-    await prisma.product.create({
-        data: rest
-    })
-
-    revalidatePath('/') // agar halaman ter-refresh
-    return {
-        data: valid.data,
-        success: true,
-        message: 'Produk berhasil ditambahkan'
-    };
+            success: true,
+            message: 'Produk berhasil ditambahkan'
+        };
     } catch (error) {
         console.log(error)
         return {
@@ -103,37 +167,37 @@ export async function addProduct(formData: ProductOptionalDefaults): Promise<Act
 export async function updateProduct(formData: ProductOptionalDefaults): Promise<ActionResponse> {
     try {
 
-    const valid = ProductModel.safeParse(formData)
-    const productFound = await prisma.product.findUnique({ where: { id: formData.id }, select: { id: true } })
-    if (!productFound) {
+        const valid = ProductOptionalDefaultsSchema.safeParse(formData)
+        const productFound = await prisma.product.findUnique({ where: { id: formData.id }, select: { id: true } })
+        if (!productFound) {
+            return {
+                data: valid.data,
+                success: true,
+                message: "Product Tidak Di Temukan",
+
+            };
+        }
+
+        if (!valid.success) {
+            return {
+                data: valid.data,
+                message: "Product Gagal diperbarui",
+                error: valid.error.flatten().fieldErrors,
+                success: false
+            }
+        }
+        const { id, ...rest } = valid.data
+        await prisma.product.update({
+            where: { id },
+            data: rest
+        })
+
+        revalidatePath('/') // agar halaman ter-refresh
         return {
             data: valid.data,
             success: true,
-            message: "Product Tidak Di Temukan",
-
+            message: 'Produk berhasil diperbarui'
         };
-    }
-
-    if (!valid.success) {
-        return {
-            data: valid.data,
-            message: "Product Gagal diperbarui",
-            error: valid.error.flatten().fieldErrors,
-            success: false
-        }
-    }
-    const { id, ...rest } = valid.data
-    await prisma.product.update({
-        where: { id },
-        data: rest
-    })
-
-    revalidatePath('/') // agar halaman ter-refresh
-    return {
-        data: valid.data,
-        success: true,
-        message: 'Produk berhasil diperbarui'
-    };
 
     } catch (error) {
         console.log(error)
@@ -150,16 +214,6 @@ export type PreorderProduct = PreOrder & {
     customer: Customer
     product: Product
 };
-
-export async function getPreOrder(): Promise<PreorderProduct[]> {
-    return prisma.preOrder.findMany({
-        orderBy: {},
-        include: {
-            customer: true,
-            product: true
-        }
-    })
-}
 
 export async function getTopSellingProduct(limit: number = 5): Promise<TopSellingProduct[]> {
     const topProducts = await prisma.salesItem.groupBy({
@@ -241,3 +295,5 @@ export async function getTodayVsYesterdaySales() {
 
     return { todayTotal, percentChange };
 }
+
+export const brands = async () => await prisma.product.groupBy({ by: 'brand' })

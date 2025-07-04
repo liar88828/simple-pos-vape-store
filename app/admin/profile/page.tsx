@@ -1,7 +1,7 @@
-import React from 'react';
-import UserProfilePage from "@/components/user-profile-page";
 import { getDataCustomer } from "@/action/customer-action";
-import { DataNotFound, EmptyDataPage } from "@/components/empty-data";
+import { DataNotFound } from "@/components/empty-data";
+import UserProfilePage from "@/components/user-profile-page";
+import React from 'react';
 
 async function Page() {
     const customerData = await getDataCustomer(1)

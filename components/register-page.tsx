@@ -1,15 +1,15 @@
 'use client'
 
-import { FormProvider, useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { Card, CardContent, CardDescription, CardFooter, CardTitle } from "@/components/ui/card";
-import { InputForm } from "@/components/form-hook";
-import { Button } from "@/components/ui/button";
 import { registerAction } from "@/action/auth-action";
+import { InputForm } from "@/components/form-hook";
 import { SlideTransition } from "@/components/slide-transition";
-import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardFooter, CardTitle } from "@/components/ui/card";
 import { RegisterFormData, registerSchema } from "@/lib/auth-schema";
 import { toastResponse } from "@/lib/my-utils";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useRouter } from "next/navigation";
+import { FormProvider, useForm } from "react-hook-form";
 
 export default function RegisterPage() {
     const route = useRouter()
@@ -21,7 +21,7 @@ export default function RegisterPage() {
             email: "",
             password: "",
             confirmPassword: "",
-        },
+        } satisfies RegisterFormData,
     });
 
     const {

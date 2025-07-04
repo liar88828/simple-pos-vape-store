@@ -1,12 +1,8 @@
 "use client"
 
-import type React from "react";
-import { SidebarTrigger } from "@/components/ui/sidebar"
 import { ModeToggle } from "@/components/theme-provider";
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Bell, Settings } from "lucide-react"
-import Link from "next/link";
+import { SidebarTrigger } from "@/components/ui/sidebar"
+import type React from "react";
 
 type LowStockProduct = { stock: number }
 

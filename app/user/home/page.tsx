@@ -1,13 +1,12 @@
-
 import { getSessionUser } from '@/action/auth-action';
 import { getProduct } from '@/action/product-action';
 import { getContextPage } from '@/components/context-action';
 import { ProductUserPage } from '@/components/product-user-page';
 import { CartItem, ContextPage, SaleCustomers } from '@/interface/actionType';
-import { prisma } from '@/lib/prisma';
-import React from 'react';
 import { STATUS_TRANSACTION } from '@/lib/constants';
+import { prisma } from '@/lib/prisma';
 import { redirect } from 'next/navigation';
+import React from 'react';
 
 export type ProductPending = {
     current: CartItem[];

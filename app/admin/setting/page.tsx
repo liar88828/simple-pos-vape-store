@@ -1,6 +1,6 @@
-import React from 'react';
-import SettingPage from "@/app/admin/setting/setting-page";
 import { getSettingInventory, getSettingPayment, getSettingShipping, getStoreLoader } from "@/action/setting-action";
+import SettingPage from "@/app/admin/setting/setting-page";
+import React from 'react';
 
 async function Page() {
     return (<SettingPage store={ await getStoreLoader() }

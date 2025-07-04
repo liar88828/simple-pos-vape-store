@@ -1,21 +1,5 @@
 "use client"
 
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle, } from "@/components/ui/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger, } from "@/components/ui/tabs"
-import { Package, Plus, Trash2, Upload } from "lucide-react";
-import React, { useState } from "react";
-import { InputForm, SelectForm, SwitchForm, SwitchOnlyForm, TextareaForm } from "@/components/form-hook";
-import { FormProvider, useFieldArray, useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import {
-    CompletePayment,
-    CompleteShipping,
-    InventoryModel,
-    RelatedPaymentModel,
-    StoreModel
-} from "@/lib/generated/zod";
-import { InventoryModelType, StoreModelType } from "@/lib/schema";
 import {
     saveSettingInventory,
     saveSettingPayment,
@@ -23,15 +7,32 @@ import {
     saveSettingStore,
     saveStoreLogo
 } from "@/action/setting-action";
+import { InputForm, SelectForm, SwitchForm, SwitchOnlyForm, TextareaForm } from "@/components/form-hook";
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle, } from "@/components/ui/card"
+import { Tabs, TabsContent, TabsList, TabsTrigger, } from "@/components/ui/tabs"
+import {
+    Inventory,
+    InventorySchema,
+    PaymentWithRelations,
+    ShippingWithRelations,
+    Store,
+    StoreOptionalDefaults,
+    StoreOptionalDefaultsSchema
+} from "@/lib/generated/zod_gen";
 import { toastResponse } from "@/lib/my-utils";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Package, Plus, Trash2, Upload } from "lucide-react";
+import React, { useState } from "react";
+import { FormProvider, useFieldArray, useForm } from "react-hook-form";
 
 export default function SettingPage(
     { store, shipping, inventory, payment }:
     {
-        store: StoreModelType | null,
-        inventory: InventoryModelType | null,
-        shipping: CompleteShipping | null,
-        payment: CompletePayment | null
+        store: Store | null,
+        inventory: Inventory | null,
+        shipping: ShippingWithRelations | null,
+        payment: PaymentWithRelations | null
     }) {
     return (
         <div className="p-6 w-full mx-auto h-screen">
@@ -55,13 +56,13 @@ export default function SettingPage(
     )
 }
 
-export function RenderStoreSection({ data }: { data: StoreModelType | null }) {
+export function RenderStoreSection({ data }: { data: Store | null }) {
     const [ isLoading, setIsLoading ] = useState(false)
     const [ logoPreview, setLogoPreview ] = useState<string>('http://localhost:3000/logo.png');
     const [ logoImage, setLogoImage ] = useState<File | null>(null);
 
-    const methods = useForm<StoreModelType>({
-        resolver: zodResolver(StoreModel),
+    const methods = useForm<StoreOptionalDefaults>({
+        resolver: zodResolver(StoreOptionalDefaultsSchema),
         defaultValues: {
             id: data?.id ?? '',
             name: data?.name ?? '',
@@ -70,7 +71,7 @@ export function RenderStoreSection({ data }: { data: StoreModelType | null }) {
             phone: data?.phone ?? '',
             email: data?.email ?? '',
             address: data?.address ?? '',
-        } satisfies StoreModelType
+        } satisfies StoreOptionalDefaults
     });
 
     const onSubmit = methods.handleSubmit(async (dataStore) => {
@@ -160,11 +161,11 @@ export function RenderStoreSection({ data }: { data: StoreModelType | null }) {
     );
 }
 
-export function RenderPaymentSection({ data }: { data: CompletePayment | null }) {
+export function RenderPaymentSection({ data }: { data: PaymentWithRelations | null }) {
     const [ isLoading, setIsLoading ] = useState(false)
     const [ isCod, setIsCod ] = useState(data?.isCod ?? false)
 
-    const methods = useForm<CompletePayment>({
+    const methods = useForm<PaymentWithRelations>({
         // resolver: zodResolver(RelatedPaymentModel),
         defaultValues: {
             id: data?.id ?? '',
@@ -179,7 +180,7 @@ export function RenderPaymentSection({ data }: { data: CompletePayment | null })
                 paymentId: "",
             } ]
             //[ { value: "", fee: 0, id: "", title: "", paymentId: "" } ]
-        } satisfies CompletePayment
+        } satisfies PaymentWithRelations
     });
 
     const { fields, append, remove } = useFieldArray({
@@ -274,10 +275,10 @@ export function RenderPaymentSection({ data }: { data: CompletePayment | null })
     );
 }
 
-export function RenderShippingSection({ data }: { data: CompleteShipping | null }) {
+export function RenderShippingSection({ data }: { data: ShippingWithRelations | null }) {
     const [ isLoading, setIsLoading ] = useState(false)
     const [ addInternational, setAddInternational ] = useState(false)
-    const methods = useForm<CompleteShipping>({
+    const methods = useForm<ShippingWithRelations>({
         defaultValues: {
             id: data?.id ?? '',
             freeShippingThreshold: data?.freeShippingThreshold ?? 0,
@@ -400,16 +401,16 @@ export function RenderShippingSection({ data }: { data: CompleteShipping | null 
     )
 }
 
-export function RenderInventorySection({ data }: { data: InventoryModelType | null }) {
-    const methods = useForm<InventoryModelType>({
-        resolver: zodResolver(InventoryModel),
+export function RenderInventorySection({ data }: { data: Inventory | null }) {
+    const methods = useForm<Inventory>({
+        resolver: zodResolver(InventorySchema),
         defaultValues: {
             id: data?.id ?? '',
             allowBackorders: data?.allowBackorders ?? false,
             autoReorder: data?.autoReorder ?? false,
             lowStockThreshold: data?.lowStockThreshold ?? 0,
             trackInventory: data?.trackInventory ?? false,
-        } satisfies InventoryModelType
+        } satisfies Inventory
     });
 
     const onSubmit = methods.handleSubmit(async (dataInventory) => {

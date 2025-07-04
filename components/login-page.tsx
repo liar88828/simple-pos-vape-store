@@ -1,16 +1,16 @@
 'use client'
-// 1. Define your Zod schema
-import { FormProvider, useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { Card, CardContent, CardDescription, CardFooter, CardTitle } from "@/components/ui/card";
-import { InputForm } from "@/components/form-hook";
-import { Button } from "@/components/ui/button";
 import { loginAction } from "@/action/auth-action";
-import { useRouter } from "next/navigation";
+import { InputForm } from "@/components/form-hook";
+import { SlideTransition } from "@/components/slide-transition";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardFooter, CardTitle } from "@/components/ui/card";
 import { LoginFormData, loginSchema } from "@/lib/auth-schema";
 import { toastResponse } from "@/lib/my-utils";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { SlideTransition } from "@/components/slide-transition";
+// 1. Define your Zod schema
+import { FormProvider, useForm } from "react-hook-form";
 
 export default function LoginPage() {
     const route = useRouter()
@@ -22,7 +22,7 @@ export default function LoginPage() {
             email: "",
             password: "",
             remember: false,
-        },
+        } satisfies LoginFormData,
     });
 
     const {

@@ -1,25 +1,11 @@
 'use client';
 
-import React from 'react';
-import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardFooter,
-    CardHeader,
-    CardTitle,
-} from '@/components/ui/card';
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from '@/components/ui/table';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle, } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { formatDateIndo, formatRupiah } from '@/lib/my-utils';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, } from '@/components/ui/table';
 import { SaleCustomers } from '@/interface/actionType';
+import { formatDateIndo, formatRupiah } from '@/lib/my-utils';
+import React from 'react';
 
 export function Invoice({ invoiceData }: { invoiceData: SaleCustomers }) {
     const calculateSubtotal = (quantity: number, price: number) => quantity * price;
@@ -119,8 +105,8 @@ export function Invoice({ invoiceData }: { invoiceData: SaleCustomers }) {
                                     </TableCell>
                                     {/* <TableCell className="text-center">{item.quantity}</TableCell> */}
                                     <TableCell className="text-right space-y-2">
-                                        <div> {item.quantity} x {formatRupiah(item.price)} </div>
-                                        <div>{formatRupiah(calculateSubtotal(item.quantity, item.price))}</div>
+                                        <div> { item.quantity } x { formatRupiah(item.priceAtBuy) } </div>
+                                        <div>{ formatRupiah(calculateSubtotal(item.quantity, item.priceAtBuy)) }</div>
 
                                     </TableCell>
                                     {/* <TableCell className="text-right font-semibold">

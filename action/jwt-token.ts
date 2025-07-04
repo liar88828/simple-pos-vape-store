@@ -1,6 +1,6 @@
 import 'server-only';
-import { JWTPayload, jwtVerify, SignJWT } from 'jose';
 import { SESSION, UserPayload } from "@/interface/actionType";
+import { JWTPayload, jwtVerify, SignJWT } from 'jose';
 
 const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || "your-secret-key-access");
 const JWT_REFRESH_SECRET = new TextEncoder().encode(process.env.JWT_REFRESH_SECRET || "your-secret-key-secret");
