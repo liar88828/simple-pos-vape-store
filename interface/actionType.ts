@@ -47,7 +47,7 @@ export type SaleCustomers = Sale & {
 // session
 
 export type UserPayload = { userId: string, email: string, role: string, name: string };
-export type SESSION = JWTPayload & UserPayload
+export type SessionPayload = JWTPayload & UserPayload
 
 
 export type ModalProps = {

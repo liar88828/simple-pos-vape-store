@@ -52,6 +52,8 @@ export function AppSidebar(
         toggleSidebar,
     } = useSidebar()
     const isActive = (path: string) => {
+        // console.log(`pathname ${pathname}`)
+        // console.log(`path ${path}`)
         return pathname === path
     }
 
@@ -97,7 +99,9 @@ export function AppSidebar(
                         <SidebarMenu>
                             {navItems.map((item) => (
                                 <SidebarMenuItem key={item.path}>
-                                    <SidebarMenuButton asChild isActive={isActive(item.path)} title={item.title}>
+                                    <SidebarMenuButton asChild isActive={ isActive(asLink + item.path) }
+                                                       title={ item.title }>
+
                                         <Link href={asLink + item.path}>
                                             <item.icon />
                                             <span>  {item.title}</span>

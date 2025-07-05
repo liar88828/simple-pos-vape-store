@@ -11,6 +11,7 @@
 /*    --warning-foreground: oklch(0.99 0.02 95);*/
 /*}*/
 
+/*noinspection CssUnresolvedCustomProperty*/
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);

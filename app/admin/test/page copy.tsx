@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils';
 import React from 'react';
 import { twMerge } from 'tailwind-merge';
 
-export default function PreOrderInvoicexx() {
+export default function PreOrderInvoice_() {
 
     const orderData = {
         id: 3,
@@ -182,11 +182,15 @@ export default function PreOrderInvoicexx() {
                         className={ cn("bg-white border-2 rounded-lg overflow-hidden", "dark:bg-gray-800 dark:border-gray-700") }>
                         <div className="md:flex">
                             <div className="  md:flex-shrink-0">
+                                <picture>
+
                                 <img
                                     src={ orderData.product.image }
                                     alt={ orderData.product.name }
                                     className="w-40 h-full  object-cover"
                                 />
+                                </picture>
+
                             </div>
                             <div className="p-6 flex-1">
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

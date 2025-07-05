@@ -52,8 +52,8 @@ export function PreOrderDialog({ orderData }: { orderData: PreorderProduct }) {
                             reactToPrintFn()
                             setOpen(false)
                         } }>
-                            <Printer/> Print
-                        </Button>
+                        <Printer/> Print
+                    </Button>
                     {/*</DialogClose>*/ }
                     <DialogClose asChild>
                         <Button variant="secondary">
@@ -151,12 +151,12 @@ export function PreOrderInvoice({ orderData }: { orderData: PreorderProduct }) {
                                 Last Purchase: { formatDateIndo(orderData.customer.lastPurchase) }
                             </p>
                             <div className="mt-2">
-                                <span className={ cn(
-                                    "px-2 py-1 rounded-full text-xs font-medium",
-                                    getStatusColor(orderData.customer.status)
-                                ) }>
-                                    { orderData.customer.status.toUpperCase() }
-                                </span>
+                                    <span className={ cn(
+                                        "px-2 py-1 rounded-full text-xs font-medium",
+                                        getStatusColor(orderData.customer.status)
+                                    ) }>
+                                        { orderData.customer.status.toUpperCase() }
+                                    </span>
                             </div>
                         </div>
                     </div>
@@ -331,11 +331,15 @@ export function InvoicePreorderTable({ orderData }: { orderData: PreorderProduct
                 <TableRow>
                     <TableCell>{ product.id }</TableCell>
                     <TableCell>
-                        <img
-                            src={ product.image }
-                            alt={ product.name }
-                            className="h-12 w-12 rounded-md object-cover ring-1 ring-gray-300"
-                        />
+                        <picture>
+
+                            <img
+                                src={ product.image }
+                                alt={ product.name }
+                                className="h-12 w-12 rounded-md object-cover ring-1 ring-gray-300"
+                            />
+                        </picture>
+
                     </TableCell>
                     <TableCell className="font-semibold">{ product.name }</TableCell>
                     <TableCell>
@@ -402,14 +406,14 @@ export function InvoicePreorder1({ orderData }: { orderData: PreorderProduct }) 
                             <p>per unit</p>
                             <p className="text-lg font-semibold">Quantity: { orderData.quantity }</p>
                             {/* <Badge variant={'destructive'} className="text-xs">
-                                            <SendToBackIcon className="w-3 h-3 mr-1" />
-                                            {product.stock.toLocaleString()} stock
-                                        </Badge>
+                                                <SendToBackIcon className="w-3 h-3 mr-1" />
+                                                {product.stock.toLocaleString()} stock
+                                            </Badge>
 
-                                        <Button size="sm" className="flex items-center space-x-2">
-                                            <ShoppingCart className="w-4 h-4" />
-                                            <span>Add to Cart</span>
-                                        </Button> */ }
+                                            <Button size="sm" className="flex items-center space-x-2">
+                                                <ShoppingCart className="w-4 h-4" />
+                                                <span>Add to Cart</span>
+                                            </Button> */ }
                         </div>
                     </div>
                 </div>

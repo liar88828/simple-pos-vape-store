@@ -1,6 +1,7 @@
 'use server'
 
-import { ActionResponse, LowStockProducts } from "@/interface/actionType";
+import { BrandsProps } from "@/components/products-page";
+import { ActionResponse, LowStockProducts, SaleCustomers } from "@/interface/actionType";
 import {
     Customer,
     PreOrder,
@@ -16,7 +17,11 @@ export type TopSellingProduct = Product & {
     totalSold: number;
 }
 
-export type ProductPaging = { data: Product[], total: number };
+export type ProductPaging = {
+    data: Product[],
+    total: number,
+    brands: BrandsProps
+};
 export const getProduct = async (
     filter: {
         productBrand?: string,
@@ -28,18 +33,13 @@ export const getProduct = async (
         productNicotine?: string,
         productResistant?: string,
         productName?: string,
+        productLimit?: string,
+        productPage?: string,
     },
-    limit: number = 10,
-    page: number = 0
 ): Promise<ProductPaging> => {
+    const limit = Number(filter.productLimit ?? 10);
+    const page = Number(filter.productPage ?? 0);
 
-    if (!limit) {
-        limit = 10
-    }
-
-    if (!page) {
-        page = 0
-    }
     const where: Prisma.ProductWhereInput = {
         name: filter.productName && filter.productName !== '-'
             ? { contains: filter.productName, }
@@ -81,6 +81,7 @@ export const getProduct = async (
     return {
         data: await prisma.product.findMany({ where, take: limit, skip: page * limit, }),
         total: await prisma.product.count({ where }),
+        brands: await getBrands()
     }
 }
 
@@ -296,4 +297,54 @@ export async function getTodayVsYesterdaySales() {
     return { todayTotal, percentChange };
 }
 
-export const brands = async () => await prisma.product.groupBy({ by: 'brand' })
+export const getBrands = async () => await prisma.product.groupBy({ by: 'brand' })
+
+export const getProductById = async (id: number): Promise<ActionResponse<Product | null>> => {
+
+    try {
+        const response = await fetch(`http://localhost:3000/api/product/${ id }`, {
+            method: "GET",
+            // cache:"reload",
+            next: {
+                revalidate: 60,
+                tags: [ `product-${ id }` ], // tag used for cache control / revalidation
+            },
+        })
+
+        return await response.json()
+    } catch (error) {
+        console.error("Error fetching product:", error)
+        return {
+            data: null,
+            success: false,
+            message: "Failed to fetch product.",
+        }
+    }
+}
+
+export const getSaleById = async (id: number): Promise<ActionResponse<SaleCustomers | null>> => {
+
+    try {
+        const response = await fetch(`http://localhost:3000/api/sale/${ id }`, {
+            method: "GET",
+            // cache:"reload",
+            next: {
+                revalidate: 60,
+                tags: [ `sale-${ id }` ], // tag used for cache control / revalidation
+            },
+        })
+
+        return await response.json()
+    } catch (error) {
+        console.error("Error fetching product:", error)
+        return {
+            data: null,
+            success: false,
+            message: "Failed to fetch product.",
+        }
+    }
+}
+
+
+
+

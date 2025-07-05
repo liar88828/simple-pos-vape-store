@@ -7,7 +7,8 @@ export default async function Inventory(context: ContextPage) {
 
     return <InventoryPage
         lowStockProducts={ await getProductLowStockComplete() }
-        products={ await getProduct({
+        products={
+            await getProduct({
                 productName: await getContextPage(context, 'productName'),
                 productBrand: await getContextPage(context, 'productBrand'),
                 productCategory: await getContextPage(context, 'productCategory'),
@@ -17,9 +18,9 @@ export default async function Inventory(context: ContextPage) {
                 productCoil: await getContextPage(context, 'productCoil'),
                 productBattery: await getContextPage(context, 'productBattery'),
                 productCotton: await getContextPage(context, 'productCotton'),
+                productLimit: await getContextPage(context, 'productLimit'),
+                productPage: await getContextPage(context, 'productPage')
             },
-            Number(await getContextPage(context, 'productLimit')),
-            Number(await getContextPage(context, 'productPage'))
         ) }
     />
 }

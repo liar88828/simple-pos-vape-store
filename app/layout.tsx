@@ -1,3 +1,4 @@
+import ProviderComponent from "@/components/provider-component";
 import { ThemeProvider } from "@/components/theme-provider"
 import type { Metadata } from "next"
 import { Inter } from "next/font/google"
@@ -41,6 +42,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
 
     // If logged in, show the full app layout
     return (
+
         <html lang="id" suppressHydrationWarning>
             <body className={inter.className}>
                 <ThemeProvider attribute="class" defaultTheme="dark">
@@ -57,8 +59,10 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
                     {/*        </main>*/}
                     {/*    </SidebarInset>*/}
                     {/*</SidebarProvider>*/}
-
-                    {children}
+                    <ProviderComponent>
+                        {/*<ReactQueryDevtools initialIsOpen={false} />*/ }
+                        { children }
+                    </ProviderComponent>
                 </ThemeProvider>
                 <Toaster position="top-right" />
             </body>

@@ -1,40 +1,26 @@
-import { brands, getProduct } from "@/action/product-action";
+import { getProduct } from "@/action/product-action";
 import { getContextPage } from "@/components/context-action";
 import { ProductsPage } from "@/components/products-page"
 import { ContextPage } from "@/interface/actionType";
 
 export default async function Products(context: ContextPage) {
-    // .then(item => item.filter(i => i.brand !== null))
-
-    // console.log(brands)
-    const productName = await getContextPage(context, 'productName')
-    const productBrand = await getContextPage(context, 'productBrand')
-    const productCategory = await getContextPage(context, 'productCategory')
-    const productTypeDevice = await getContextPage(context, 'productTypeDevice')
-    const productNicotine = await getContextPage(context, 'productNicotine')
-    const productResistant = await getContextPage(context, 'productResistant')
-    const productCoil = await getContextPage(context, 'productCoil')
-    const productBattery = await getContextPage(context, 'productBattery')
-    const productCotton = await getContextPage(context, 'productCotton')
-    const productLimit = await getContextPage(context, 'productLimit')
-    const productPage = await getContextPage(context, 'productPage')
 
     return <ProductsPage
-        products={ await getProduct({
-                productBrand,
-                productCategory,
-                productCotton,
-                productTypeDevice,
-                productResistant,
-                productCoil,
-                productBattery,
-                productName,
-                productNicotine,
+        products={
+            await getProduct({
+                productName: await getContextPage(context, 'productName'),
+                productBrand: await getContextPage(context, 'productBrand'),
+                productCategory: await getContextPage(context, 'productCategory'),
+                productTypeDevice: await getContextPage(context, 'productTypeDevice'),
+                productNicotine: await getContextPage(context, 'productNicotine'),
+                productResistant: await getContextPage(context, 'productResistant'),
+                productCoil: await getContextPage(context, 'productCoil'),
+                productBattery: await getContextPage(context, 'productBattery'),
+                productCotton: await getContextPage(context, 'productCotton'),
+                productLimit: await getContextPage(context, 'productLimit'),
+                productPage: await getContextPage(context, 'productPage')
             },
-            Number(productLimit),
-            Number(productPage),
         ) }
-        brands={ await brands() }
 
     />
 }

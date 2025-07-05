@@ -1,10 +1,10 @@
 "use client"
 
 import { DashboardStats, TopSellingProducts, transactionStatus } from "@/action/sale-action";
+import { ProductDetailDialogOnly } from "@/components/product-detail-dialog-only";
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent, } from "@/components/ui/chart"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
     Dialog,
     DialogClose,
@@ -17,23 +17,15 @@ import {
 } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { ChartData, RangeStats, SaleCustomers } from "@/interface/actionType"
+import { RangeStats, SaleCustomers } from "@/interface/actionType"
+import { Product } from "@/lib/generated/zod_gen";
 import { formatDateIndo, formatRupiah, formatRupiahShort, toastResponse } from "@/lib/my-utils";
-import clsx from "clsx"
-import { BarChart3, Eye, ReceiptText, TrendingDown, TrendingUp } from "lucide-react"
+import { BarChart3, Eye, ReceiptText } from "lucide-react"
 import { useRouter } from "next/navigation"
 import React, { useRef, useState } from "react"
 import { useReactToPrint } from "react-to-print";
-import { Bar, BarChart, CartesianGrid, XAxis } from "recharts"
 import * as XLSX from 'xlsx';
 import { Invoice } from "./invoice"
-
-const chartConfig = {
-    desktop: {
-        label: "Desktop",
-        color: "var(--chart-1)",
-    },
-} satisfies ChartConfig
 
 function getGrowthColorClass(growth: number | boolean) {
     if (typeof growth === "boolean") {
@@ -56,24 +48,18 @@ interface ReportsPageProps {
 }
 
 export function ReportsPage({ range, sales, stats, topSellers, }: ReportsPageProps) {
-    // console.log({ range, sales, chartData, trending, stats })
     const router = useRouter();
-    const contentRef = useRef<HTMLDivElement>(null)
-    const onPrintPage = useReactToPrint({ contentRef })
     const [ selectedRange, setSelectedRange ] = useState<RangeStats>(range);
+
+    const [ isOpen, setIsOpen ] = useState(false);
+    const [ isProduct, setIsProduct ] = useState<Product | null>(null)
+
     const handleSelectChange = (value: RangeStats) => {
         setSelectedRange(value);
         const params = new URLSearchParams(window.location.search);
         params.set("range", value);
         router.push(`?${ params.toString() }`);
     };
-
-    const rangeIndo = clsx({
-        'Bulan': range === 'month',
-        'Hari': range === 'today',
-        'Tahun': range === 'year',
-        'Minggu': range === 'week',
-    })
 
     function exportToExcel(
         allSales: ReportsPageProps['sales'],
@@ -155,12 +141,18 @@ export function ReportsPage({ range, sales, stats, topSellers, }: ReportsPagePro
     }
 
     return (
-        <div className="p-6 max-w-7xl mx-auto">
-            <div className="flex justify-between items-center mb-6">
-                <h1 className="text-3xl font-bold">Laporan Penjualan</h1>
-                <div className="flex space-x-2">
+        <div className="p-4 sm:p-6 max-w-7xl mx-auto">
+            <ProductDetailDialogOnly product={ isProduct }
+                                     isOpen={ isOpen }
+                                     setOpenAction={ setIsOpen }
+
+            />
+            <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-6">
+                <h1 className="text-lg sm:text-3xl font-bold">Laporan Penjualan</h1>
+
+                <div className="flex flex-col sm:flex-row gap-2 sm:items-center w-full sm:w-auto">
                     <Select value={ selectedRange } onValueChange={ handleSelectChange }>
-                        <SelectTrigger>
+                        <SelectTrigger className="w-full sm:w-auto">
                             <SelectValue placeholder="Pilih rentang waktu"/>
                         </SelectTrigger>
                         <SelectContent>
@@ -171,65 +163,74 @@ export function ReportsPage({ range, sales, stats, topSellers, }: ReportsPagePro
                         </SelectContent>
                     </Select>
 
-                    <Button onClick={ () => {
-                        if (confirm('Apakah Anda ingin Meng-Export data ini ')) {
-                            exportToExcel(sales, topSellers)
-                        }
-                    } }>
-                        Export <BarChart3 className="h-4 w-4 mr-2"/>
+                    <Button
+                        className="w-full sm:w-auto"
+                        onClick={ () => {
+                            if (confirm("Apakah Anda ingin Meng-Export data ini")) {
+                                exportToExcel(sales, topSellers)
+                            }
+                        } }
+                    >
+                        Export <BarChart3 className="h-4 w-4 ml-2"/>
                     </Button>
-
                 </div>
             </div>
-
             {/* Sales Summary */ }
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+            <div className="grid grid-cols-2 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
                 <Card>
                     <CardHeader>
-                        <CardTitle>Total Penjualan</CardTitle>
+                        <CardTitle className="text-base sm:text-lg">Total Penjualan</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">{ formatRupiahShort(stats.totalSales) }</div>
+                        <div className="text-xl sm:text-2xl font-bold">{ formatRupiahShort(stats.totalSales) }</div>
                         <p className={ `text-sm ${ getGrowthColorClass(stats.salesGrowth) }` }>
-                            { stats.salesGrowth.toFixed(2) }% dari { rangeIndo } lalu</p>
-                    </CardContent>
-                </Card>
-
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Transaksi</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">{ stats.transactions }</div>
-                        <p className={ `text-sm ${ getGrowthColorClass(stats.transactionsGrowth) }` }>
-                            { (stats.transactionsGrowth).toFixed(2) }% dari { rangeIndo } lalu
+                            { stats.salesGrowth.toFixed(2) }%
+                            {/*dari {rangeIndo} lalu*/ }
                         </p>
                     </CardContent>
                 </Card>
 
                 <Card>
                     <CardHeader>
-                        <CardTitle>Rata-rata Transaksi</CardTitle>
+                        <CardTitle className="text-base sm:text-lg">Rata-rata Transaksi</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">{ formatRupiahShort(stats.avgTransaction) }</div>
+                        <div className="text-xl sm:text-2xl font-bold">{ formatRupiahShort(stats.avgTransaction) }</div>
                         <p className={ `text-sm ${ getGrowthColorClass(stats.avgTransactionGrowth) }` }>
-                            { stats.avgTransactionGrowth.toFixed(2) }% dari { rangeIndo } lalu</p>
+                            { stats.avgTransactionGrowth.toFixed(2) }%
+                            {/*dari {rangeIndo} lalu*/ }
+                        </p>
                     </CardContent>
                 </Card>
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="text-base sm:text-lg">Transaksi</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-xl sm:text-2xl font-bold">{ stats.transactions }</div>
+                        <p className={ `text-sm ${ getGrowthColorClass(stats.transactionsGrowth) }` }>
+                            { stats.transactionsGrowth.toFixed(2) }%
+                            {/*dari {rangeIndo} lalu*/ }
+                        </p>
+                    </CardContent>
+                </Card>
+
 
                 <Card>
                     <CardHeader>
-                        <CardTitle>Produk Terlaris</CardTitle>
+                        <CardTitle className="text-base sm:text-lg">Produk Terlaris</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="text-lg font-bold">{ stats.topProduct.product?.name }</div>
-                        <p className="text-sm text-muted-foreground">{ stats.topProduct.unitsSold } unit terjual</p>
+                        {/*truncate*/ }
+                        <div className="text-xs sm:text-lg font-bold ">
+                            { stats.topProduct.product?.name }
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                            { stats.topProduct.unitsSold } unit terjual
+                        </p>
                     </CardContent>
                 </Card>
             </div>
-
-
             {/* Detailed Sales */ }
             <Card className="mb-6">
                 <CardHeader>
@@ -278,34 +279,57 @@ export function ReportsPage({ range, sales, stats, topSellers, }: ReportsPagePro
                     <CardTitle>Top Produk Terlaris ({ getRangeLabel(range) })</CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <Table>
+                    <Table className="text-xs sm:text-base ">
                         <TableHeader>
                             <TableRow>
                                 <TableHead>No</TableHead>
                                 <TableHead>Produk</TableHead>
                                 <TableHead>Gambar</TableHead>
-                                <TableHead>Jumlah Terjual</TableHead>
+                                <TableHead>Jumlah</TableHead>
                                 <TableHead>Total Harga</TableHead>
+                                <TableHead>Aksi</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
                             { topSellers.map((item, index) => (
                                 <TableRow key={ item.productId }>
                                     <TableCell>{ index + 1 }</TableCell>
-                                    <TableCell>{ item.product?.name ?? "-" }</TableCell>
+                                    <TableCell className={ 'min-w-32 ' }>
+                                        <div className="text-wrap">
+                                            { item.product?.name }
+                                        </div>
+                                    </TableCell>
                                     <TableCell>
                                         { item.product?.image ? (
+                                            <picture>
+
                                             <img
                                                 src={ item.product.image }
                                                 alt={ item.product.name }
                                                 className="h-12 w-12 rounded object-cover"
                                             />
+                                            </picture>
+
                                         ) : (
                                             "-"
                                         ) }
                                     </TableCell>
                                     <TableCell>{ item.totalSold }</TableCell>
-                                    <TableCell>{ formatRupiah(item.totalSold * (item.product?.price ?? 1)) }</TableCell>
+                                    <TableCell>{
+                                        // formatRupiah(item.totalSold * (item.product?.price ?? 1))
+                                        formatRupiah(item.totalPrice)
+                                    }</TableCell>
+                                    <TableCell>
+                                        <Button size={ 'sm' }
+                                                variant="outline"
+                                                onClick={ () => {
+                                                    setIsProduct(item.product ?? null)
+                                                    setIsOpen(true)
+                                                } }>
+                                            <Eye/>
+                                        </Button>
+                                    </TableCell>
+
                                 </TableRow>
                             )) }
                         </TableBody>
@@ -429,73 +453,6 @@ export function ModalInvoice({ sale }: { sale: SaleCustomers }) {
         </Dialog>
     );
 }
-
-function ReportsPageChart({ range, sales, chartData, trending, stats }: {
-    range: RangeStats,
-    sales: SaleCustomers[],
-    chartData: ChartData[]
-    stats: DashboardStats,
-    trending: {
-        changeText: string,
-        isUp: boolean,
-        value: number
-    }
-}) {
-
-    const rangeIndo = clsx({
-        'Bulan': range === 'month',
-        'Hari': range === 'today',
-        'Tahun': range === 'year',
-        'Minggu': range === 'week',
-    })
-
-    return (
-        <Card className="mb-6">
-            <CardHeader>
-                <CardTitle className="capitalize">Grafik Penjualan { range }</CardTitle>
-
-                <CardDescription>
-                    { `${ chartData[0].name } to ${ chartData[chartData.length - 1].name } ${ new Date().getFullYear() }` }
-                </CardDescription>
-            </CardHeader>
-            <CardContent>
-                <ChartContainer config={ chartConfig }>
-                    <BarChart accessibilityLayer data={ chartData }>
-                        <CartesianGrid vertical={ false }/>
-                        <XAxis
-                            dataKey="name"
-                            tickLine={ false }
-                            tickMargin={ 10 }
-                            axisLine={ false }
-                            tickFormatter={ (value) => value.slice(0, 3) }
-                        />
-                        <ChartTooltip
-                            cursor={ false }
-                            content={ <ChartTooltipContent hideLabel/> }
-                        />
-                        <Bar dataKey="desktop"
-                             fill="var(--color-desktop)"
-                             radius={ 8 }/>
-                    </BarChart>
-                </ChartContainer>
-
-            </CardContent>
-
-            <CardFooter className="flex-col items-start gap-2 text-sm">
-                <div className={ `flex gap-2 leading-none font-medium ${ getGrowthColorClass(trending.isUp) }` }>
-                    { trending.changeText } { trending.isUp
-                    ? <TrendingUp className="h-4 w-4 "/>
-                    : <TrendingDown className="h-4 w-4 "/> }
-                </div>
-                <div className="text-muted-foreground leading-none">
-                    Showing total visitors for the last { chartData.length } { rangeIndo }
-                </div>
-            </CardFooter>
-        </Card>
-
-    );
-}
-
 function getRangeLabel(range: RangeStats) {
     switch (range) {
         case "today":

@@ -4,9 +4,8 @@ import { createCustomerNew } from "@/action/customer-action";
 import { ProductPaging } from "@/action/product-action";
 import { createTransaction } from "@/action/sale-action";
 import { InputForm } from "@/components/form-hook";
-import { ResponsiveModal } from "@/components/modal-components";
 import { ProductDetailDialogOnly } from "@/components/product-detail-dialog-only";
-import { BrandsProps, FilterSelect } from "@/components/products-page";
+import { ProductsFilter } from "@/components/products-page";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -20,119 +19,25 @@ import {
     DialogTrigger
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useCart } from "@/hooks/use-cart";
-import { useDebounce, } from "@/hooks/use-debounce";
-import {
-    batterySizeOptions,
-    categoryOption,
-    coilSizeOption,
-    cottonSizeOption,
-    nicotineLevelsOptions,
-    pageSizeOptions,
-    resistanceSizeOption,
-    stockStatusOptions,
-    typeDeviceOption
-} from "@/lib/constants";
 import { Customer, Product } from "@/lib/generated/zod_gen";
 import { chooseStatus, formatRupiah, getStatusVariant, newParam, toastResponse } from "@/lib/my-utils";
 import { CustomerModelNew, CustomerModelType } from "@/lib/schema";
 import { zodResolver } from "@hookform/resolvers/zod";
-import {
-    ChevronLeft,
-    ChevronRight,
-    FilterIcon,
-    MinusIcon,
-    Plus,
-    PlusIcon,
-    Search,
-    ShoppingCart,
-    Trash2,
-    XIcon
-} from "lucide-react"
+import { MinusIcon, Plus, PlusIcon, Search, ShoppingCart, Trash2 } from "lucide-react"
 import { useRouter } from "next/navigation";
-import React, { useEffect, useMemo, useState } from "react"
+import React, { useMemo, useState } from "react"
 import { FormProvider, useForm } from "react-hook-form";
 
 export function POSPage(
-    { products, customers, brands }:
-    { customers: Customer[], products: ProductPaging, brands: BrandsProps }) {
-    const router = useRouter();
+    { products, customers }:
+    { customers: Customer[], products: ProductPaging }) {
     const [ selectedCustomer, setSelectedCustomer ] = useState<Customer | null>(null)
     const [ loading, setLoading ] = useState(false)
-    const [ openDetail, setOpenDetail ] = useState(false);
-
     const [ searchCustomer, setSearchCustomer ] = useState("")
-    const [ searchProduct, setSearchProduct ] = useState("")
-
-    const [ productCategory, setProductCategory ] = useState("-")
-    const [ productNicotine, setProductNicotine ] = useState("-")
-    const [ productTypeDevice, setProductTypeDevice ] = useState("-")
-
-    const [ productResistant, setProductResistant ] = useState("-");
-    const [ productCoil, setProductCoil ] = useState("-");
-    const [ productCotton, setProductCotton ] = useState("-");
-    const [ productBattery, setProductBattery ] = useState("-");
-    const [ stockFilter, setStockFilter ] = useState("-");
-    const [ productBrand, setProductBrand ] = useState('-');
-    
     const [ isProduct, setIsProduct ] = useState<Product | null>(null)
     const [ isOpen, setIsOpen ] = useState(false)
-    const searchNameDebounce = useDebounce(searchProduct)
-    const searchCustomerDebounce = useDebounce(searchCustomer)
-
     const { setCartItems, removeFromCart, incrementItem, decrementItem, cartItems, addToCart } = useCart([])
-
-    // Pagination
-    const [ itemsPerPage, setItemsPerPage ] = useState(10);
-    const [ page, setPage ] = useState(0);
-
-
-
-    useEffect(() => {
-        // Convert "-" to undefined so the backend can ignore these filters
-        const filters = {
-            productName: searchNameDebounce.trim() || undefined,
-            customerName: searchCustomerDebounce.trim() || undefined,
-            productBrand,
-            productCotton,
-            productBattery,
-            productCategory,
-            productTypeDevice,
-            productNicotine,
-            productResistant,
-            productCoil,
-            productLimit: String(itemsPerPage),
-            productPage: String(page),
-        };
-        // Only push if at least one filter has value
-        const hasAnyFilter = Object.values(filters).some(Boolean);
-
-        if (hasAnyFilter) {
-            router.push(newParam(filters));
-            console.log('Filters applied:', filters);
-        }
-    }, [ router, productBrand, productCategory, productTypeDevice, productNicotine, itemsPerPage, page, productResistant, productCoil, productBattery, productCotton, searchNameDebounce, searchCustomerDebounce ]);
-
-    const totalPages = Math.ceil(products.total / itemsPerPage);
-
-    const onReset = () => {
-        setSearchCustomer("-")
-        setSearchProduct("-")
-        setProductNicotine("-")
-        setProductCategory("-")
-        setProductTypeDevice("-")
-        setStockFilter("-")
-        setProductBrand("-")
-        setProductResistant("-")
-        setProductBattery("-")
-        setProductCoil("-")
-        setProductCotton("-")
-
-    }
-    const getTotalCart = () => {
-        return cartItems.reduce((total, item) => total + item.price * item.quantity, 0)
-    }
 
     async function onTransaction() {
         setLoading(true)
@@ -145,6 +50,10 @@ export function POSPage(
         })
         setLoading(false)
 
+    }
+
+    const getTotalCart = () => {
+        return cartItems.reduce((total, item) => total + item.price * item.quantity, 0)
     }
 
     const getProductStock = (id: number) => {
@@ -175,150 +84,7 @@ export function POSPage(
                         {/* Filters */ }
                         <CardHeader className={ 'space-y-2' }>
                             <CardTitle>Pilih Produk</CardTitle>
-
-                            <Input
-                                placeholder="Cari produk..."
-                                value={ searchProduct }
-                                type={ 'search' }
-                                onChange={ (e) => setSearchProduct(e.target.value) }
-                            />
-
-                            <div className="flex gap-4 flex-col sm:flex-row ">
-                                {/*Filter */ }
-                                <div className="">
-                                    <ResponsiveModal
-                                        title="Filter Produk"
-                                        description="Filter produk sesuai yang kamu inginkan"
-                                        trigger={ <Button variant="outline"><FilterIcon
-                                            className="w-4 h-4"/>Filter</Button> }
-                                        footer={ <Button onClick={ onReset } type="button"
-                                                         variant="destructive"> Reset
-                                            <XIcon className="w-4 h-4"/>
-                                        </Button> }
-                                    >
-                                        <div className="grid grid-cols-3 gap-3 ">
-                                            <FilterSelect
-                                                label="Kategori"
-                                                value={ productCategory }
-                                                onChangeAction={ setProductCategory }
-                                                placeholder="Semua kategori"
-                                                options={ categoryOption }
-                                            />
-                                            <FilterSelect
-                                                label="Resistensi"
-                                                value={ productResistant }
-                                                onChangeAction={ setProductResistant }
-                                                placeholder="Semua Resistensi"
-                                                options={ resistanceSizeOption }
-                                            />
-                                            <FilterSelect
-                                                label="Coil"
-                                                value={ productCoil }
-                                                onChangeAction={ setProductCoil }
-                                                placeholder="Semua Coil"
-                                                options={ coilSizeOption }
-                                            />
-                                            <FilterSelect
-                                                label="Cotton"
-                                                value={ productCotton }
-                                                onChangeAction={ setProductCotton }
-                                                placeholder="Semua Cotton"
-                                                options={ cottonSizeOption }
-                                            />
-                                            <FilterSelect
-                                                label="Battery"
-                                                value={ productBattery }
-                                                onChangeAction={ setProductBattery }
-                                                placeholder="Semua Battery"
-                                                options={ batterySizeOptions }
-                                            />
-                                            <FilterSelect
-                                                label="Merk"
-                                                value={ productBrand }
-                                                onChangeAction={ setProductBrand }
-                                                placeholder="Semua Merk"
-                                                options={ brands.map(item => ({
-                                                    label: item.brand ?? "-",
-                                                    value: item.brand ?? "-"
-                                                })) }
-                                            />
-                                            <FilterSelect
-                                                label="Nikotin"
-                                                labelClassName="text-nowrap"
-                                                value={ productNicotine }
-                                                onChangeAction={ setProductNicotine }
-                                                placeholder="Semua level"
-                                                options={ nicotineLevelsOptions }
-                                            />
-                                            <FilterSelect
-                                                label="Device"
-                                                value={ productTypeDevice }
-                                                onChangeAction={ setProductTypeDevice }
-                                                placeholder="Semua tipe"
-                                                options={ typeDeviceOption }
-                                            />
-                                            <FilterSelect
-                                                label="Stok"
-                                                value={ stockFilter }
-                                                onChangeAction={ setStockFilter }
-                                                placeholder="Semua status"
-                                                options={ stockStatusOptions }
-                                            />
-
-                                            {/*<div>*/ }
-                                            {/*    <Label>Reset</Label>*/ }
-                                            {/*    <Button onClick={ onReset } type="button" variant="destructive">*/ }
-                                            {/*        <XIcon className="w-4 h-4"/>*/ }
-                                            {/*    </Button>*/ }
-                                            {/*</div>*/ }
-
-                                        </div>
-                                    </ResponsiveModal>
-                                        </div>
-
-                                {/*Paging*/ }
-                                <div className="flex items-center gap-4">
-                                    <Select
-                                        value={ String(itemsPerPage) }
-                                        onValueChange={ (value) => {
-                                            setItemsPerPage(Number(value));
-                                            setPage(0); // Reset ke halaman pertama
-                                        } }>
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="Tampil"/>
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            { pageSizeOptions.map((value) => (
-                                                <SelectItem key={ value } value={ value.toString() }>
-                                                    { value }
-                                                </SelectItem>
-                                            )) }
-                                        </SelectContent>
-                                    </Select>
-                                    <Button
-                                        variant="outline"
-                                        onClick={ () => setPage((prev) => Math.max(0, prev - 1)) }
-                                        disabled={ page === 0 }
-                                    >
-                                        <ChevronLeft/>
-                                    </Button>
-
-                                    {/*just for text*/ }
-                                    <Button variant="outline" disabled={ true }>
-                                        { page + 1 } / { totalPages }
-                                    </Button>
-
-                                    <Button
-                                        variant="outline"
-                                        onClick={ () => setPage((prev) => prev + 1) }
-                                        disabled={ page + 1 >= totalPages }
-                                    >
-                                        <ChevronRight/>
-
-                                    </Button>
-                                </div>
-                            </div>
-
+                            <ProductsFilter products={ products } customerName={ searchCustomer }/>
                         </CardHeader>
 
 
@@ -473,7 +239,6 @@ export function POSPage(
                                                 : <SelectCustomer
                                                     setCustomerNameAction={ setSearchCustomer }
                                                     customerName={ searchCustomer }
-                                                    // ageValid={ ageValid }
                                                     customers={ customers }
                                                     onSelectAction={ (customer) => setSelectedCustomer(customer) }
                                                 /> }

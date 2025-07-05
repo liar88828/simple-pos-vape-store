@@ -18,6 +18,10 @@ export function LoadingSpin() {
     )
 }
 
+export function LoadingSpinPage() {
+    return <div className="animate-spin w-6 h-6 border-2 border-t-transparent rounded-full mx-auto"/>
+}
+
 export function LoadingSpinText({ message }: { message: string }) {
     return (
         <p className="text-sm text-muted-foreground flex justify-center size-9 items-center w-full gap-2">

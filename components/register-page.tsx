@@ -47,11 +47,13 @@ export default function RegisterPage() {
 
                         <SlideTransition name={ 'image-page' }>
                             <div className="bg-muted relative hidden md:block">
+                                <picture>
                                 <img
                                     src="https://images.pexels.com/photos/6963094/pexels-photo-6963094.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1"
                                     alt="Image"
                                     className="absolute inset-0 h-full w-full object-cover dark:brightness-[0.2] dark:grayscale"
                                 />
+                                </picture>
                             </div>
                         </SlideTransition>
                         <FormProvider { ...methods }>

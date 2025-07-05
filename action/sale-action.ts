@@ -1,5 +1,5 @@
 'use server'
-import { ActionResponse, CartItem, LastBuyer, RangeStats, SaleCustomers } from "@/interface/actionType";
+import { ActionResponse, CartItem, LastBuyer, RangeStats, SaleCustomers, SessionPayload } from "@/interface/actionType";
 import { ERROR, STATUS_TRANSACTION } from "@/lib/constants";
 import { Customer, Product, Sale, SalesItemOptionalDefaults } from "@/lib/generated/zod_gen";
 import { prisma } from "@/lib/prisma";
@@ -12,10 +12,10 @@ export type TopSellingProducts = {
     productId: number,
     totalSold: number,
     totalPrice: number,
-    product: Product | undefined,
+    product?: Product | null,
 };
 
-export async function saleCustomersAction(range: RangeStats) {
+export async function getSaleCustomers(range: RangeStats) {
     const now = new Date();
     let startDate: Date;
 
@@ -388,6 +388,37 @@ export const getTransactionCountToday = async () => {
     })
 }
 
+export const getHistories = async (session: SessionPayload): Promise<SaleCustomers[]> => prisma.sale.findMany({
+    orderBy: { date: "desc" },
+    where: {
+        customer: {
+            name: session.name
+        }
+    },
+    include: {
+        customer: true,
+        SaleItems: {
+            include: {
+                product: true
+            }
+        },
+
+    }
+})
+export const getHistoriesById = async (id: number): Promise<SaleCustomers | null> => await prisma.sale.findUnique({
+    where: { id },
+    include: {
+        customer: true,
+        SaleItems: {
+            include: {
+                product: true
+            }
+        }
+    }
+})
+
+
+
 export async function getTotalSoldToday() {
     const result = await prisma.salesItem.aggregate({
         _sum: {
@@ -659,7 +690,7 @@ export async function getDashboardStats(range: RangeStats) {
             ? (previousSales._sum.total ?? 0) / previousTransactionCount
             : 0;
 
-    // 7. Top selling product current period by units sold
+    // 7. Top-selling product current period by units sold
     const topProduct = await prisma.salesItem.groupBy({
         by: ["productId"],
         _sum: { quantity: true },

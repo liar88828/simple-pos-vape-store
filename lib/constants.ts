@@ -1,4 +1,4 @@
-export const lowStockProduct = 4
+export const _lowStockProduct = 4
 
 export const STATUS_TRANSACTION = {
     PENDING: 'Pending',

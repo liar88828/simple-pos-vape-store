@@ -22,7 +22,7 @@ import {
     DrawerTrigger
 } from "@/components/ui/drawer";
 import { ModalProps } from "@/interface/actionType";
-import * as React from "react"
+import React, { useEffect, useState } from "react";
 import { useMediaQuery } from "usehooks-ts";
 
 interface ResponsiveModalProps {
@@ -41,33 +41,34 @@ export function ResponsiveModal(
         children,
         footer,
     }: ResponsiveModalProps) {
-    const [ open, setOpen ] = React.useState(false)
-
+    const [ open, setOpen ] = useState(false)
+    const [ isMounted, setIsMounted ] = useState(false)
     const isDesktop = useMediaQuery("(min-width: 768px)")
 
-    if (isDesktop) {
-        return (
-            <Dialog open={ open } onOpenChange={ setOpen }>
-                <DialogTrigger asChild>{ trigger }</DialogTrigger>
-                <DialogContent className="sm:max-w-[500px]">
-                    <DialogHeader>
-                        <DialogTitle>{ title }</DialogTitle>
-                        { description && <DialogDescription>{ description }</DialogDescription> }
-                    </DialogHeader>
+    useEffect(() => {
+        setIsMounted(true)
+    }, [])
 
-                    { children }
-                    { footer && <DialogFooter className="pt-4">
-                        { footer }
-						<DialogClose asChild>
-							<Button variant="outline">Tutup</Button>
-						</DialogClose>
-					</DialogFooter> }
-                </DialogContent>
-            </Dialog>
-        )
-    }
+    if (!isMounted) return null // SSR-safe render
 
-    return (
+    return isDesktop ? (
+        <Dialog open={ open } onOpenChange={ setOpen }>
+            <DialogTrigger asChild>{ trigger }</DialogTrigger>
+            <DialogContent className="sm:max-w-[500px]">
+                <DialogHeader>
+                    <DialogTitle>{ title }</DialogTitle>
+                    { description && <DialogDescription>{ description }</DialogDescription> }
+                </DialogHeader>
+                { children }
+                { footer && <DialogFooter className="pt-4">
+                    { footer }
+					<DialogClose asChild>
+						<Button variant="outline">Tutup</Button>
+					</DialogClose>
+				</DialogFooter> }
+            </DialogContent>
+        </Dialog>
+    ) : (
         <Drawer open={ open } onOpenChange={ setOpen }>
             <DrawerTrigger asChild>{ trigger }</DrawerTrigger>
             <DrawerContent>
@@ -99,11 +100,17 @@ export function ResponsiveModalOnly(
         isOpen
     }: ResponsiveModalProps & ModalProps) {
 
+    const [ isMounted, setIsMounted ] = useState(false)
     const isDesktop = useMediaQuery("(min-width: 768px)")
 
-    if (isDesktop) {
-        return (
-            <Dialog open={ isOpen } onOpenChange={ setOpenAction }>
+    useEffect(() => {
+        setIsMounted(true)
+    }, [])
+
+    if (!isMounted) return null // SSR-safe render
+
+    return isDesktop
+        ? (<Dialog open={ isOpen } onOpenChange={ setOpenAction }>
                 <DialogContent className="sm:max-w-[500px]">
                     <DialogHeader>
                         <DialogTitle>{ title }</DialogTitle>
@@ -118,12 +125,8 @@ export function ResponsiveModalOnly(
 						</DialogClose>
 					</DialogFooter> }
                 </DialogContent>
-            </Dialog>
-        )
-    }
-
-    return (
-        <Drawer open={ isOpen } onOpenChange={ setOpenAction }>
+        </Dialog>)
+        : (<Drawer open={ isOpen } onOpenChange={ setOpenAction }>
             <DrawerContent>
                 <div className="mx-auto w-full max-w-sm">
                     <DrawerHeader className="text-left">

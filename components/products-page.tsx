@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { useDebounceLoad, } from "@/hooks/use-debounce";
+import { useDebounce, } from "@/hooks/use-debounce";
 import { ModalProps } from "@/interface/actionType";
 import {
     batterySizeOptions,
@@ -42,17 +42,15 @@ import React, { useEffect, useState } from "react"
 import { FormProvider, useForm } from "react-hook-form";
 import { toast } from "sonner";
 
-interface Option {
-    label: string;
-    value: string;
-}
-
 interface FilterSelectProps {
     label: string;
     value: string;
     onChangeAction: (val: string) => void;
     placeholder: string;
-    options: Option[];
+    options: {
+        label: string;
+        value: string;
+    }[];
     labelClassName?: string;
 }
 
@@ -86,77 +84,11 @@ export function FilterSelect(
 
 export type BrandsProps = { brand: string | null }[];
 
-export function ProductsPage({ products, brands }: {
-                                 products: ProductPaging,
-                                 brands: BrandsProps
-                             }
-) {
-    const router = useRouter()
-
+export function ProductsPage({ products }: { products: ProductPaging }) {
     const [ openCreate, setOpenCreate ] = useState(false);
     const [ openUpdate, setOpenUpdate ] = useState(false);
     const [ openDetail, setOpenDetail ] = useState(false);
     const [ isProduct, setIsProduct ] = useState<Product | null>(null);
-
-    // Pagination
-    const [ itemsPerPage, setItemsPerPage ] = useState(10);
-    const [ page, setPage ] = useState(0);
-
-    // Filters
-    const [ searchTerm, setSearchTerm ] = useState("");
-    const [ productCategory, setProductCategory ] = useState("-");
-    const [ productTypeDevice, setProductTypeDevice ] = useState("-");
-    const [ productNicotine, setProductNicotine ] = useState("-");
-    const [ productResistant, setProductResistant ] = useState("-");
-    const [ productCoil, setProductCoil ] = useState("-");
-    const [ productCotton, setProductCotton ] = useState("-");
-    const [ productBattery, setProductBattery ] = useState("-");
-    const [ stockFilter, setStockFilter ] = useState("-");
-    const [ productBrand, setProductBrand ] = useState('-');
-    const { value, } = useDebounceLoad(searchTerm, 1000);
-
-    useEffect(() => {
-        // Convert "-" to undefined so the backend can ignore these filters
-        const filters = {
-            productName: value.trim() || undefined,
-            productBrand,
-            productCotton,
-            productBattery,
-            productCategory,
-            productTypeDevice,
-            productNicotine,
-            productResistant,
-            productCoil,
-            productLimit: String(itemsPerPage),
-            productPage: String(page),
-        };
-        // Only push if at least one filter has value
-        const hasAnyFilter = Object.values(filters).some(Boolean);
-
-        if (hasAnyFilter) {
-            router.push(newParam(filters));
-            console.log('Filters applied:', filters);
-        }
-    }, [ value, router, productBrand, productCategory, productTypeDevice, productNicotine, itemsPerPage, page, productResistant, productCoil, productBattery, productCotton ]);
-
-    const totalPages = Math.ceil(products.total / itemsPerPage);
-
-    const onReset = () => {
-        // console.log('will execute start')
-        setSearchTerm("")
-        setProductNicotine("-")
-        setProductCategory("-")
-        setProductTypeDevice("-")
-        setStockFilter("-")
-        setProductBrand("-")
-        setProductResistant("-")
-        setProductBattery("-")
-        setProductCoil("-")
-        setProductCotton("-")
-        // console.log('will execute end')
-
-    }
-
     return (
         <div className="p-6 max-w-7xl mx-auto">
             <div className="flex justify-between items-center mb-6">
@@ -178,149 +110,8 @@ export function ProductsPage({ products, brands }: {
                 {/* Filters */ }
                 <CardHeader className={ 'space-y-2' }>
                     <CardTitle>Filter Produk</CardTitle>
-                    <Input
-                        placeholder="Cari produk..."
-                        value={ searchTerm }
-                        type={ 'search' }
-                        onChange={ (e) => setSearchTerm(e.target.value) }
-                    />
-
-                    <div className="flex gap-4 flex-col sm:flex-row ">
-                        {/*Filter */ }
-                        <div className="">
-                            <ResponsiveModal
-                                title="Filter Produk"
-                                description="Filter produk sesuai yang kamu inginkan"
-                                trigger={ <Button variant="outline"><FilterIcon className="w-4 h-4"/>Filter</Button> }
-                                footer={ <Button onClick={ onReset } type="button" variant="destructive"> Reset
-                                    <XIcon className="w-4 h-4"/>
-                                </Button> }
-                            >
-                                <div className="grid grid-cols-3 gap-3 ">
-                                <FilterSelect
-                                    label="Kategori"
-                                    value={ productCategory }
-                                    onChangeAction={ setProductCategory }
-                                    placeholder="Semua kategori"
-                                    options={ categoryOption }
-                                />
-                                    <FilterSelect
-                                        label="Resistensi"
-                                        value={ productResistant }
-                                        onChangeAction={ setProductResistant }
-                                        placeholder="Semua Resistensi"
-                                        options={ resistanceSizeOption }
-                                    />
-                                    <FilterSelect
-                                        label="Coil"
-                                        value={ productCoil }
-                                        onChangeAction={ setProductCoil }
-                                        placeholder="Semua Coil"
-                                        options={ coilSizeOption }
-                                    />
-                                    <FilterSelect
-                                        label="Cotton"
-                                        value={ productCotton }
-                                        onChangeAction={ setProductCotton }
-                                        placeholder="Semua Cotton"
-                                        options={ cottonSizeOption }
-                                    />
-                                    <FilterSelect
-                                        label="Battery"
-                                        value={ productBattery }
-                                        onChangeAction={ setProductBattery }
-                                        placeholder="Semua Battery"
-                                        options={ batterySizeOptions }
-                                    />
-                                    <FilterSelect
-                                        label="Merk"
-                                        value={ productBrand }
-                                        onChangeAction={ setProductBrand }
-                                        placeholder="Semua Merk"
-                                        options={ brands.map(item => ({
-                                            label: item.brand ?? "-",
-                                            value: item.brand ?? "-"
-                                        })) }
-                                    />
-                                <FilterSelect
-                                    label="Nikotin"
-                                    labelClassName="text-nowrap"
-                                    value={ productNicotine }
-                                    onChangeAction={ setProductNicotine }
-                                    placeholder="Semua level"
-                                    options={ nicotineLevelsOptions }
-                                />
-                                <FilterSelect
-                                    label="Device"
-                                    value={ productTypeDevice }
-                                    onChangeAction={ setProductTypeDevice }
-                                    placeholder="Semua tipe"
-                                    options={ typeDeviceOption }
-                                />
-                                <FilterSelect
-                                    label="Stok"
-                                    value={ stockFilter }
-                                    onChangeAction={ setStockFilter }
-                                    placeholder="Semua status"
-                                    options={ stockStatusOptions }
-                                />
-
-                                    {/*<div>*/ }
-                                    {/*    <Label>Reset</Label>*/ }
-                                    {/*    <Button onClick={ onReset } type="button" variant="destructive">*/ }
-                                    {/*        <XIcon className="w-4 h-4"/>*/ }
-                                    {/*    </Button>*/ }
-                                    {/*</div>*/ }
-
-                                </div>
-                            </ResponsiveModal>
-                        </div>
-
-                        {/*Paging*/ }
-                        <div className="flex items-center gap-4">
-                            <Select
-                                value={ String(itemsPerPage) }
-                                onValueChange={ (value) => {
-                                setItemsPerPage(Number(value));
-                                    setPage(0); // Reset ke halaman pertama
-                                } }>
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Tampil"/>
-                                </SelectTrigger>
-                                <SelectContent>
-                                    { pageSizeOptions.map((value) => (
-                                        <SelectItem key={ value } value={ value.toString() }>
-                                            { value }
-                                        </SelectItem>
-                                    )) }
-                                </SelectContent>
-                            </Select>
-                            <Button
-                                variant="outline"
-                                onClick={ () => setPage((prev) => Math.max(0, prev - 1)) }
-                                disabled={ page === 0 }
-                            >
-                                <ChevronLeft/>
-                            </Button>
-
-                            {/*just for text*/ }
-                            <Button variant="outline" disabled={ true }>
-                                { page + 1 } / { totalPages }
-                            </Button>
-
-                            <Button
-                                variant="outline"
-                                onClick={ () => setPage((prev) => prev + 1) }
-                                disabled={ page + 1 >= totalPages }
-                            >
-                                <ChevronRight/>
-
-                            </Button>
-                        </div>
-                    </div>
-
+                    <ProductsFilter products={ products }/>
                 </CardHeader>
-
                 {/* Products Table */ }
                 <CardContent>
                     <Table>
@@ -396,6 +187,214 @@ export function ProductsPage({ products, brands }: {
             </Card>
         </div>
     )
+}
+
+export function ProductsFilter({ products, customerName }: { customerName?: string, products: ProductPaging, }) {
+
+    const router = useRouter()
+
+    // Pagination
+    const [ itemsPerPage, setItemsPerPage ] = useState(10);
+    const [ page, setPage ] = useState(0);
+
+    // Filters
+    const [ productName, setProductName ] = useState("");
+    const [ productCategory, setProductCategory ] = useState("-");
+    const [ productTypeDevice, setProductTypeDevice ] = useState("-");
+    const [ productNicotine, setProductNicotine ] = useState("-");
+    const [ productResistant, setProductResistant ] = useState("-");
+    const [ productCoil, setProductCoil ] = useState("-");
+    const [ productCotton, setProductCotton ] = useState("-");
+    const [ productBattery, setProductBattery ] = useState("-");
+    const [ stockFilter, setStockFilter ] = useState("-");
+    const [ productBrand, setProductBrand ] = useState('-');
+    const productNameDebounce = useDebounce(productName, 1000);
+    const customerNameDebounce = useDebounce(customerName)
+
+    useEffect(() => {
+        // Convert "-" to undefined so the backend can ignore these filters
+        const filters = {
+            productName: productNameDebounce.trim() || undefined,
+            customerName: customerNameDebounce?.trim() || undefined,
+            productBrand,
+            productCotton,
+            productBattery,
+            productCategory,
+            productTypeDevice,
+            productNicotine,
+            productResistant,
+            productCoil,
+            productLimit: String(itemsPerPage),
+            productPage: String(page),
+        };
+        // Only push if at least one filter has value
+        const hasAnyFilter = Object.values(filters).some(Boolean);
+
+        if (hasAnyFilter) {
+            router.push(newParam(filters));
+            console.log('Filters applied:', filters);
+        }
+    }, [ productNameDebounce, router, productBrand, productCategory, productTypeDevice, productNicotine, itemsPerPage, page, productResistant, productCoil, productBattery, productCotton, customerNameDebounce ]);
+
+    const totalPages = Math.ceil(products.total / itemsPerPage);
+
+    const onReset = () => {
+        // console.log('will execute start')
+        setProductName("")
+        setProductNicotine("-")
+        setProductCategory("-")
+        setProductTypeDevice("-")
+        setStockFilter("-")
+        setProductBrand("-")
+        setProductResistant("-")
+        setProductBattery("-")
+        setProductCoil("-")
+        setProductCotton("-")
+        // console.log('will execute end')
+
+    }
+
+    return (<>
+            <Input
+                placeholder="Cari produk..."
+                value={ productName }
+                type={ 'search' }
+                onChange={ (e) => setProductName(e.target.value) }
+            />
+            <div className="flex gap-4 flex-col sm:flex-row ">
+                {/*Filter */ }
+                <div className="">
+                    <ResponsiveModal
+                        title="Filter Produk"
+                        description="Filter produk sesuai yang kamu inginkan"
+                        trigger={ <Button variant="outline"><FilterIcon className="size-4"/>Filter</Button> }
+                        footer={ <Button onClick={ onReset } variant="destructive"> Reset <XIcon
+                            className="size-4"/></Button> }>
+                        <div className="grid grid-cols-3 gap-3 ">
+                            <FilterSelect
+                                label="Kategori"
+                                value={ productCategory }
+                                onChangeAction={ setProductCategory }
+                                placeholder="Semua kategori"
+                                options={ categoryOption }
+                            />
+                            <FilterSelect
+                                label="Resistensi"
+                                value={ productResistant }
+                                onChangeAction={ setProductResistant }
+                                placeholder="Semua Resistensi"
+                                options={ resistanceSizeOption }
+                            />
+                            <FilterSelect
+                                label="Coil"
+                                value={ productCoil }
+                                onChangeAction={ setProductCoil }
+                                placeholder="Semua Coil"
+                                options={ coilSizeOption }
+                            />
+                            <FilterSelect
+                                label="Cotton"
+                                value={ productCotton }
+                                onChangeAction={ setProductCotton }
+                                placeholder="Semua Cotton"
+                                options={ cottonSizeOption }
+                            />
+                            <FilterSelect
+                                label="Battery"
+                                value={ productBattery }
+                                onChangeAction={ setProductBattery }
+                                placeholder="Semua Battery"
+                                options={ batterySizeOptions }
+                            />
+                            <FilterSelect
+                                label="Merk"
+                                value={ productBrand }
+                                onChangeAction={ setProductBrand }
+                                placeholder="Semua Merk"
+                                options={ products.brands.map(item => ({
+                                    label: item.brand ?? "-",
+                                    value: item.brand ?? "-"
+                                })) }
+                            />
+                            <FilterSelect
+                                label="Nikotin"
+                                labelClassName="text-nowrap"
+                                value={ productNicotine }
+                                onChangeAction={ setProductNicotine }
+                                placeholder="Semua level"
+                                options={ nicotineLevelsOptions }
+                            />
+                            <FilterSelect
+                                label="Device"
+                                value={ productTypeDevice }
+                                onChangeAction={ setProductTypeDevice }
+                                placeholder="Semua tipe"
+                                options={ typeDeviceOption }
+                            />
+                            <FilterSelect
+                                label="Stok"
+                                value={ stockFilter }
+                                onChangeAction={ setStockFilter }
+                                placeholder="Semua status"
+                                options={ stockStatusOptions }
+                            />
+
+                            {/*<div>*/ }
+                            {/*    <Label>Reset</Label>*/ }
+                            {/*    <Button onClick={ onReset } type="button" variant="destructive">*/ }
+                            {/*        <XIcon className="w-4 h-4"/>*/ }
+                            {/*    </Button>*/ }
+                            {/*</div>*/ }
+
+                        </div>
+                    </ResponsiveModal>
+                </div>
+
+                {/*Paging*/ }
+                <div className="flex items-center gap-4">
+                    <Select
+                        value={ String(itemsPerPage) }
+                        onValueChange={ (value) => {
+                            setItemsPerPage(Number(value));
+                            setPage(0); // Reset ke halaman pertama
+                        } }>
+                        <SelectTrigger>
+                            <SelectValue placeholder="Tampil"/>
+                        </SelectTrigger>
+                        <SelectContent>
+                            { pageSizeOptions.map((value) => (
+                                <SelectItem key={ value } value={ value.toString() }>
+                                    { value }
+                                </SelectItem>
+                            )) }
+                        </SelectContent>
+                    </Select>
+                    <Button
+                        variant="outline"
+                        onClick={ () => setPage((prev) => Math.max(0, prev - 1)) }
+                        disabled={ page === 0 }
+                    >
+                        <ChevronLeft/>
+                    </Button>
+
+                    {/*just for text*/ }
+                    <Button variant="outline" disabled={ true }>
+                        { page + 1 } / { totalPages }
+                    </Button>
+
+                    <Button
+                        variant="outline"
+                        onClick={ () => setPage((prev) => prev + 1) }
+                        disabled={ page + 1 >= totalPages }
+                    >
+                        <ChevronRight/>
+
+                    </Button>
+                </div>
+
+            </div>
+        </>
+    );
 }
 
 export function ModalProductForm({ isOpen, setOpenAction, product }: ModalProps & {

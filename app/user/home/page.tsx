@@ -18,13 +18,8 @@ export default async function Page(context: ContextPage) {
     if (!session) {
         redirect('/login')
     }
-    const nameProduct = await getContextPage(context, 'productName')
 
-
-    // const session = await getSessionUser()
-    // const customers = await prisma.customer.findFirst({ where: { name: session?.name } })
-
-    const currentProductUser = await prisma.sale.findFirst({
+    const currentProductUser = async () => await prisma.sale.findFirst({
         orderBy: { date: "desc" },
         where: {
             statusTransaction: STATUS_TRANSACTION.PENDING,
@@ -60,8 +55,21 @@ export default async function Page(context: ContextPage) {
 
         <ProductUserPage
             session={session}
-            products={await getProduct(nameProduct)}
-            productPending={currentProductUser}
+            products={
+                await getProduct({
+                    productName: await getContextPage(context, 'productName'),
+                    productBrand: await getContextPage(context, 'productBrand'),
+                    productCategory: await getContextPage(context, 'productCategory'),
+                    productTypeDevice: await getContextPage(context, 'productTypeDevice'),
+                    productNicotine: await getContextPage(context, 'productNicotine'),
+                    productResistant: await getContextPage(context, 'productResistant'),
+                    productCoil: await getContextPage(context, 'productCoil'),
+                    productBattery: await getContextPage(context, 'productBattery'),
+                    productCotton: await getContextPage(context, 'productCotton'),
+                    productLimit: await getContextPage(context, 'productLimit'),
+                    productPage: await getContextPage(context, 'productPage')
+                }) }
+            productPending={ await currentProductUser() }
         />
     );
 }

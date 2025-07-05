@@ -1,34 +1,21 @@
 import { getSessionUser } from '@/action/auth-action';
+import { getHistories } from "@/action/sale-action";
 import { HistoriesPage } from '@/components/histories-page';
-import { ContextPage, SaleCustomers } from '@/interface/actionType';
-import { prisma } from '@/lib/prisma';
+import { ContextPage } from '@/interface/actionType';
+import { redirect } from "next/navigation";
 import React from 'react';
 
 export default async function Page(context: ContextPage) {
     const session = await getSessionUser()
     // const customers = await prisma.customer.findMany({ where: { name: session?.name } })
-    console.log('session is :' + session)
 
-    const histories: SaleCustomers[] = await prisma.sale.findMany({
-        orderBy: { date: "desc" },
-        where: {
-            customer: {
-                name: session?.name
-            }
-        },
-        include: {
-            customer: true,
-            SaleItems: {
-                include: {
-                    product: true
-                }
-            },
-
-        }
-    })
+    // console.log('session is :' + session)
+    if (!session) {
+        redirect('/login')
+    }
 
     return (
-        <HistoriesPage histories={histories} />
+        <HistoriesPage histories={ await getHistories(session) }/>
     );
 }
 
