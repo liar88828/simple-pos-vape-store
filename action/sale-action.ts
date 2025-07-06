@@ -1,11 +1,12 @@
 'use server'
+import { TopSellingProduct } from "@/action/product-action";
 import { ActionResponse, CartItem, LastBuyer, RangeStats, SaleCustomers, SessionPayload } from "@/interface/actionType";
 import { ERROR, STATUS_TRANSACTION } from "@/lib/constants";
 import { Customer, Product, Sale, SalesItemOptionalDefaults } from "@/lib/generated/zod_gen";
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
 import { revalidatePath } from "next/cache";
-import { getSessionUser } from "./auth-action";
+import { getSessionUserPage } from "./auth-action";
 import PrismaClientKnownRequestError = Prisma.PrismaClientKnownRequestError;
 
 export type TopSellingProducts = {
@@ -15,7 +16,7 @@ export type TopSellingProducts = {
     product?: Product | null,
 };
 
-export async function getSaleCustomers(range: RangeStats) {
+export async function getSaleCustomers(range: RangeStats): Promise<SaleCustomers[]> {
     const now = new Date();
     let startDate: Date;
 
@@ -276,7 +277,7 @@ export async function createTransactionUser(product: CartItem[]): Promise<Action
     // console.log('execute');
     try {
         let customerId
-        const session = await getSessionUser()
+        const session = await getSessionUserPage()
         const customer = await prisma.customer.findFirst({ where: { name: session?.name } })
 
         if (!customer) {
@@ -373,9 +374,33 @@ export async function lastBuyer(): Promise<LastBuyer[]> {
     return prisma.customer.findMany({
         take: 5,
         include: { Sales: true },
-        orderBy: { lastPurchase: 'desc' }
+        orderBy: {
+            lastPurchase: 'desc',
+            // updatedAt:'desc'
+        }
     })
 }
+
+export async function lastBuyerPending(): Promise<SaleCustomers[]> {
+    return prisma.sale.findMany({
+        take: 10,
+        orderBy: { date: "desc" },
+        where: {
+            statusTransaction: STATUS_TRANSACTION.PENDING
+        },
+        include: {
+            customer: true,
+            SaleItems: {
+                include: {
+                    product: true,
+                },
+            },
+        },
+    });
+}
+
+
+
 
 export const getTransactionCountToday = async () => {
     return prisma.sale.count({
@@ -751,42 +776,72 @@ function getRangeDate(range: RangeStats): Date {
     }
 }
 
-export async function getTopSellingProductsByRange(
+export async function getTopSellingProductsByRangeReport(
     range: RangeStats,
-    limit = 5
+    limit = 10
 ): Promise<TopSellingProducts[]> {
     const startDate = getRangeDate(range);
 
     const grouped = await prisma.salesItem.groupBy({
-
-        by: ["productId"],
-        where: {
-            createdAt: {
-                gte: startDate,
-            },
-        },
+        // sale: { statusTransaction: STATUS_TRANSACTION.SUCCESS }
+        by: [ "productId", 'priceAtBuy' ],
+        where: { updatedAt: { gte: startDate, }, },
         _sum: {
             quantity: true,
             priceAtBuy: true,
         },
-        orderBy: {
-            _sum: { quantity: "desc", },
-        },
+        orderBy: { _sum: { quantity: "desc", }, },
         take: limit,
     });
-    // console.log(grouped);
-    const productIds = grouped.map((item) => item.productId);
+    console.log("grouped", grouped);
+    // [
+    //     { productId: 8, totalSold: 2, totalPrice: 10000 },
+    //     { productId: 8, totalSold: 2, totalPrice: 15000 }
+    // ]
+
+    // Gabungkan data berdasarkan productId
+    const merged = Object.values(
+        grouped.reduce((accumulator, current) => {
+            const productId = current.productId;
+            const quantity = current._sum.quantity ?? 0;
+            const price = current.priceAtBuy ?? 0;
+
+            // Jika belum ada data productId ini, buat dulu
+            if (!accumulator[productId]) {
+                accumulator[productId] = {
+                    productId: productId,
+                    totalSold: 0,
+                    totalPrice: 0,
+                };
+            }
+
+            // Tambahkan jumlah terjual dan total harga
+            accumulator[productId].totalSold += quantity;
+            accumulator[productId].totalPrice += quantity * price;
+
+            return accumulator;
+        }, {} as Record<number, {
+            productId: number;
+            totalSold: number;
+            totalPrice: number;
+        }>)
+    );
+
+    const productIds = merged.map((item) => item.productId);
 
     const products = await prisma.product.findMany({
         where: { id: { in: productIds } },
     });
 
-    return grouped.map((item): TopSellingProducts => ({
+    const data = merged.map((item): TopSellingProducts => ({
         productId: item.productId,
-        totalSold: item._sum.quantity ?? 0,
-        totalPrice: item._sum.priceAtBuy ?? 0,
+        totalSold: item.totalSold,
+        totalPrice: item.totalPrice,
         product: products.find((p) => p.id === item.productId),
     }));
+    // console.log("data----",data);
+
+    return data
 }
 
 export async function transactionStatus(
@@ -820,3 +875,82 @@ export async function transactionStatus(
 //     actualPrice: number, // data asli
 //     product: Product ,
 // }
+export async function getTopSellingProductDashboard_(
+    date: Date,
+    limit: number = 10): Promise<TopSellingProduct[]> {
+    const grouped = await prisma.salesItem.groupBy({
+        where: { updatedAt: { gte: date, }, },
+        by: [ "productId", 'priceAtBuy' ],
+        _sum: { quantity: true },
+        orderBy: { _sum: { quantity: 'desc' }, },
+        take: limit,
+    });
+
+    // Gabungkan data berdasarkan productId
+    const merged = Object.values(
+        grouped.reduce((accumulator, current) => {
+            const productId = current.productId;
+            const quantity = current._sum.quantity ?? 0;
+            const price = current.priceAtBuy ?? 0;
+
+            // Jika belum ada data productId ini, buat dulu
+            if (!accumulator[productId]) {
+                accumulator[productId] = {
+                    productId: productId,
+                    totalSold: 0,
+                    totalPrice: 0,
+                };
+            }
+
+            // Tambahkan jumlah terjual dan total harga
+            accumulator[productId].totalSold += quantity;
+            accumulator[productId].totalPrice += quantity * price;
+
+            return accumulator;
+        }, {} as Record<number, {
+            productId: number;
+            totalSold: number;
+            totalPrice: number;
+        }>)
+    );
+
+    const productIds = merged.map(item => item.productId);
+
+    const products = await prisma.product.findMany({
+
+        where: {
+            id: { in: productIds },
+        },
+        include: {
+            SalesItems: {
+                select: {
+                    quantity: true,
+                },
+            },
+        },
+    });
+
+    return merged.map(item => {
+        const product = products.find(p => p.id === item.productId)
+        if (product) {
+            return {
+                type: product.type,
+                minStock: product.minStock,
+                stock: product.stock,
+                price: product.price,
+                flavor: product.flavor,
+                description: product.description,
+                nicotineLevel: product.nicotineLevel,
+                id: product.id,
+                name: product.name,
+                category: product.category,
+                image: product.image,
+                totalSold: item.totalSold,
+                createdAt: product.createdAt,
+                updatedAt: product.updatedAt,
+                sold: product.sold,
+                expired: product.expired,
+            } satisfies TopSellingProduct
+        }
+    }).filter(item => item !== undefined)
+}

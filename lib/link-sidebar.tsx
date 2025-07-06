@@ -1,5 +1,15 @@
 'use client'
-import { Archive, BarChart3, FlaskConical, History, Home, LucideIcon, Package, ShoppingCart, Users, } from "lucide-react"
+import {
+    Archive,
+    BarChart3,
+    FlaskConical,
+    History,
+    Home,
+    LucideIcon,
+    Package,
+    ShoppingCart,
+    Users,
+} from "lucide-react"
 
 export type NavItems = {
     title: string;
@@ -10,12 +20,12 @@ export type NavItems = {
     badgeVariant?: string
 }
 export const adminNavItems: NavItems[] = [
-    // {
-    //     title: "Dashboard",
-    //     icon: Home,
-    //     path: "/dashboard",
-    //     description: "Overview & Analytics",
-    // },
+    {
+        title: "Dashboard",
+        icon: Home,
+        path: "/dashboard",
+        description: "Overview & Analytics",
+    },
     {
         title: "POS Kasir",
         icon: ShoppingCart,

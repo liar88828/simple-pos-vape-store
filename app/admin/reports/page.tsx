@@ -2,7 +2,7 @@ import {
     getDashboardStats,
     getMonthlySalesChange,
     getSaleCustomers,
-    getTopSellingProductsByRange
+    getTopSellingProductsByRangeReport
 } from "@/action/sale-action";
 import { ReportsPage } from "@/components/reports-page"
 import { ContextPage, RangeStats } from "@/interface/actionType";
@@ -13,7 +13,7 @@ export default async function Reports({ searchParams }: ContextPage) {
     return <ReportsPage
         // chartData={ await getChartData(range) }
         range={ range }
-        topSellers={ await getTopSellingProductsByRange(range, 10) }
+        topSellers={ await getTopSellingProductsByRangeReport(range, 10) }
         trending={ await getMonthlySalesChange(range) }
         stats={ await getDashboardStats(range) }
         sales={ await getSaleCustomers(range) }

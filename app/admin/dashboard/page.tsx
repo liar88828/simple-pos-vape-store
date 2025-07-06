@@ -1,12 +1,16 @@
 import { getPreOrderStatusCount } from "@/action/inventory-action";
-import { getProductLowStockComplete, getTodayVsYesterdaySales, getTopSellingProduct } from "@/action/product-action";
-import { lastBuyer } from "@/action/sale-action";
+import { getProductLowStockComplete, getTodayVsYesterdaySales } from "@/action/product-action";
+import { getTopSellingProductsByRangeReport, lastBuyerPending } from "@/action/sale-action";
 import { DashboardPage } from "@/components/dashboard-page"
 
 export default async function Dashboard() {
+
+    const date = new Date()
+    date.setMonth(date.getMonth() - 1);
+
     return <DashboardPage
-        topSelling={ await getTopSellingProduct() }
-        lastBuyer={ await lastBuyer() }
+        topSelling={ await getTopSellingProductsByRangeReport('month') }
+        lastBuyer={ await lastBuyerPending() }
         preOrders={ await getPreOrderStatusCount('Pending') }
         lowStockProducts={ await getProductLowStockComplete() }
         todayVsYesterdaySales={ await getTodayVsYesterdaySales() }

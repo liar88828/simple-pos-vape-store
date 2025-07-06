@@ -1,6 +1,7 @@
 "use client"
 
 import { DashboardStats, TopSellingProducts, transactionStatus } from "@/action/sale-action";
+import { ResponsiveModalOnly } from "@/components/modal-components";
 import { ProductDetailDialogOnly } from "@/components/product-detail-dialog-only";
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -17,7 +18,7 @@ import {
 } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { RangeStats, SaleCustomers } from "@/interface/actionType"
+import { ModalProps, RangeStats, SaleCustomers } from "@/interface/actionType"
 import { Product } from "@/lib/generated/zod_gen";
 import { formatDateIndo, formatRupiah, formatRupiahShort, toastResponse } from "@/lib/my-utils";
 import { BarChart3, Eye, ReceiptText } from "lucide-react"
@@ -51,9 +52,10 @@ export function ReportsPage({ range, sales, stats, topSellers, }: ReportsPagePro
     const router = useRouter();
     const [ selectedRange, setSelectedRange ] = useState<RangeStats>(range);
 
-    const [ isOpen, setIsOpen ] = useState(false);
+    const [ isProductModal, setIsProductModal ] = useState(false);
     const [ isProduct, setIsProduct ] = useState<Product | null>(null)
-
+    const [ isSaleModal, setIsSaleModal ] = useState(false)
+    const [ isSale, setIsSale ] = useState<SaleCustomers | null>(null)
     const handleSelectChange = (value: RangeStats) => {
         setSelectedRange(value);
         const params = new URLSearchParams(window.location.search);
@@ -143,13 +145,18 @@ export function ReportsPage({ range, sales, stats, topSellers, }: ReportsPagePro
     return (
         <div className="p-4 sm:p-6 max-w-7xl mx-auto">
             <ProductDetailDialogOnly product={ isProduct }
-                                     isOpen={ isOpen }
-                                     setOpenAction={ setIsOpen }
-
+                                     isOpen={ isProductModal }
+                                     setOpenAction={ setIsProductModal }
             />
+
+            <ModalSalesDetail sale={ isSale }
+                              isOpen={ isSaleModal }
+                              setOpenAction={ setIsSaleModal }
+            />
+
+            {/*Header*/ }
             <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-6">
                 <h1 className="text-lg sm:text-3xl font-bold">Laporan Penjualan</h1>
-
                 <div className="flex flex-col sm:flex-row gap-2 sm:items-center w-full sm:w-auto">
                     <Select value={ selectedRange } onValueChange={ handleSelectChange }>
                         <SelectTrigger className="w-full sm:w-auto">
@@ -175,6 +182,8 @@ export function ReportsPage({ range, sales, stats, topSellers, }: ReportsPagePro
                     </Button>
                 </div>
             </div>
+
+
             {/* Sales Summary */ }
             <div className="grid grid-cols-2 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
                 <Card>
@@ -264,7 +273,14 @@ export function ReportsPage({ range, sales, stats, topSellers, }: ReportsPagePro
                                         <Badge variant="default">{ sale.statusTransaction }</Badge>
                                     </TableCell>
                                     <TableCell className={ 'space-x-2' }>
-                                        <ModalSalesDetail sale={ sale }/>
+                                        <Button size="sm" variant="outline"
+                                                onClick={ () => {
+                                                    setIsSale(sale)
+                                                    setIsSaleModal(true)
+                                                } }
+                                        >
+                                            <Eye className="size-3 "/>
+                                        </Button>
                                         <ModalInvoice sale={ sale }/>
                                     </TableCell>
 
@@ -285,8 +301,8 @@ export function ReportsPage({ range, sales, stats, topSellers, }: ReportsPagePro
                                 <TableHead>No</TableHead>
                                 <TableHead>Produk</TableHead>
                                 <TableHead>Gambar</TableHead>
-                                <TableHead>Jumlah</TableHead>
-                                <TableHead>Total Harga</TableHead>
+                                {/*<TableHead>Jumlah</TableHead>*/ }
+                                <TableHead>Total</TableHead>
                                 <TableHead>Aksi</TableHead>
                             </TableRow>
                         </TableHeader>
@@ -303,28 +319,32 @@ export function ReportsPage({ range, sales, stats, topSellers, }: ReportsPagePro
                                         { item.product?.image ? (
                                             <picture>
 
-                                            <img
-                                                src={ item.product.image }
-                                                alt={ item.product.name }
-                                                className="h-12 w-12 rounded object-cover"
-                                            />
+                                                <img
+                                                    src={ item.product.image }
+                                                    alt={ item.product.name }
+                                                    className="h-12 w-12 rounded object-cover"
+                                                />
                                             </picture>
 
                                         ) : (
                                             "-"
                                         ) }
                                     </TableCell>
-                                    <TableCell>{ item.totalSold }</TableCell>
-                                    <TableCell>{
-                                        // formatRupiah(item.totalSold * (item.product?.price ?? 1))
-                                        formatRupiah(item.totalPrice)
-                                    }</TableCell>
+                                    {/*<TableCell>{ item.totalSold }</TableCell>*/ }
+                                    <TableCell>
+                                        <p>Terjual { item.totalSold }</p>
+                                        <p> {
+                                            // formatRupiah(item.totalSold * (item.product?.price ?? 1))
+                                            formatRupiah(item.totalPrice)
+                                        }
+                                        </p>
+                                    </TableCell>
                                     <TableCell>
                                         <Button size={ 'sm' }
                                                 variant="outline"
                                                 onClick={ () => {
                                                     setIsProduct(item.product ?? null)
-                                                    setIsOpen(true)
+                                                    setIsProductModal(true)
                                                 } }>
                                             <Eye/>
                                         </Button>
@@ -341,15 +361,26 @@ export function ReportsPage({ range, sales, stats, topSellers, }: ReportsPagePro
     )
 }
 
-export function ModalSalesDetail({ sale }: { sale: SaleCustomers }) {
-    const [ selectStatus, setSelectStatus ] = useState(sale.statusTransaction)
+export function ModalSalesDetailOld({ sale, isOpen, setOpenAction }: { sale: SaleCustomers | null } & ModalProps) {
+    const [ selectStatus, setSelectStatus ] = useState(sale?.statusTransaction)
+
+    if (!sale) {
+        return <Dialog open={ isOpen } onOpenChange={ setOpenAction }>
+            <DialogContent>
+                <DialogHeader>
+                    Data is Not Found
+                </DialogHeader>
+                <DialogFooter>
+                    <DialogClose asChild>
+                        <Button variant="outline">Tutup</Button>
+                    </DialogClose>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    }
+
     return (
-        <Dialog>
-            <DialogTrigger asChild>
-                <Button size="sm" variant="outline">
-                    <Eye className="h-3 w-3"/>
-                </Button>
-            </DialogTrigger>
+        <Dialog open={ isOpen } onOpenChange={ setOpenAction }>
             <DialogContent>
                 <DialogHeader>
                     <DialogTitle>Detail Transaksi : { sale.id }
@@ -396,26 +427,109 @@ export function ModalSalesDetail({ sale }: { sale: SaleCustomers }) {
                         <span>{ formatRupiah(sale.total) }</span>
                     </div>
                 </div>
-
-
-                {/*
-                    .{selectStatus} */ }
-
-
                 <Button variant="default"
-                        onClick={ async () => toastResponse({ response: await transactionStatus(selectStatus, sale) }) }>
+                        onClick={ async () => {
+                            if (selectStatus) {
+                                toastResponse({ response: await transactionStatus(selectStatus, sale) })
+                            }
+                        } }>
                     Simpan
                 </Button>
-
-                <DialogClose asChild>
-                    <Button variant="outline">Tutup</Button>
-                </DialogClose>
+                <DialogFooter>
+                    <DialogClose asChild>
+                        <Button variant="outline">Tutup</Button>
+                    </DialogClose>
+                </DialogFooter>
 
 
             </DialogContent>
         </Dialog>
     );
 }
+
+export function ModalSalesDetail({ sale, isOpen, setOpenAction }: { sale: SaleCustomers | null } & ModalProps) {
+    const [ selectStatus, setSelectStatus ] = useState(sale?.statusTransaction)
+
+    if (!sale) {
+        return <Dialog open={ isOpen } onOpenChange={ setOpenAction }>
+            <DialogContent>
+                <DialogHeader>
+                    Data is Not Found
+                </DialogHeader>
+                <DialogFooter>
+                    <DialogClose asChild>
+                        <Button variant="outline">Tutup</Button>
+                    </DialogClose>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    }
+
+    return (
+        <ResponsiveModalOnly
+            isOpen={ isOpen }
+            setOpenAction={ setOpenAction }
+            title={ `Detail Transaksi : ${ sale.id }` }
+            description={ `Transaksi oleh ${ sale.customer.name } pada ${ formatDateIndo(sale.date) }` }
+            footer={
+                <>
+                    <Select value={ selectStatus } onValueChange={ setSelectStatus }
+                    >
+                        <SelectTrigger className={ 'w-full sm:w-fit' }>
+                            <SelectValue placeholder="Pilih Status"/>
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="Pending">Pending</SelectItem>
+                            <SelectItem value="Success">Success</SelectItem>
+                            {/* <SelectItem value="year"></SelectItem> */ }
+                        </SelectContent>
+                    </Select>
+                    <Button variant="default"
+                            onClick={ async () => {
+                                if (selectStatus) {
+                                    toastResponse({ response: await transactionStatus(selectStatus, sale) })
+                                }
+                            } }>
+                        Simpan
+                    </Button>
+                </>
+
+            }
+
+        >
+
+
+            <div className="space-y-2 text-sm">
+                <p><strong>Nama Pelanggan:</strong> { sale.customer.name }</p>
+                <p><strong>Tanggal:</strong> { formatDateIndo(sale.date) }</p>
+                <p><strong>Total Pembelian:</strong> { formatRupiah(sale.total) }</p>
+                <p><strong>Jumlah Barang:</strong> { sale.items } item</p>
+            </div>
+            <div className="mt-4 space-y-2 text-sm">
+                <p><strong>Daftar Produk:</strong></p>
+                <ul className="space-y-3">
+                    { sale.SaleItems.map((item) => (
+                        <li key={ item.id } className="flex justify-between">
+                            <span className={ 'w-auto' }>{ item.product.name }</span>
+                            <div className={ 'text-end' }>
+                                <div
+                                    className={ 'text-nowrap' }>{ item.quantity } × { formatRupiah(item.priceAtBuy) }</div>
+
+                                <div>{ formatRupiah(item.priceAtBuy * item.quantity) }</div>
+                            </div>
+                        </li>
+                    )) }
+                </ul>
+                <div className="flex justify-between font-semibold pt-2 border-t">
+                    <span>Total</span>
+                    <span>{ formatRupiah(sale.total) }</span>
+                </div>
+            </div>
+
+        </ResponsiveModalOnly>
+    );
+}
+
 
 export function ModalInvoice({ sale }: { sale: SaleCustomers }) {
     const contentRef = useRef<HTMLDivElement>(null);
@@ -453,6 +567,7 @@ export function ModalInvoice({ sale }: { sale: SaleCustomers }) {
         </Dialog>
     );
 }
+
 function getRangeLabel(range: RangeStats) {
     switch (range) {
         case "today":

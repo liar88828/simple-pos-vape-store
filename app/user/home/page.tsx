@@ -1,11 +1,10 @@
-import { getSessionUser } from '@/action/auth-action';
+import { getSessionUserPage } from '@/action/auth-action';
 import { getProduct } from '@/action/product-action';
 import { getContextPage } from '@/components/context-action';
 import { ProductUserPage } from '@/components/product-user-page';
 import { CartItem, ContextPage, SaleCustomers } from '@/interface/actionType';
 import { STATUS_TRANSACTION } from '@/lib/constants';
 import { prisma } from '@/lib/prisma';
-import { redirect } from 'next/navigation';
 import React from 'react';
 
 export type ProductPending = {
@@ -14,10 +13,10 @@ export type ProductPending = {
     isPending: boolean;
 };
 export default async function Page(context: ContextPage) {
-    const session = await getSessionUser()
-    if (!session) {
-        redirect('/login')
-    }
+    const session = await getSessionUserPage()
+    // if (!session) {
+    //     redirect('/login')
+    // }
 
     const currentProductUser = async () => await prisma.sale.findFirst({
         orderBy: { date: "desc" },

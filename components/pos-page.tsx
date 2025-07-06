@@ -6,7 +6,6 @@ import { createTransaction } from "@/action/sale-action";
 import { InputForm } from "@/components/form-hook";
 import { ProductDetailDialogOnly } from "@/components/product-detail-dialog-only";
 import { ProductsFilter } from "@/components/products-page";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
@@ -21,7 +20,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { useCart } from "@/hooks/use-cart";
 import { Customer, Product } from "@/lib/generated/zod_gen";
-import { chooseStatus, formatRupiah, getStatusVariant, newParam, toastResponse } from "@/lib/my-utils";
+import { formatRupiah, newParam, toastResponse } from "@/lib/my-utils";
 import { CustomerModelNew, CustomerModelType } from "@/lib/schema";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { MinusIcon, Plus, PlusIcon, Search, ShoppingCart, Trash2 } from "lucide-react"
@@ -61,7 +60,8 @@ export function POSPage(
     };
 
     return (
-        <div className="p-6 max-w-7xl mx-auto">
+        <div className="p-4 sm:p-6 max-w-7xl mx-auto">
+
             <ProductDetailDialogOnly
                 product={ isProduct } isOpen={ isOpen } isAdd={ true }
                 setOpenAction={ setIsOpen }
@@ -73,23 +73,21 @@ export function POSPage(
                 } }
             />
 
-
-            <h1 className="text-3xl font-bold mb-6">POS Kasir</h1>
-
+            {/*hidden sm:block*/ }
+            <h1 className="text-lg sm:text-3xl font-bold mb-4">POS Kasir</h1>
             <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
 
                 {/* Product Selection */ }
                 <div className="lg:col-span-2 ">
                     <Card>
-                        {/* Filters */ }
-                        <CardHeader className={ 'space-y-2' }>
+                        <CardHeader>
                             <CardTitle>Pilih Produk</CardTitle>
                             <ProductsFilter products={ products } customerName={ searchCustomer }/>
                         </CardHeader>
 
 
                         <CardContent>
-                            <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-4">
+                            <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 sm:gap-4 gap-2">
                                 { products.data.map((product) => {
                                     const cartItem = cartItems.find(item => item.id === product.id);
                                     const remainingStock = cartItem ? product.stock - cartItem.quantity : product.stock;
@@ -101,9 +99,7 @@ export function POSPage(
 
                                                 <img
                                                     onClick={ () => {
-                                                        setIsOpen(prev => {
-                                                            return !prev
-                                                        })
+                                                        setIsOpen(prev => !prev)
                                                         setIsProduct(product)
                                                     } }
                                                     src={ product.image }
@@ -111,21 +107,20 @@ export function POSPage(
                                                     className="w-full h-40 object-contain rounded bg-white "
                                                 />
                                             </picture>
-                                            <CardContent className="p-4 md:p-6">
-                                                <h3 className="font-medium text-sm mb-1">{ product.name }</h3>
-                                                <p className="text-xs text-muted-foreground mb-2">{ product.category }</p>
+                                            <CardContent className="p-2 md:p-6">
+                                                <h3 className="font-medium text-xs sm:text-sm mb-1">{ product.name }</h3>
+                                                <p className="text-xs sm:text-xs text-muted-foreground mb-2">{ product.category }</p>
+                                                <span
+                                                    className="font-bold text-sm">{ formatRupiah(product.price) }</span>
                                                 <div className="flex justify-between items-center">
-                                                        <span
-                                                            className="font-bold text-sm">{ formatRupiah(product.price) }</span>
+                                                    <p className="text-xs text-muted-foreground mt-1">Stok: { remainingStock }</p>
                                                     <Button size="sm"
                                                             onClick={ () => addToCart(product) }
                                                             disabled={ remainingStock <= 0 }
-
                                                     >
-                                                        <Plus className="h-3 w-3"/>
+                                                        <Plus className=" size-3"/>
                                                     </Button>
                                                 </div>
-                                                <p className="text-xs text-muted-foreground mt-1">Stok: { remainingStock }</p>
                                             </CardContent>
                                         </Card>
                                     )
@@ -148,7 +143,6 @@ export function POSPage(
                                 ) : (
                                     <>
                                         { cartItems.map((product) => {
-
                                             return (
                                                 <div key={ product.id }
                                                      className="flex justify-between items-center py-2 border-b">
@@ -182,7 +176,7 @@ export function POSPage(
                                                                 size={ 'sm' }
                                                                 onClick={ () => incrementItem(product.id) }
                                                                 // disabled={ product.quantity >= getProductStock(product.id) }
-                                                                disabled={product.quantity >= getProductStock(product.id)} // ✅ perbaikan di sini
+                                                                disabled={ product.quantity >= getProductStock(product.id) } // ✅ perbaikan di sini
                                                             >
                                                                 <PlusIcon/>
                                                             </Button>
@@ -223,10 +217,11 @@ export function POSPage(
                                                     <div className="">
                                                         <h1 className="font-medium">{ selectedCustomer.name }</h1>
                                                         <p className="text-sm text-muted-foreground">
-                                                            Usia: { selectedCustomer.age } • Total
-                                                            Belanja : <Badge
-                                                            variant={ getStatusVariant(selectedCustomer.status) }>
-                                                            { chooseStatus(selectedCustomer.status) }</Badge>
+                                                            {/*Usia: { selectedCustomer.age } • Total*/ }
+                                                            {/*Belanja : <Badge*/ }
+                                                            {/*variant={ getStatusVariant(selectedCustomer.status) }>*/ }
+                                                            {/*{ chooseStatus(selectedCustomer.status) }</Badge>*/ }
+
                                                         </p>
                                                     </div>
 
@@ -376,10 +371,10 @@ export function SelectCustomer(
                                                 <h1 className="font-medium">{ customer.name }</h1>
                                                 <p className="text-sm text-muted-foreground">
                                                     Usia: { customer.age } • Total: { customer.totalPurchase } •
-                                                    Status:{ " " }
-                                                    <Badge variant={ getStatusVariant(customer.status) }>
-                                                        { chooseStatus(customer.status) }
-                                                    </Badge>
+                                                    {/*Status:{ " " }*/ }
+                                                    {/*<Badge variant={ getStatusVariant(customer.status) }>*/ }
+                                                    {/*    { chooseStatus(customer.status) }*/ }
+                                                    {/*</Badge>*/ }
                                                 </p>
                                             </div>
                                         </Button>

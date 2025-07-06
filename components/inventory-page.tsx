@@ -3,7 +3,7 @@
 import { preOrderProduct } from "@/action/inventory-action";
 import { ProductPaging } from "@/action/product-action";
 import { InputDateForm, InputForm, SelectForm } from "@/components/form-hook";
-import { ResponsiveModalOnly } from "@/components/modal-components";
+import { ResponsiveModal, ResponsiveModalOnly } from "@/components/modal-components";
 import { ProductsFilter } from "@/components/products-page";
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -30,20 +30,13 @@ export function InventoryPage({ products, lowStockProducts }: {
     const [ isModal, setIsModal ] = useState(false)
 
     return (
-        <div className="p-6 max-w-7xl mx-auto">
-            {/*<ShowModal>*/ }
+        <div className="p-4 sm:p-6 max-w-7xl mx-auto">
 
-            {/*</ShowModal>*/ }
-            <div className="flex justify-between items-center mb-6 ">
-                <div className="">
-                    <h1 className="text-3xl font-bold">Manajemen Inventori</h1>
-                </div>
-                <div className="flex gap-2 flex-col sm:flex-row">
-                    <StockModal products={ products }/>
-                    <ReorderStockModal product={ isProduct } isOpen={ isModal } setOpenAction={ setIsModal }/>
-                </div>
+            <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-6">
+                <h1 className="text-lg sm:text-3xl font-bold">Manajemen Inventori</h1>
+                <AddStockModal products={ products }/>
+                <ReorderStockModal product={ isProduct } isOpen={ isModal } setOpenAction={ setIsModal }/>
             </div>
-
 
             {/* Low Stock Alert */ }
             <Card className="mb-6">
@@ -106,7 +99,7 @@ export function InventoryPage({ products, lowStockProducts }: {
     )
 }
 
-function ReorderStockModal(
+export function ReorderStockModal(
     { product, setOpenAction, isOpen }
     : { product: Product | null } & ModalProps) {
 
@@ -175,7 +168,7 @@ function ReorderStockModal(
 }
 
 // atas
-export default function StockModal({ products }: { products: ProductPaging, }) {
+export function AddStockModal_Old({ products }: { products: ProductPaging, }) {
     const [ isModalOpen, setIsModalOpen ] = useState(false)
     const [ stockAmount, setStockAmount ] = useState("")
     const [ nameProduct, setNameProduct ] = useState<string>('')
@@ -308,5 +301,134 @@ export default function StockModal({ products }: { products: ProductPaging, }) {
                 </DialogFooter>
             </DialogContent>
         </Dialog>
+    )
+}
+
+// atas
+export function AddStockModal({ products }: { products: ProductPaging, }) {
+    const [ stockAmount, setStockAmount ] = useState("")
+    const [ nameProduct, setNameProduct ] = useState<string>('')
+    const [ productData, setProductData ] = useState<Product | null>(null)
+
+    const handleSubmit = () => {
+        const product = products.data.find((p) => p.id === Number(nameProduct))
+        const amount = parseInt(stockAmount)
+
+        if (product && !isNaN(amount)) {
+            product.stock += amount
+            alert(`Stok ${ product.name } ditambah ${ amount }`)
+            setStockAmount("")
+            setNameProduct('')
+        }
+    }
+    const handleAddStock = (product: Product | null) => {
+        setProductData(product)
+    }
+    const router = useRouter()
+
+    const { value, isLoading } = useDebounceLoad(nameProduct, 1000);
+
+    useEffect(() => {
+        if (value.trim()) {
+            router.push(newParam({ name: value }));
+        }
+    }, [ value, router ]);
+
+    return (
+        <ResponsiveModal
+            title={ 'Tambah Stok Produk' }
+            trigger={ <Button>
+                <Plus className="h-4 w-4 mr-2"/>
+                Tambah Stok
+            </Button>
+            }
+            footer={ <Button
+                onClick={ handleSubmit }
+                disabled={ !nameProduct || !stockAmount }
+            >
+                Simpan
+            </Button> }
+        >
+            <div className="space-y-4">
+                <ProductsFilter products={ products }/>
+
+                <div>
+                    <Label htmlFor="stock">Tambah Stok</Label>
+                    <Input
+                        id="stock"
+                        type="number"
+                        value={ stockAmount }
+                        onChange={ (e) => setStockAmount(e.target.value) }
+                    />
+                </div>
+                { productData ?
+                    <Card className="flex items-center gap-4 p-4 flex-row border-green-800 border-2">
+                        <picture>
+                            <img
+                                src={ productData.image }
+                                alt={ productData.name }
+                                className="size-10  rounded-md object-cover"
+                            />
+                        </picture>
+
+                        <div className="flex-1">
+                            <p className="text-sm font-semibold">{ productData.name }</p>
+                            <p className="text-xs text-muted-foreground">
+                                Stok: { productData.stock } | { formatRupiah(productData.price) }
+                            </p>
+                        </div>
+
+                        <Button
+                            size="sm"
+                            variant="secondary"
+                            onClick={ () => handleAddStock(null) }
+                        >
+                            Hapus
+                        </Button>
+                    </Card>
+                    :
+                    <div className="space-y-3 overflow-y-auto h-96">
+                        {
+                            isLoading
+                                ? <Card className="flex items-center gap-4 p-4 ">Loading...</Card>
+                                : products.data.length === 0
+                                    ? <Card className="flex items-center gap-4 p-4">Product Is Not Found</Card>
+                                    : products.data
+                                    .filter((p) => p.name.toLowerCase().includes(nameProduct.toLowerCase()))
+                                    .map((product) => (
+                                        <Card key={ product.id }
+                                              className="flex items-center gap-4 p-4 flex-row hover:border-primary">
+                                            <picture>
+                                                <img
+                                                    src={ product.image }
+                                                    alt={ product.name }
+                                                    className="size-10  rounded-md object-cover"
+                                                />
+                                            </picture>
+
+                                            <div className="flex-1">
+                                                <p className="text-sm font-semibold">{ product.name }</p>
+                                                <p className="text-xs text-muted-foreground">
+                                                    Stok: { product.stock } | { formatRupiah(product.price) }
+                                                </p>
+                                            </div>
+
+                                            <Button
+                                                size="sm"
+                                                variant="secondary"
+                                                onClick={ () => handleAddStock(product) }
+                                            >
+                                                <Plus/>
+                                                <span className={ 'hidden sm:block' }>
+
+                                                Tambah
+                                                </span>
+                                            </Button>
+                                        </Card>
+                                    )) }
+                    </div>
+                }
+            </div>
+        </ResponsiveModal>
     )
 }

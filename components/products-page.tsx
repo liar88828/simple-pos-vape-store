@@ -67,7 +67,7 @@ export function FilterSelect(
         <div>
             <Label className={ labelClassName }>{ label }</Label>
             <Select value={ value } onValueChange={ onChangeAction }>
-                <SelectTrigger className="w-[6rem]">
+                <SelectTrigger className="w-full min-w-6">
                     <SelectValue placeholder={ placeholder }/>
                 </SelectTrigger>
                 <SelectContent>
@@ -90,9 +90,10 @@ export function ProductsPage({ products }: { products: ProductPaging }) {
     const [ openDetail, setOpenDetail ] = useState(false);
     const [ isProduct, setIsProduct ] = useState<Product | null>(null);
     return (
-        <div className="p-6 max-w-7xl mx-auto">
-            <div className="flex justify-between items-center mb-6">
-                <h1 className="text-3xl font-bold">Katalog Produk</h1>
+        <div className="p-4 sm:p-6 max-w-7xl mx-auto">
+
+            <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-6">
+                <h1 className="text-lg sm:text-3xl font-bold">Katalog Produk</h1>
                 <Button onClick={ () => setOpenCreate(prevState => !prevState) }>
                     <Plus className="h-4 w-4 mr-2"/>
                     Tambah Produk
@@ -105,13 +106,13 @@ export function ProductsPage({ products }: { products: ProductPaging }) {
             </div>
 
 
-            {/* Products Header */ }
             <Card>
                 {/* Filters */ }
-                <CardHeader className={ 'space-y-2' }>
+                <CardHeader>
                     <CardTitle>Filter Produk</CardTitle>
                     <ProductsFilter products={ products }/>
                 </CardHeader>
+
                 {/* Products Table */ }
                 <CardContent>
                     <Table>
@@ -254,14 +255,14 @@ export function ProductsFilter({ products, customerName }: { customerName?: stri
 
     }
 
-    return (<>
+    return (<div className={ 'space-y-2 sm:space-y-4' }>
             <Input
                 placeholder="Cari produk..."
                 value={ productName }
                 type={ 'search' }
                 onChange={ (e) => setProductName(e.target.value) }
             />
-            <div className="flex gap-4 flex-col sm:flex-row ">
+            <div className="flex sm:gap-4 gap-2 flex-col sm:flex-row ">
                 {/*Filter */ }
                 <div className="">
                     <ResponsiveModal
@@ -269,8 +270,10 @@ export function ProductsFilter({ products, customerName }: { customerName?: stri
                         description="Filter produk sesuai yang kamu inginkan"
                         trigger={ <Button variant="outline"><FilterIcon className="size-4"/>Filter</Button> }
                         footer={ <Button onClick={ onReset } variant="destructive"> Reset <XIcon
-                            className="size-4"/></Button> }>
-                        <div className="grid grid-cols-3 gap-3 ">
+                            className="size-4"/>
+                        </Button> }>
+
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-2 ">
                             <FilterSelect
                                 label="Kategori"
                                 value={ productCategory }
@@ -351,7 +354,7 @@ export function ProductsFilter({ products, customerName }: { customerName?: stri
                 </div>
 
                 {/*Paging*/ }
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2 sm:gap-4 ">
                     <Select
                         value={ String(itemsPerPage) }
                         onValueChange={ (value) => {
@@ -393,7 +396,7 @@ export function ProductsFilter({ products, customerName }: { customerName?: stri
                 </div>
 
             </div>
-        </>
+        </div>
     );
 }
 

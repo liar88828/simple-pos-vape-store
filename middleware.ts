@@ -35,12 +35,17 @@ export async function middleware(request: NextRequest) {
             const isInclude = path.includes(pathname)
             // console.log('guest only Path', path);
             // console.log('guest only Pathname', pathname);
-            // console.log('guest only isInclude', isInclude);
+            console.log('guest only isInclude', isInclude);
             return isInclude
         })) {
             return NextResponse.next();
         }
         return NextResponse.redirect(new URL("/login", request.url));
+    } else {
+        // if (guestOnlyPaths.some(path => path === pathname)) {
+        //     if()
+        //     return NextResponse.next();
+        // }
     }
 
     // Have Token

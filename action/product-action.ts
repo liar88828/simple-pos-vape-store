@@ -216,57 +216,6 @@ export type PreorderProduct = PreOrder & {
     product: Product
 };
 
-export async function getTopSellingProduct(limit: number = 5): Promise<TopSellingProduct[]> {
-    const topProducts = await prisma.salesItem.groupBy({
-        by: [ 'productId' ],
-        _sum: { quantity: true },
-        orderBy: {
-            _sum: { quantity: 'desc' },
-        },
-        take: limit,
-    });
-
-    const productIds = topProducts.map(item => item.productId);
-
-    const products = await prisma.product.findMany({
-
-        where: {
-            id: { in: productIds },
-        },
-        include: {
-            SalesItems: {
-                select: {
-                    quantity: true,
-                },
-            },
-        },
-    });
-
-    return topProducts.map(item => {
-        const product = products.find(p => p.id === item.productId)
-        if (product) {
-            return {
-                type: product.type,
-                minStock: product.minStock,
-                stock: product.stock,
-                price: product.price,
-                flavor: product.flavor,
-                description: product.description,
-                nicotineLevel: product.nicotineLevel,
-                id: product.id,
-                name: product.name,
-                category: product.category,
-                image: product.image,
-                totalSold: item._sum.quantity ?? 0,
-                createdAt: product.createdAt,
-                updatedAt: product.updatedAt,
-                sold: product.sold,
-                expired: product.expired,
-            } satisfies TopSellingProduct
-        }
-    }).filter(item => item !== undefined)
-}
-
 export async function getTodayVsYesterdaySales() {
     const now = new Date();
 
@@ -278,11 +227,13 @@ export async function getTodayVsYesterdaySales() {
     const endOfYesterday = new Date(startOfToday);
 
     const today = await prisma.sale.aggregate({
+
         _sum: { total: true },
         where: { date: { gte: startOfToday, lt: startOfTomorrow } },
     });
 
     const yesterday = await prisma.sale.aggregate({
+
         _sum: { total: true },
         where: { date: { gte: startOfYesterday, lt: endOfYesterday } },
     });

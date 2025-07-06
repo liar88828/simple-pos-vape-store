@@ -1,20 +1,22 @@
 "use client"
 
-import { TopSellingProduct } from "@/action/product-action";
+import { TopSellingProducts } from "@/action/sale-action";
+import { ModalSalesDetail } from "@/components/reports-page";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { LastBuyer } from "@/interface/actionType";
+import { SaleCustomers } from "@/interface/actionType";
 import { Product } from "@/lib/generated/zod_gen";
 import { formatDateIndo, formatRupiah, formatRupiahShort } from "@/lib/my-utils";
 import { cn } from "@/lib/utils"
 import { AlertTriangle, Clock, DollarSign, Package, ShoppingCart, Star, TrendingUp, Users } from "lucide-react"
 import Link from "next/link"
+import React, { useState } from "react";
 
 interface DashboardPageProps {
-    topSelling: TopSellingProduct[],
-    lastBuyer: LastBuyer[],
+    topSelling: TopSellingProducts[],
+    lastBuyer: SaleCustomers[],
     preOrders: number,
     lowStockProducts: Product[],
     todayVsYesterdaySales: {
@@ -32,14 +34,23 @@ export function DashboardPage(
         todayVsYesterdaySales
     }: DashboardPageProps) {
 
+    const [ isSaleModal, setIsSaleModal ] = useState(false)
+    const [ isSale, setIsSale ] = useState<SaleCustomers | null>(null)
+
     return (
-        <div className="p-6 max-w-7xl mx-auto">
-            <div className="flex justify-between items-center mb-6">
-                <div>
-                    <h1 className={ "text-3xl font-bold text-primary" }>Dashboard</h1>
-                    <p className={ "text-muted-foreground mt-1" }>
-                        Selamat datang di VapeStore Management System
-                    </p>
+        <div className="p-4 sm:p-6 max-w-7xl mx-auto">
+            <ModalSalesDetail sale={ isSale }
+                              isOpen={ isSaleModal }
+                              setOpenAction={ setIsSaleModal }
+            />
+
+
+            <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-6">
+                <div className="">
+
+                    <h1 className="text-lg sm:text-3xl font-bold">Dashboard</h1>
+                    <p className={ "text-sm sm:text-base text-muted-foreground mt-1" }>Selamat datang di VapeStore
+                        Management System</p>
                 </div>
                 <Button asChild><Link href="/admin/pos"><ShoppingCart/> Buka POS</Link></Button>
             </div>
@@ -52,7 +63,7 @@ export function DashboardPage(
                     <AlertDescription>
                         { lowStockProducts.length } produk memiliki stok di bawah minimum. <Button variant="outline">
                         <Link href="/admin/inventory">Lihat detail</Link>
-                        </Button>
+                    </Button>
                     </AlertDescription>
                 </Alert>
             ) }
@@ -173,21 +184,33 @@ export function DashboardPage(
                                         </div>
                                         <div>
                                             <p className={ "font-medium text-primary" }>
-                                                { sale.name }
+                                                { sale.customer.name }
                                             </p>
                                             <p className={ "text-sm text-muted-foreground" }>
-                                                { sale.Sales.length } items • { formatDateIndo(sale.lastPurchase) }
+                                                { sale.SaleItems.length } items • { formatDateIndo(sale.date) }
                                             </p>
                                         </div>
                                     </div>
+
                                     <div className="text-right">
                                         <p className={ "font-bold text-primary" }>
-                                            { formatRupiah(sale.totalPurchase) }
+                                            { formatRupiah(sale.SaleItems.reduce((a, b) => a + (b.priceAtBuy * b.quantity), 0)) }
                                         </p>
-                                        <Badge variant="default">
-                                            Selesai
-                                        </Badge>
+                                        {/*<Badge variant="default">*/ }
+                                        {/*    { sale.statusTransaction }*/ }
+                                        {/*</Badge>*/ }
+
+                                        <Button size="sm" onClick={ () => {
+                                            setIsSale(sale)
+                                            setIsSaleModal(true)
+                                        } }
+                                        >
+                                            { sale.statusTransaction }
+                                            {/*<Eye className="size-3 "/>*/ }
+                                        </Button>
+
                                     </div>
+
                                 </div>
                             )) }
                         </div>
@@ -250,13 +273,14 @@ export function DashboardPage(
                             { lowStockProducts.length === 0 ? (
                                 <div className="text-center py-6">
                                     <Package className="h-12 w-12 mx-auto mb-3"/>
-                                    <p className={ "text-gray-500" }>Semua produk stok aman</p>
+                                    <p>Semua produk stok aman</p>
                                 </div>
                             ) : (
                                 lowStockProducts.slice(0, 4).map((product) => (
                                     <div
                                         key={ product.id }
-                                        className="flex items-center justify-between p-3 border border-red-200 bg-red-50 rounded-lg"
+                                        className={ "flex items-center justify-between p-3 bg-muted rounded-lg border-red-200 border " }
+
                                     >
                                         <div className="flex items-center space-x-3">
                                             <picture>
@@ -295,7 +319,7 @@ export function DashboardPage(
                         <div className="space-y-3">
                             { topSelling.slice(0, 4).map((product, index) => (
                                 <div
-                                    key={ product.id }
+                                    key={ product.product?.id }
                                     className={ "flex items-center justify-between p-3 bg-muted rounded-lg" }
                                 >
                                     <div className="flex items-center space-x-3">
@@ -305,19 +329,19 @@ export function DashboardPage(
                                         </div>
                                         <picture>
                                             <img
-                                                src={ product.image }
-                                                alt={ product.name }
+                                                src={ product.product?.image }
+                                                alt={ product.product?.name }
                                                 className="w-10 h-10 rounded-lg object-cover"
                                             />
                                         </picture>
                                         <div>
-                                            <p className={ "font-medium text-primary" }>{ product.name }</p>
-                                            <p className={ "text-sm text-muted-foreground" }>{ product.category }</p>
+                                            <p className={ "font-medium text-primary" }>{ product.product?.name }</p>
+                                            <p className={ "text-sm text-muted-foreground" }>{ product.product?.category }</p>
                                         </div>
                                     </div>
                                     <div className="text-right">
                                         <p className={ "font-bold text-primary" }>{ product.totalSold } terjual</p>
-                                        <p className={ "text-sm text-muted-foreground" }> { formatRupiah(product.price) }</p>
+                                        <p className={ "text-sm text-muted-foreground" }> { formatRupiah(product.totalPrice) }</p>
                                     </div>
                                 </div>
                             )) }

@@ -1,3 +1,4 @@
+import { getSessionUserPage } from "@/action/auth-action";
 import { getProductLowStock } from "@/action/product-action";
 import { AppSidebar } from "@/components/app-sidebar";
 import HeaderComponent from "@/components/header-page";
@@ -9,10 +10,7 @@ import React from 'react';
 export default async function Layout({ children }: { children: React.ReactNode }) {
     const cookieStore = await cookies()
     const defaultOpen = cookieStore.get("sidebar_state")?.value === "true"
-
-    // Example: check if a login token cookie exists
-    const token = cookieStore.get("token")?.value
-    const isLoggedIn = Boolean(token)
+    const session = await getSessionUserPage()
 
     return (
         <SidebarProvider defaultOpen={defaultOpen}>
@@ -20,12 +18,14 @@ export default async function Layout({ children }: { children: React.ReactNode }
                 asLink='/admin'
                 navItems={adminNavItems}
                 lowStockProducts={await getProductLowStock()}
+                session={ session }
             // totalTransaction={ await getTransactionCountToday() }
             // totalSellToday={ await getTotalSoldToday() }
             />
             <SidebarInset>
                 <main className="flex-1 overflow-y-auto">
-                    <HeaderComponent lowStockProducts={await getProductLowStock()} isLoggedIn={isLoggedIn} />
+                    <HeaderComponent lowStockProducts={ await getProductLowStock() }
+                                     isLoggedIn={ Boolean(session) }/>
                     {children}
                 </main>
             </SidebarInset>

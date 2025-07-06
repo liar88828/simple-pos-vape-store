@@ -1,9 +1,9 @@
-import { getSessionUser } from "@/action/auth-action";
-import NotFound from "./not-found";
+import { redirect } from "next/navigation";
 
 export default async function page() {
-    const session = await getSessionUser()
+    // const session = await getSessionUserPage()
     // console.log(payload)
-    // redirect('/')
-    return <NotFound role={session?.role} />
+    redirect('/login')
+
+    // return <NotFound role={session?.role} />
 }

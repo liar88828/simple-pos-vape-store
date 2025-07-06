@@ -1,5 +1,6 @@
 "use client"
 import { deleteCookie } from "@/action/auth-action";
+import { ModeToggle } from "@/components/theme-provider";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
     DropdownMenu,
@@ -24,6 +25,7 @@ import {
     SidebarRail,
     useSidebar,
 } from "@/components/ui/sidebar"
+import { UserPayload } from "@/interface/actionType";
 import { NavItems } from "@/lib/link-sidebar";
 import { ChevronsUpDown, LogOutIcon, Settings, } from "lucide-react"
 import Link from "next/link"
@@ -35,11 +37,13 @@ export function AppSidebar(
     {
         lowStockProducts,
         navItems,
-        asLink
+        asLink,
+        session
     }: {
         lowStockProducts: { stock: number }[],
         navItems: NavItems[],
-        asLink: string
+        asLink: string,
+        session: UserPayload
     }) {
     const pathname = usePathname()
     const {
@@ -58,38 +62,37 @@ export function AppSidebar(
     }
 
     return (
-        <Sidebar collapsible={'icon'}>
+        <Sidebar collapsible={ 'icon' }>
             <SidebarHeader>
                 <SidebarMenu>
-                    <SidebarMenuItem>
-                        <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                <SidebarMenuButton
-                                    size="lg"
-                                    className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
-                                >
-                                    <div
-                                        className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
-                                        <Avatar>
-                                            <AvatarImage src="/logo.png" alt="logo image" />
-                                            <AvatarFallback>AD</AvatarFallback>
-                                        </Avatar>
-                                    </div>
-                                    <div className="grid flex-1 text-left text-sm leading-tight">
-                                        <span className="truncate font-medium"> Menu </span>
-                                        <span className="truncate text-xs"> Dashboard </span>
-                                    </div>
-                                    {/*<ChevronsUpDown className="ml-auto"/>*/}
-                                </SidebarMenuButton>
-                            </DropdownMenuTrigger>
-                        </DropdownMenu>
+                    <SidebarMenuItem className={ 'flex items-center' }>
+
+                        {/* ✅ This becomes the dropdown trigger button */ }
+                        <SidebarMenuButton
+                            size="lg"
+                            className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
+                        >
+                            <div
+                                className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
+                                <Avatar>
+                                    <AvatarImage src="/logo.png" alt="logo image"
+                                                 className={ 'dark:invert-0 invert  ' }/>
+                                    <AvatarFallback>AD</AvatarFallback>
+                                </Avatar>
+                            </div>
+                            <div className="grid flex-1 text-left text-sm leading-tight">
+                                <span className="truncate font-medium"> Menu </span>
+                                <span className="truncate text-xs"> Dashboard </span>
+                            </div>
+                        </SidebarMenuButton>
+                        <ModeToggle/>
+
+
                     </SidebarMenuItem>
                 </SidebarMenu>
             </SidebarHeader>
-
-
             <SidebarContent>
-                {/* Main Navigation */}
+                {/* Main Navigation */ }
                 <SidebarGroup>
                     <SidebarGroupLabel
                         className="text-xs font-semibold uppercase tracking-wider px-3 py-2">
@@ -97,25 +100,25 @@ export function AppSidebar(
                     </SidebarGroupLabel>
                     <SidebarGroupContent>
                         <SidebarMenu>
-                            {navItems.map((item) => (
-                                <SidebarMenuItem key={item.path}>
+                            { navItems.map((item) => (
+                                <SidebarMenuItem key={ item.path }>
                                     <SidebarMenuButton asChild isActive={ isActive(asLink + item.path) }
                                                        title={ item.title }>
 
-                                        <Link href={asLink + item.path}>
-                                            <item.icon />
-                                            <span>  {item.title}</span>
+                                        <Link href={ asLink + item.path }>
+                                            <item.icon/>
+                                            <span>  { item.title }</span>
                                         </Link>
                                     </SidebarMenuButton>
                                     <SidebarMenuBadge>
                                         {
                                             match(item.title)
-                                                .with("Inventori", () => `${lowStockProducts.length}`)
-                                                .with("POS Kasir", () => item.badge ?? null)
-                                                .otherwise(() => null)
+                                            .with("Inventori", () => `${ lowStockProducts.length }`)
+                                            .with("POS Kasir", () => item.badge ?? null)
+                                            .otherwise(() => null)
                                         }</SidebarMenuBadge>
                                 </SidebarMenuItem>
-                            ))}
+                            )) }
                         </SidebarMenu>
                     </SidebarGroupContent>
                 </SidebarGroup>
@@ -123,8 +126,7 @@ export function AppSidebar(
 
             </SidebarContent>
 
-
-            <SidebarFooter className={'border-t'}>
+            <SidebarFooter className={ 'border-t' }>
                 <SidebarMenu>
                     <SidebarMenuItem>
                         <DropdownMenu>
@@ -139,17 +141,17 @@ export function AppSidebar(
                                         <AvatarFallback>AD</AvatarFallback>
                                     </Avatar>
                                     <div className="grid flex-1 text-left text-sm leading-tight">
-                                        <span className="truncate font-medium">{'admin@vapestore.com'}</span>
-                                        <span className="truncate text-xs">{'admin'}</span>
+                                        <span className="truncate font-medium">{ 'admin@vapestore.com' }</span>
+                                        <span className="truncate text-xs">{ 'admin' }</span>
                                     </div>
-                                    <ChevronsUpDown className="ml-auto size-4" />
+                                    <ChevronsUpDown className="ml-auto size-4"/>
                                 </SidebarMenuButton>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent
                                 className="w-(--radix-dropdown-menu-trigger-width) min-w-56 rounded-lg"
-                                side={isMobile ? "bottom" : "right"}
+                                side={ isMobile ? "bottom" : "right" }
                                 align="end"
-                                sideOffset={4}
+                                sideOffset={ 4 }
                             >
 
                                 <DropdownMenuLabel className="p-0 font-normal">
@@ -159,23 +161,23 @@ export function AppSidebar(
                                             <AvatarFallback className="rounded-lg">CN</AvatarFallback>
                                         </Avatar>
                                         <div className="grid flex-1 text-left text-sm leading-tight">
-                                            <span className="truncate font-medium">{'admin@vapestore.com'}</span>
-                                            <span className="truncate text-xs">{'admin'}</span>
+                                            <span className="truncate font-medium">{ session.email }</span>
+                                            <span className="truncate text-xs">{ session.name }</span>
                                         </div>
                                     </div>
                                 </DropdownMenuLabel>
                                 <DropdownMenuGroup>
                                     <DropdownMenuItem>
-                                        <Link href="/admin/setting" className={'flex items-center gap-2'}>
-                                            <Settings />
+                                        <Link href="/admin/setting" className={ 'flex items-center gap-2' }>
+                                            <Settings/>
                                             <span>Settings</span>
                                         </Link>
                                     </DropdownMenuItem>
                                 </DropdownMenuGroup>
                                 <DropdownMenuGroup>
 
-                                    <DropdownMenuItem className="text-red-600" onClick={deleteCookie}>
-                                        <LogOutIcon />
+                                    <DropdownMenuItem className="text-red-600" onClick={ deleteCookie }>
+                                        <LogOutIcon/>
                                         <span>Log out</span>
                                     </DropdownMenuItem>
                                 </DropdownMenuGroup>
@@ -184,7 +186,7 @@ export function AppSidebar(
                     </SidebarMenuItem>
                 </SidebarMenu>
             </SidebarFooter>
-            <SidebarRail />
+            <SidebarRail/>
         </Sidebar>
     )
 }

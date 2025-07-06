@@ -40,9 +40,10 @@ export function CustomersPage({ customers, }: {
     );
 
     return (
-        <div className="p-6 max-w-7xl mx-auto">
-            <div className="flex justify-between items-center mb-6">
-                <h1 className="text-3xl font-bold">Manajemen Pelanggan</h1>
+        <div className="p-4 sm:p-6 max-w-7xl mx-auto">
+
+            <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-6">
+                <h1 className="text-lg sm:text-3xl font-bold">Manajemen Pelanggan</h1>
                 <ModalTambahCustomer/>
             </div>
 

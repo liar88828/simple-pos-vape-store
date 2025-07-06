@@ -3,12 +3,12 @@ import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle }
 import Link from 'next/link'
 import { match } from 'ts-pattern';
 
-export default async function NotFound({ role }: { role?: string }) {
+export default function NotFound({ role }: { role?: string }) {
+
     const homeLink = match(role)
         .with("USER", () => "/user/home")
         .with("ADMIN", () => "/admin/dashboard")
         .otherwise(() => "/login");
-    // console.log('role is : ' + role)
 
 
 

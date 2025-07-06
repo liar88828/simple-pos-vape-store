@@ -100,7 +100,12 @@ export async function loginAction(rawData: LoginFormData): Promise<ActionRespons
     });
 
     revalidatePath('/')
-    redirect("/");
+
+    if (user.role === 'ADMIN') {
+        redirect("/admin/dashboard");
+    } else if (user.role === 'USER') {
+        redirect("/user/home");
+    } else redirect("/register");
 
     // return {
     //     success: true,
@@ -171,11 +176,15 @@ export const deleteCookie = async () => {
     cookieStore.delete('token')
 }
 
-export async function getSessionUser() {
+export async function getSessionUserPage() {
     const cookieStore = await cookies()
     const token = cookieStore.get("token")?.value
     // console.log("token : " + token)
-    return verifyJwt(token)
+    const session = await verifyJwt(token)
+    if (!session) {
+        redirect("/login");
+    }
+    return session;
 }
 
 

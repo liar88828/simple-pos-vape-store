@@ -65,10 +65,10 @@ export function Invoice({ invoiceData }: { invoiceData: SaleCustomers }) {
                                 <span className="text-muted-foreground">Total Items:</span>
                                 <span>{invoiceData.items}</span>
                             </div>
-                            <div className="flex justify-between">
-                                <span className="text-muted-foreground">Customer Total Purchases:</span>
-                                <span>{formatRupiah(invoiceData.customer.totalPurchase)}</span>
-                            </div>
+                            {/*<div className="flex justify-between">*/ }
+                            {/*    <span className="text-muted-foreground">Customer Total Purchases:</span>*/ }
+                            {/*    <span>{formatRupiah(invoiceData.customer.totalPurchase)}</span>*/ }
+                            {/*</div>*/ }
                         </div>
                     </div>
                 </div>

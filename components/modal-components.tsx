@@ -77,7 +77,7 @@ export function ResponsiveModal(
                         <DrawerTitle>{ title }</DrawerTitle>
                         { description && <DrawerDescription>{ description }</DrawerDescription> }
                     </DrawerHeader>
-                    <div className="px-4">{ children }</div>
+                    <div className="px-6">{ children }</div>
                     <DrawerFooter className="pt-2">
                         { footer }
                         <DrawerClose asChild>

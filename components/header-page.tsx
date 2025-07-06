@@ -1,8 +1,18 @@
 "use client"
 
-import { ModeToggle } from "@/components/theme-provider";
+import {
+    Breadcrumb,
+    BreadcrumbItem,
+    BreadcrumbLink,
+    BreadcrumbList,
+    BreadcrumbPage,
+    BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb"
+import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar"
-import type React from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import React, { Fragment } from "react";
 
 type LowStockProduct = { stock: number }
 
@@ -12,27 +22,60 @@ interface HeaderComponentProps {
 }
 
 export default function HeaderComponent({ lowStockProducts, isLoggedIn }: HeaderComponentProps) {
-    return (
-        <header className="bg-muted shadow-sm border-b">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="flex justify-between items-center py-4">
-                    <div className="flex items-end gap-4">
-                        { isLoggedIn && (
-                            <SidebarTrigger
-                                variant="outline"
-                                className="size-9"
-                            />
-                        ) }
-                        <h1 className="text-2xl font-bold">VapeStore Pro</h1>
-                    </div>
-                    <ModeToggle/>
+    const pathname = usePathname()
+    const segments = pathname.split('/').filter(Boolean) // remove empty strings
 
-                </div>
-            </div>
+    // Build cumulative paths like /admin, /admin/users, etc.
+    const pathArray = segments.map((seg, i) => ({
+        name: decodeURIComponent(seg),
+        href: '/' + segments.slice(0, i + 1).join('/'),
+        isLast: i === segments.length - 1,
+    }))
+
+    return (
+        <header className="bg-background sticky top-0 flex shrink-0 items-center gap-2 border-b p-4">
+            <SidebarTrigger
+                variant="outline"
+                className="size-9"
+            />
+
+            {/*<h1 className="text-2xl font-bold">VapeStore Pro</h1>*/ }
+            <Separator
+                orientation="vertical"
+                className="mr-2 data-[orientation=vertical]:h-4"
+
+
+            />
+            <Breadcrumb>
+                <BreadcrumbList>
+                    { pathArray.map((segment, idx) => {
+                        const isHidden = idx !== 0 ? 'hidden md:block' : '';
+
+                        return (
+                            <Fragment key={ segment.href }>
+                                <BreadcrumbItem>
+                                    { !segment.isLast ? (
+                                        <BreadcrumbLink asChild>
+                                            <Link className={ "capitalize hidden md:block" } href={ segment.href }>
+                                                { segment.name }
+                                            </Link>
+                                        </BreadcrumbLink>
+                                    ) : (
+                                        <BreadcrumbPage className="capitalize">{ segment.name }</BreadcrumbPage>
+                                    ) }
+                                </BreadcrumbItem>
+
+                                { !segment.isLast && (
+                                    <BreadcrumbSeparator className={ `hidden md:block` }/>
+                                ) }
+                            </Fragment>
+                        );
+                    }) }
+                </BreadcrumbList>
+            </Breadcrumb>
         </header>
     )
 }
-
 
 // { isLoggedIn ? (
 //     <div className="flex items-center space-x-4">
