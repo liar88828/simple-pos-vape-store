@@ -37,12 +37,12 @@ export const ProductSchema = z.object({
   type: z.string().min(1),
   description: z.string().min(1),
   nicotineLevel: z.string().nullish(),
+    fluidLevel: z.string().nullish(),
   flavor: z.string().nullish(),
   cottonSize: z.string().nullish(),
   batterySize: z.string().nullish(),
   resistanceSize: z.string().nullish(),
   coilSize: z.string().nullish(),
-  expired: z.date().nullish(),
   createdAt: z.date(),
   updatedAt: z.date(),
 })

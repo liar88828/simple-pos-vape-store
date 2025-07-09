@@ -1,6 +1,6 @@
 import { ActionResponse } from "@/interface/actionType";
-import { toast } from "sonner";
 import { Product } from "@prisma/client";
+import { toast } from "sonner";
 import { match } from "ts-pattern";
 
 export type Variant = "default" | "secondary" | "destructive" | "outline" | null | undefined;
@@ -70,9 +70,13 @@ export function choose<T>(...cases: [condition: boolean, result: T][]): T | unde
 }
 
 export function formatDateIndo(
-    dateStr: Date | string,
+    dateStr?: Date | string | null,
     format: "numeric" | "long" | "full" | "time" | "datetime" = "long"
 ): string {
+    if (!dateStr) {
+        return '-'
+    }
+
     const date = new Date(dateStr);
 
     switch (format) {

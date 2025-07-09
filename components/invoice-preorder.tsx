@@ -1,4 +1,4 @@
-import { PreorderProduct } from '@/action/product-action';
+import { PreorderProductCustomer } from '@/action/product-action';
 import { Badge } from '@/components/ui/badge';
 
 import { Button } from '@/components/ui/button';
@@ -21,7 +21,7 @@ import React, { useRef, useState } from 'react';
 import { useReactToPrint } from 'react-to-print';
 import { twMerge } from 'tailwind-merge';
 
-export function PreOrderDialog({ orderData }: { orderData: PreorderProduct }) {
+export function PreOrderDialog({ orderData }: { orderData: PreorderProductCustomer }) {
     const [ open, setOpen ] = useState(false)
     const contentRef = useRef<HTMLDivElement>(null)
     const reactToPrintFn = useReactToPrint({ contentRef })
@@ -66,7 +66,7 @@ export function PreOrderDialog({ orderData }: { orderData: PreorderProduct }) {
     )
 }
 
-export function PreOrderInvoice({ orderData }: { orderData: PreorderProduct }) {
+export function PreOrderInvoice({ orderData }: { orderData: PreorderProductCustomer }) {
 
     const product = orderData.product
     const calculateTotal = () => {
@@ -308,7 +308,7 @@ export function PreOrderInvoice({ orderData }: { orderData: PreorderProduct }) {
     );
 }
 
-export function InvoicePreorderTable({ orderData }: { orderData: PreorderProduct }) {
+export function InvoicePreorderTable({ orderData }: { orderData: PreorderProductCustomer }) {
     const product = orderData.product
     return (
         <Table>
@@ -364,7 +364,7 @@ export function InvoicePreorderTable({ orderData }: { orderData: PreorderProduct
     )
 }
 
-export function InvoicePreorder1({ orderData }: { orderData: PreorderProduct }) {
+export function InvoicePreorder1({ orderData }: { orderData: PreorderProductCustomer }) {
     const product = orderData.product
     return (
         <Card className="overflow-hidden hover:shadow-lg transition-shadow duration-300 p-0">
@@ -423,7 +423,7 @@ export function InvoicePreorder1({ orderData }: { orderData: PreorderProduct }) 
     )
 }
 
-export function invoicePreorder({ orderData }: { orderData: PreorderProduct }) {
+export function invoicePreorder({ orderData }: { orderData: PreorderProductCustomer }) {
     return (
         <div className={ cn("bg-white border-2 rounded-lg overflow-hidden", "dark:bg-gray-800 dark:border-gray-700") }>
             <div className="md:flex">

@@ -1,8 +1,8 @@
 "use client"
 
 import { preOrderProduct } from "@/action/inventory-action";
-import { ProductPaging } from "@/action/product-action";
-import { InputDateForm, InputForm, SelectForm } from "@/components/form-hook";
+import { PreorderProduct, ProductPaging } from "@/action/product-action";
+import { InputDateForm, InputForm, InputNumForm, SelectForm } from "@/components/form-hook";
 import { ResponsiveModal, ResponsiveModalOnly } from "@/components/modal-components";
 import { ProductsFilter } from "@/components/products-page";
 import { Badge } from "@/components/ui/badge"
@@ -15,19 +15,25 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useDebounceLoad } from "@/hooks/use-debounce";
 import { ModalProps } from "@/interface/actionType";
 import { PreOrderOptionalDefaults, PreOrderOptionalDefaultsSchema, Product } from "@/lib/generated/zod_gen";
-import { formatRupiah, newParam, toastResponse } from "@/lib/my-utils";
+import { formatDateIndo, formatRupiah, newParam, toastResponse } from "@/lib/my-utils";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { AlertTriangle, Plus } from "lucide-react"
 import { useRouter } from "next/navigation";
 import React, { useEffect, useState } from "react"
 import { FormProvider, useForm } from "react-hook-form";
 
-export function InventoryPage({ products, lowStockProducts }: {
+export function InventoryPage({ products, lowStockProducts, expiredProduct, preorders }: {
     products: ProductPaging,
     lowStockProducts: Product[],
+    expiredProduct: PreorderProduct[],
+    preorders: PreorderProduct[]
 }) {
-    const [ isProduct, setIsProduct ] = useState<Product | null>(null)
-    const [ isModal, setIsModal ] = useState(false)
+    const [ isModalStock, setIsModalStock ] = useState(false)
+    const [ isModalPreorder, setIsModalPreorder ] = useState(false)
+    const [ isModalExpired, setIsModalExpired ] = useState(false)
+    const [ isStock, setIsStock ] = useState<Product | null>(null)
+    const [ isPreorder, setIsPreorder ] = useState<PreorderProduct | null>(null)
+    const [ isExpired, setIsExpired ] = useState<PreorderProduct | null>(null)
 
     return (
         <div className="p-4 sm:p-6 max-w-7xl mx-auto">
@@ -35,8 +41,86 @@ export function InventoryPage({ products, lowStockProducts }: {
             <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-6">
                 <h1 className="text-lg sm:text-3xl font-bold">Manajemen Inventori</h1>
                 <AddStockModal products={ products }/>
-                <ReorderStockModal product={ isProduct } isOpen={ isModal } setOpenAction={ setIsModal }/>
+                { isStock &&
+						<ReorderStockModal product={ isStock } isOpen={ isModalStock }
+										   setOpenAction={ setIsModalStock }/> }
             </div>
+
+            {/* History Preorder */ }
+            <Card className="mb-6">
+                <CardHeader>
+                    <CardTitle className="flex items-center">
+                        Produk Preorder History
+                    </CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>Produk</TableHead>
+                                <TableHead>Stok</TableHead>
+                                <TableHead>Expired</TableHead>
+                                {/*<TableHead>Perlu Reorder</TableHead>*/ }
+                                <TableHead>Aksi</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            { preorders.map((item) => (
+                                <TableRow key={ item.id }>
+                                    <TableCell>
+                                        <div className="flex items-center space-x-3">
+                                            <picture>
+                                                <img
+                                                    src={ item.product.image || "/placeholder.svg" }
+                                                    alt={ item.product.name }
+                                                    className="w-8 h-8 rounded object-cover"
+                                                />
+                                            </picture>
+                                            <div className="flex flex-col">
+                                                <span
+                                                    className="font-bold w-auto text-wrap">{ item.product.name }</span>
+                                                <span
+                                                    className="font-light">Normal : { formatRupiah(item.product.price) }</span>
+                                                <span
+                                                    className="font-light">Sell : { formatRupiah(item.priceSell) }</span>
+                                            </div>
+                                        </div>
+                                    </TableCell>
+                                    <TableCell>
+                                        <Badge
+                                            variant={ item.product.minStock >= item.product.stock
+                                                ? 'destructive'
+                                                : "default" }>
+                                            { item.product.stock }
+                                        </Badge>
+                                    </TableCell>
+                                    <TableCell>{ formatDateIndo(item?.expired) }</TableCell>
+                                    {/*<TableCell>{ product.minStock - product.stock + 10 }</TableCell>*/ }
+                                    <TableCell>
+                                        <div className="space-x-2">
+                                            <Button size="sm"
+                                                    onClick={ () => {
+                                                        setIsPreorder(item)
+                                                        setIsModalPreorder(true)
+                                                    } }
+                                            >Ubah</Button>
+
+                                            <Button size="sm" variant={ 'destructive' }
+                                                    onClick={ () => {
+                                                        if (confirm(`Apakah Anda Yakin Untuk Hapus Data ini ${ item.product.name } ?`)) {
+                                                            console.log('delete')
+                                                        }
+                                                    } }
+                                            >Hapus</Button>
+                                        </div>
+                                    </TableCell>
+                                </TableRow>
+                            )) }
+                        </TableBody>
+                    </Table>
+                </CardContent>
+            </Card>
+
 
             {/* Low Stock Alert */ }
             <Card className="mb-6">
@@ -79,11 +163,68 @@ export function InventoryPage({ products, lowStockProducts }: {
                                         <Button
                                             size="sm"
                                             onClick={ () => {
-                                                setIsProduct(product)
-                                                setIsModal(true)
+                                                setIsStock(product)
+                                                setIsModalStock(true)
                                             } }
                                         >
                                             Reorder
+                                        </Button>
+
+                                    </TableCell>
+                                </TableRow>
+                            )) }
+                        </TableBody>
+                    </Table>
+                </CardContent>
+            </Card>
+
+
+            {/* Expired Alert */ }
+            <Card className="mb-6">
+                <CardHeader>
+                    <CardTitle className="flex items-center">
+                        <AlertTriangle className="h-5 w-5 text-red-500 mr-2"/>
+                        Produk Expired : { expiredProduct.length } Produk
+                    </CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>Produk</TableHead>
+                                <TableHead>Stok Saat Ini</TableHead>
+                                <TableHead>Expired</TableHead>
+                                {/*<TableHead>Perlu Reorder</TableHead>*/ }
+                                <TableHead>Aksi</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            { expiredProduct.map((item) => (
+                                <TableRow key={ item.id }>
+                                    <TableCell>
+                                        <div className="flex items-center space-x-3">
+                                            <picture>
+                                                <img
+                                                    src={ item.product.image || "/placeholder.svg" }
+                                                    alt={ item.product.name }
+                                                    className="w-8 h-8 rounded object-cover"
+                                                />
+                                            </picture>
+                                            <span className="font-medium">{ item.product.name }</span>
+                                        </div>
+                                    </TableCell>
+                                    <TableCell><Badge variant="destructive">{ item.product.stock }</Badge></TableCell>
+                                    <TableCell>{ formatDateIndo(item.expired ?? new Date()) }</TableCell>
+                                    {/*<TableCell>{ product.minStock - product.stock + 10 }</TableCell>*/ }
+                                    <TableCell>
+                                        <Button
+                                            size="sm"
+                                            onClick={ () => {
+                                                setIsExpired(item)
+                                                setIsModalExpired(true)
+                                            } }
+                                        >
+                                            Sistem Dev
                                         </Button>
 
                                     </TableCell>
@@ -101,7 +242,7 @@ export function InventoryPage({ products, lowStockProducts }: {
 
 export function ReorderStockModal(
     { product, setOpenAction, isOpen }
-    : { product: Product | null } & ModalProps) {
+    : { product: Product } & ModalProps) {
 
     // const [ productToAddStock, setProductToAddStock ] = useState<Product | null>(null)
     const [ loading, setLoading ] = useState(false)
@@ -111,16 +252,13 @@ export function ReorderStockModal(
             defaultValues: {
                 status: '-',
                 estimatedDate: new Date(),
-                productId: 1,
+                productId: product.id,
                 quantity: 0,
-
+                priceNormal: 0,
+                priceSell: 0,
             } satisfies PreOrderOptionalDefaults
         }
     );
-
-    if (!product) {
-        return;
-    }
 
     const onSubmit = methods.handleSubmit(async (data) => {
 
@@ -128,7 +266,7 @@ export function ReorderStockModal(
         // if (productToAddStock) {
         setOpenAction(false)
         // setProductToAddStock(null)
-        toastResponse({ response: await preOrderProduct(product, data) })
+        toastResponse({ response: await preOrderProduct(data) })
         setLoading(false)
         // }
         setLoading(false)
@@ -154,6 +292,8 @@ export function ReorderStockModal(
                                 { label: "Success", value: "success" },
                             ] }
                         />
+                        <InputNumForm name={ 'priceNormal' } title={ 'Harga Beli' }/>
+                        <InputNumForm name={ 'priceSell' } title={ 'Harga Jual' }/>
                         <InputDateForm name={ 'estimatedDate' }
                                        title={ "Tanggal" }
                                        description={ 'Tambahkan Tanggal' }

@@ -5,27 +5,30 @@ import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 
 export async function preOrderProduct(
-    product: Product,
+    // product: Product,
     preorder: PreOrderOptionalDefaults
 ): Promise<ActionResponse> {
     try {
 
         await prisma.$transaction(async (tx) => {
             const dataPreorder = await tx.product.update({
-                where: { id: product.id },
+                where: { id: preorder.id },
                 data: {
                     stock: { increment: preorder.quantity },
                 }
             })
-            await tx.preOrder.create({
-                data: {
-                    productId: product.id,
-                    quantity: preorder.quantity,
-                    estimatedDate: preorder.estimatedDate,
-                    status: preorder.status,
-                }
-            })
 
+            // const data =
+            //     preOrderSchema.parse({
+            //         productId: product.id,
+            //         quantity: preorder.quantity,
+            //         estimatedDate: preorder.estimatedDate,
+            //         status: preorder.status,
+            //         priceNormal: preorder.priceNormal,
+            //         priceSell: preorder.priceSell,
+            //     }satisfies PreOrderOptionalDefaults)
+
+            await tx.preOrder.create({ data: preorder })
         })
 
     revalidatePath('/')

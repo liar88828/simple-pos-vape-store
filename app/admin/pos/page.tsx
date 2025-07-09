@@ -20,6 +20,7 @@ export default async function POS(context: ContextPage) {
                 productCoil: await getContextPage(context, 'productCoil'),
                 productBattery: await getContextPage(context, 'productBattery'),
                 productCotton: await getContextPage(context, 'productCotton'),
+                productFluid: await getContextPage(context, 'productFluid'),
                 productLimit: await getContextPage(context, 'productLimit'),
                 productPage: await getContextPage(context, 'productPage')
             },

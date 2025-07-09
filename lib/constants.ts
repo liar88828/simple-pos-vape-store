@@ -5,6 +5,10 @@ export const STATUS_TRANSACTION = {
     SUCCESS: 'Success'
 }
 
+export const STATUS_PREORDER = {
+    PENDING: 'Pending',
+    SUCCESS: 'Success'
+}
 export const ERROR = {
     DATABASE: 'DATABASE',
     VALIDATION: 'VALIDATION',
@@ -12,6 +16,13 @@ export const ERROR = {
     SYSTEM: 'SYSTEM',
 };
 
+export const fluidLevelsOptions = [
+    { label: "-", value: "-" }, // Bisa juga diganti label jadi "Tidak ditentukan" atau "Semua"
+    { label: "0ml", value: "0ml" },
+    { label: "100ml", value: "100ml" },
+    { label: "60mg", value: "60mg" },
+    { label: "30mg", value: "30mg" },
+];
 
 export const nicotineLevelsOptions = [
     { label: "-", value: "-" }, // Bisa juga diganti label jadi "Tidak ditentukan" atau "Semua"
@@ -25,6 +36,7 @@ export const nicotineLevelsOptions = [
 
 export const batterySizeOptions = [
     { label: "-", value: "-" }, // Bisa diganti "Tidak Ditentukan" jika perlu
+    { label: "0A - 0mAh", value: "ARUS_0A_0" },
     { label: "20A - 2000mAh", value: "ARUS_20A_2000" },
     { label: "20A - 3000mAh", value: "ARUS_20A_3000" },
     { label: "30A - 2000mAh", value: "ARUS_30A_2000" },
@@ -41,6 +53,7 @@ export const cottonSizeOption=[
 
 export const  coilSizeOption= [
     { label: "-", value: '-' },
+    { label: "0 AWG (0 mm)", value: "AWG_0.0" },
     { label: "24 AWG (0.51 mm)", value: "AWG_24_0.51" },
     { label: "26 AWG (0.40 mm)", value: "AWG_26_0.40" },
     { label: "28 AWG (0.32 mm)", value: "AWG_28_0.32" },
@@ -48,6 +61,7 @@ export const  coilSizeOption= [
 ]
 export const resistanceSizeOption= [
     { label: "-", value: '-' },
+    { label: "0 Ohm ", value: "0_OHM_low" },
     { label: "0.15 Ohm low", value: "0.15_OHM_low" },
     { label: "0.2 Ohm low", value: "0.2_OHM_low" },
     { label: "0.3 Ohm low", value: "0.3_OHM_low" },

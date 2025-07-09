@@ -1,10 +1,13 @@
 'use server'
 
-import { BrandsProps } from "@/components/products-page";
+import { ProductData } from "@/components/products-page";
 import { ActionResponse, LowStockProducts, SaleCustomers } from "@/interface/actionType";
+import { STATUS_PREORDER } from "@/lib/constants";
 import {
     Customer,
     PreOrder,
+    PreOrderOptionalDefaults,
+    PreOrderOptionalDefaultsSchema,
     Product,
     ProductOptionalDefaults,
     ProductOptionalDefaultsSchema
@@ -16,6 +19,7 @@ import { revalidatePath } from 'next/cache'
 export type TopSellingProduct = Product & {
     totalSold: number;
 }
+export type BrandsProps = { brand: string | null }[];
 
 export type ProductPaging = {
     data: Product[],
@@ -24,17 +28,18 @@ export type ProductPaging = {
 };
 export const getProduct = async (
     filter: {
-        productBrand?: string,
-        productCategory?: string,
-        productTypeDevice?: string,
-        productCotton?: string,
-        productCoil?: string,
-        productBattery?: string,
-        productNicotine?: string,
-        productResistant?: string,
-        productName?: string,
-        productLimit?: string,
-        productPage?: string,
+        productBrand: string | undefined,
+        productCategory: string | undefined,
+        productTypeDevice: string | undefined,
+        productCotton: string | undefined,
+        productCoil: string | undefined,
+        productBattery: string | undefined,
+        productNicotine: string | undefined,
+        productFluid: string | undefined,
+        productResistant: string | undefined,
+        productName: string | undefined,
+        productLimit: string | undefined,
+        productPage: string | undefined,
     },
 ): Promise<ProductPaging> => {
     const limit = Number(filter.productLimit ?? 10);
@@ -76,8 +81,12 @@ export const getProduct = async (
         nicotineLevel: filter.productNicotine && filter.productNicotine !== '-'
             ? { contains: filter.productNicotine, }
             : undefined,
-    }
 
+        fluidLevel: filter.productFluid && filter.productFluid !== '-'
+            ? { contains: filter.productFluid, }
+            : undefined,
+    }
+    console.log(where)
     return {
         data: await prisma.product.findMany({ where, take: limit, skip: page * limit, }),
         total: await prisma.product.count({ where }),
@@ -124,13 +133,12 @@ export const deleteProduct = async (idProduct: Product['id']): Promise<ActionRes
     }
 }
 
-export async function upsertProduct(formData: ProductOptionalDefaults): Promise<ActionResponse> {
+export async function upsertProduct(formData: ProductData): Promise<ActionResponse> {
     if (formData.id) return await updateProduct(formData)
     else return await addProduct(formData)
-
 }
 
-export async function addProduct(formData: ProductOptionalDefaults): Promise<ActionResponse> {
+export async function addProduct({ priceNormal, expired, ...formData }: ProductData): Promise<ActionResponse> {
     try {
 
         const valid = ProductOptionalDefaultsSchema.safeParse(formData)
@@ -147,7 +155,21 @@ export async function addProduct(formData: ProductOptionalDefaults): Promise<Act
             }
         }
         const { id, ...data } = valid.data
-        await prisma.product.create({ data })
+
+        await prisma.$transaction(async (tx) => {
+            const productDB = await tx.product.create({ data })
+
+            await tx.preOrder.create({
+                data: PreOrderOptionalDefaultsSchema.parse({
+                    productId: productDB.id,
+                    quantity: productDB.stock,
+                    status: STATUS_PREORDER.SUCCESS,
+                    priceSell: productDB.price,
+                    priceNormal,
+                    expired,
+                }satisfies PreOrderOptionalDefaults)
+            })
+        })
 
         revalidatePath('/') // agar halaman ter-refresh
         return {
@@ -211,8 +233,12 @@ export async function updateProduct(formData: ProductOptionalDefaults): Promise<
 
 }
 
-export type PreorderProduct = PreOrder & {
+export type PreorderProductCustomer = PreOrder & {
     customer: Customer
+    product: Product
+};
+
+export type PreorderProduct = PreOrder & {
     product: Product
 };
 
@@ -296,6 +322,33 @@ export const getSaleById = async (id: number): Promise<ActionResponse<SaleCustom
     }
 }
 
+export const getExpiredProduct = async (): Promise<PreorderProduct[]> => {
+    const now = new Date();
+    const oneYearAgo = new Date();
+    oneYearAgo.setFullYear(now.getFullYear() - 1);
 
+    return prisma.preOrder.findMany({
+        where: {
+            expired: {
+                not: null,
+                gte: oneYearAgo, // expired date >= 1 year ago
+                lte: now,        // expired date <= today
+            },
+        },
+        include: {
+            product: true, // optional
+        },
+    });
+}
 
+export const getPreorder = async (): Promise<PreorderProduct[]> => {
+    return prisma.preOrder.findMany({
+        take: 100,
+        orderBy: { updatedAt: "desc" },
+        include: {
+            product: true, // optional
+        },
+
+    });
+}
 

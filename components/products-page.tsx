@@ -2,12 +2,12 @@
 
 import { ProductPaging, upsertProduct } from "@/action/product-action";
 import { InputDateForm, InputForm, InputNumForm, SelectForm, TextareaForm } from "@/components/form-hook";
-import { ResponsiveModal } from "@/components/modal-components";
+import { ResponsiveModal, ResponsiveModalOnly } from "@/components/modal-components";
 import { ProductDetailDialogOnly } from "@/components/product-detail-dialog-only";
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { DialogFooter } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -19,6 +19,7 @@ import {
     categoryOption,
     coilSizeOption,
     cottonSizeOption,
+    fluidLevelsOptions,
     nicotineLevelsOptions,
     pageSizeOptions,
     resistanceSizeOption,
@@ -41,48 +42,7 @@ import { useRouter } from "next/navigation";
 import React, { useEffect, useState } from "react"
 import { FormProvider, useForm } from "react-hook-form";
 import { toast } from "sonner";
-
-interface FilterSelectProps {
-    label: string;
-    value: string;
-    onChangeAction: (val: string) => void;
-    placeholder: string;
-    options: {
-        label: string;
-        value: string;
-    }[];
-    labelClassName?: string;
-}
-
-export function FilterSelect(
-    {
-        label,
-        value,
-        onChangeAction,
-        placeholder,
-        options,
-        labelClassName
-    }: FilterSelectProps) {
-    return (
-        <div>
-            <Label className={ labelClassName }>{ label }</Label>
-            <Select value={ value } onValueChange={ onChangeAction }>
-                <SelectTrigger className="w-full min-w-6">
-                    <SelectValue placeholder={ placeholder }/>
-                </SelectTrigger>
-                <SelectContent>
-                    { options.map((item) => (
-                        <SelectItem key={ item.value } value={ item.value }>
-                            { item.label }
-                        </SelectItem>
-                    )) }
-                </SelectContent>
-            </Select>
-        </div>
-    );
-}
-
-export type BrandsProps = { brand: string | null }[];
+import { z } from "zod";
 
 export function ProductsPage({ products }: { products: ProductPaging }) {
     const [ openCreate, setOpenCreate ] = useState(false);
@@ -203,6 +163,7 @@ export function ProductsFilter({ products, customerName }: { customerName?: stri
     const [ productCategory, setProductCategory ] = useState("-");
     const [ productTypeDevice, setProductTypeDevice ] = useState("-");
     const [ productNicotine, setProductNicotine ] = useState("-");
+    const [ productFluid, setProductFluid ] = useState("-");
     const [ productResistant, setProductResistant ] = useState("-");
     const [ productCoil, setProductCoil ] = useState("-");
     const [ productCotton, setProductCotton ] = useState("-");
@@ -225,6 +186,7 @@ export function ProductsFilter({ products, customerName }: { customerName?: stri
             productNicotine,
             productResistant,
             productCoil,
+            productFluid,
             productLimit: String(itemsPerPage),
             productPage: String(page),
         };
@@ -235,7 +197,7 @@ export function ProductsFilter({ products, customerName }: { customerName?: stri
             router.push(newParam(filters));
             console.log('Filters applied:', filters);
         }
-    }, [ productNameDebounce, router, productBrand, productCategory, productTypeDevice, productNicotine, itemsPerPage, page, productResistant, productCoil, productBattery, productCotton, customerNameDebounce ]);
+    }, [ productNameDebounce, router, productBrand, productCategory, productTypeDevice, productNicotine, itemsPerPage, page, productResistant, productCoil, productBattery, productCotton, customerNameDebounce, productFluid ]);
 
     const totalPages = Math.ceil(products.total / itemsPerPage);
 
@@ -251,6 +213,7 @@ export function ProductsFilter({ products, customerName }: { customerName?: stri
         setProductBattery("-")
         setProductCoil("-")
         setProductCotton("-")
+        setProductFluid("-")
         // console.log('will execute end')
 
     }
@@ -319,14 +282,7 @@ export function ProductsFilter({ products, customerName }: { customerName?: stri
                                     value: item.brand ?? "-"
                                 })) }
                             />
-                            <FilterSelect
-                                label="Nikotin"
-                                labelClassName="text-nowrap"
-                                value={ productNicotine }
-                                onChangeAction={ setProductNicotine }
-                                placeholder="Semua level"
-                                options={ nicotineLevelsOptions }
-                            />
+
                             <FilterSelect
                                 label="Device"
                                 value={ productTypeDevice }
@@ -340,6 +296,24 @@ export function ProductsFilter({ products, customerName }: { customerName?: stri
                                 onChangeAction={ setStockFilter }
                                 placeholder="Semua status"
                                 options={ stockStatusOptions }
+                            />
+
+                            <FilterSelect
+                                label="Nikotin (liquid)"
+                                labelClassName="text-nowrap"
+                                value={ productNicotine }
+                                onChangeAction={ setProductNicotine }
+                                placeholder="Semua level"
+                                options={ nicotineLevelsOptions }
+                            />
+
+                            <FilterSelect
+                                label="Jumlah ml (liquid)"
+                                labelClassName="text-nowrap"
+                                value={ productFluid }
+                                onChangeAction={ setProductFluid }
+                                placeholder="Semua level"
+                                options={ fluidLevelsOptions }
                             />
 
                             {/*<div>*/ }
@@ -400,16 +374,21 @@ export function ProductsFilter({ products, customerName }: { customerName?: stri
     );
 }
 
+export const productDataSchema = ProductOptionalDefaultsSchema.merge(z.object({
+    priceNormal: z.number().min(1),
+    expired: z.date().nullish(),
+}))
+export  type ProductData = z.infer<typeof productDataSchema>
+
 export function ModalProductForm({ isOpen, setOpenAction, product }: ModalProps & {
     product: ProductOptionalDefaults | null
 }) {
     const [ _selectCategory, setSelectCategory ] = useState<string | null>(null);
     // console.log(product)
 
-    const methods = useForm<ProductOptionalDefaults>({
-            resolver: zodResolver(ProductOptionalDefaultsSchema),
+    const methods = useForm<ProductData>({
+        resolver: zodResolver(productDataSchema),
             defaultValues: product ?? {
-                expired: null,
                 id: 0,
                 name: "",
                 category: "device",
@@ -427,7 +406,10 @@ export function ModalProductForm({ isOpen, setOpenAction, product }: ModalProps 
                 cottonSize: '-',
                 resistanceSize: '-',
                 batterySize: '-',
-            } satisfies ProductOptionalDefaults
+                priceNormal: 0,
+                fluidLevel: '-',
+                expired: null,
+            } satisfies ProductData
         }
     );
     // console.log(methods.formState.errors)
@@ -435,7 +417,6 @@ export function ModalProductForm({ isOpen, setOpenAction, product }: ModalProps 
     useEffect(() => {
         if (product) {
             methods.reset(product);
-
         }
         console.log('is render');
     }, [ product, methods ]);
@@ -450,9 +431,9 @@ export function ModalProductForm({ isOpen, setOpenAction, product }: ModalProps 
                     toast("You submitted the following values", {
                         description: (
                             <pre className="mt-2 w-[320px] rounded-md bg-neutral-950 p-4">
-                                    <code className="text-white">{ JSON.stringify(data, null, 2) }</code>
-                                    <code
-                                        className="text-white">{ JSON.stringify(methods.formState.errors, null, 2) }</code>
+                                        <code className="text-white">{ JSON.stringify(data, null, 2) }</code>
+                                        <code
+                                            className="text-white">{ JSON.stringify(methods.formState.errors, null, 2) }</code>
                                 </pre>
                         )
                     })
@@ -463,18 +444,29 @@ export function ModalProductForm({ isOpen, setOpenAction, product }: ModalProps 
     });
 
     return (
-        <Dialog open={ isOpen } onOpenChange={ setOpenAction }>
+        <ResponsiveModalOnly isOpen={ isOpen }
+                             setOpenAction={ setOpenAction }
+                             title={ 'Tambah Produk Baru' }
+                             footer={
+                                 <DialogFooter>
+                                     <Button onClick={ onSubmit }>Simpan Produk</Button>
+                                 </DialogFooter>
+                             }
 
-            <DialogContent className="max-w-2xl">
-                <DialogHeader>
-                    <DialogTitle>Tambah Produk Baru</DialogTitle>
-                </DialogHeader>
-
+        >
+            <div className="h-[60vh] overflow-y-scroll">
                 <FormProvider { ...methods }>
-                    <form onSubmit={ onSubmit } className={ 'space-y-4' }>
+                    <form
+                        // onSubmit={ onSubmit }
+                        className={ 'space-y-4' }>
                         <div className="grid grid-cols-2 gap-4">
                             <InputForm title="Nama Produk" name="name" placeholder="Nama produk"/>
                             <InputForm title='Merk' name="brand" placeholder="Nama Merk"/>
+
+                            <InputNumForm name="price" title="Harga" placeholder="0" type="number"/>
+                            <InputNumForm name="priceNormal" title="Harga Normal" placeholder="0" type="number"/>
+                            <InputForm name="stock" title="Stok Awal" placeholder="0" type="number"/>
+                            <InputForm name="minStock" title="Minimum Stok" placeholder="0" type="number"/>
 
                             <SelectForm
                                 onChangeAction={ setSelectCategory }
@@ -483,11 +475,6 @@ export function ModalProductForm({ isOpen, setOpenAction, product }: ModalProps 
                                 placeholder="Pilih kategori"
                                 options={ categoryOption }
                             />
-
-
-                            <InputNumForm name="price" title="Harga" placeholder="0" type="number"/>
-                            <InputForm name="stock" title="Stok Awal" placeholder="0" type="number"/>
-                            <InputForm name="minStock" title="Minimum Stok" placeholder="0" type="number"/>
 
 
                             <SelectForm
@@ -528,12 +515,22 @@ export function ModalProductForm({ isOpen, setOpenAction, product }: ModalProps 
                                 options={ batterySizeOptions }
                             />
 
+
                             <SelectForm
                                 name="nicotineLevel"
                                 label="Level Nikotin (untuk liquid)"
                                 placeholder="Pilih level"
                                 options={ nicotineLevelsOptions }
                             />
+
+                            <SelectForm
+                                name="fluidLevel"
+                                label="Volume ml (untuk liquid)"
+                                placeholder="Pilih level"
+                                options={ fluidLevelsOptions }
+                            />
+
+
 
                             <InputDateForm name={ 'expired' }
                                            title={ "Expired" }
@@ -543,12 +540,51 @@ export function ModalProductForm({ isOpen, setOpenAction, product }: ModalProps 
                         </div>
                         <InputForm name="image" title="URL Gambar" placeholder="Link gambar produk" type="url"/>
                         <TextareaForm name="description" title="Deskripsi" placeholder="Deskripsi produk"/>
-                        <DialogFooter className="pt-4">
-                            <Button type="submit">Simpan Produk</Button>
-                        </DialogFooter>
+                        {/*<DialogFooter className="pt-4">*/ }
+                        {/*    <Button type="submit">Simpan Produk</Button>*/ }
+                        {/*</DialogFooter>*/ }
                     </form>
                 </FormProvider>
-            </DialogContent>
-        </Dialog>
+            </div>
+        </ResponsiveModalOnly>
+    );
+}
+
+export function FilterSelect(
+    {
+        label,
+        value,
+        onChangeAction,
+        placeholder,
+        options,
+        labelClassName
+    }: {
+        label: string;
+        value: string;
+        onChangeAction: (val: string) => void;
+        placeholder: string;
+        options: {
+            label: string;
+            value: string;
+        }[];
+        labelClassName?: string;
+    }
+) {
+    return (
+        <div>
+            <Label className={ labelClassName }>{ label }</Label>
+            <Select value={ value } onValueChange={ onChangeAction }>
+                <SelectTrigger className="w-full min-w-6">
+                    <SelectValue placeholder={ placeholder }/>
+                </SelectTrigger>
+                <SelectContent>
+                    { options.map((item) => (
+                        <SelectItem key={ item.value } value={ item.value }>
+                            { item.label }
+                        </SelectItem>
+                    )) }
+                </SelectContent>
+            </Select>
+        </div>
     );
 }

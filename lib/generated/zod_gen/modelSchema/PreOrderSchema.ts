@@ -18,7 +18,10 @@ export const PreOrderSchema = z.object({
   id: z.number().int(),
   productId: z.number().int(),
   quantity: z.number().min(1),
-  estimatedDate: z.date(),
+    priceNormal: z.number().min(1),
+    priceSell: z.number().min(1),
+    estimatedDate: z.date().nullish(),
+    expired: z.date().nullish(),
     /**
      * //Pending, Terima
      */
@@ -43,6 +46,7 @@ export type PreOrderPartial = z.infer<typeof PreOrderPartialSchema>
 
 export const PreOrderOptionalDefaultsSchema = PreOrderSchema.merge(z.object({
   id: z.number().int().optional(),
+    estimatedDate: z.date().optional(),
   createdAt: z.date().optional(),
   updatedAt: z.date().optional(),
 }))

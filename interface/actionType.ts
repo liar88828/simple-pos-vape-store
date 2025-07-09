@@ -14,23 +14,28 @@ export type CartItem = Product & {
     quantity: number
 }
 
+export type ProductParam = {
+    range: string,
+    productName: string
+    productCoil: string
+    productCotton: string
+    productFluid: string
+    productBattery: string
+    productCategory: string
+    productNicotine: string
+    productResistant: string
+    productTypeDevice: string
+    productBrand: string
+    productPage: string
+    productLimit: string
+}
+
 export type ContextPage = {
     params: Promise<{ slug: string }>
-    searchParams: Promise<{
-        range: string,
-        productName: string
-        productCoil: string
-        productCotton: string
-        productBattery: string
-        productCategory: string
-        productNicotine: string
-        productResistant: string
-        productTypeDevice: string
-        productBrand: string
-        productPage: string
-        productLimit: string
-        customerName: string
-    }>
+    searchParams: Promise<(
+        ProductParam &
+        { customerName: string }
+        )>
 }
 
 export type RangeStats = 'today' | "week" | "month" | "year"

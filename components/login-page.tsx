@@ -46,7 +46,6 @@ export default function LoginPage() {
 
     return (
         <div className="w-full max-w-sm md:max-w-3xl">
-            <div className="flex flex-col gap-6">
                 <Card className="overflow-hidden p-0">
                     {/*<CardHeader>*/ }
                     {/*    <CardTitle>Welcome Back 👋</CardTitle>*/ }
@@ -127,7 +126,6 @@ export default function LoginPage() {
                         </SlideTransition>
                     </CardContent>
                 </Card>
-            </div>
         </div>
     );
 };

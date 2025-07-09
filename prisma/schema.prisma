@@ -72,6 +72,7 @@ model Product {
     type           String /// @zod.string.min(1)
     description    String /// @zod.string.min(1)
     nicotineLevel  String? // nullable
+    fluidLevel String? // nullable
     flavor         String? // nullable
     cottonSize     String?
     batterySize    String?
@@ -79,7 +80,6 @@ model Product {
     coilSize       String?
     PreOrders      PreOrder[]
     SalesItems     SalesItem[]
-    expired        DateTime?
     createdAt      DateTime    @default(now())
     updatedAt      DateTime    @updatedAt
 }
@@ -106,7 +106,10 @@ model PreOrder {
     product       Product  @relation(fields: [productId], references: [id])
     productId     Int
     quantity      Int /// @zod.number.min(1)
-    estimatedDate DateTime
+    priceNormal   Int /// @zod.number.min(1)
+    priceSell     Int /// @zod.number.min(1)
+    estimatedDate DateTime @default(now()) /// @zod.date.nullish()
+    expired       DateTime?
     status        String /// @zod.string.min(1)//Pending, Terima
 
     createdAt DateTime @default(now())

@@ -1,4 +1,4 @@
-import { getProduct, getProductLowStockComplete } from "@/action/product-action";
+import { getExpiredProduct, getPreorder, getProduct, getProductLowStockComplete } from "@/action/product-action";
 import { getContextPage } from "@/components/context-action";
 import { InventoryPage } from "@/components/inventory-page"
 import { ContextPage } from "@/interface/actionType";
@@ -6,6 +6,8 @@ import { ContextPage } from "@/interface/actionType";
 export default async function Inventory(context: ContextPage) {
 
     return <InventoryPage
+        preorders={ await getPreorder() }
+        expiredProduct={ await getExpiredProduct() }
         lowStockProducts={ await getProductLowStockComplete() }
         products={
             await getProduct({
@@ -18,6 +20,7 @@ export default async function Inventory(context: ContextPage) {
                 productCoil: await getContextPage(context, 'productCoil'),
                 productBattery: await getContextPage(context, 'productBattery'),
                 productCotton: await getContextPage(context, 'productCotton'),
+                productFluid: await getContextPage(context, 'productFluid'),
                 productLimit: await getContextPage(context, 'productLimit'),
                 productPage: await getContextPage(context, 'productPage')
             },
