@@ -1,5 +1,5 @@
 'use client'
-import { newParam } from "@/lib/my-utils";
+import { newParam } from "@/lib/helper";
 import { useRouter } from "next/navigation"; // or "next/navigation" if you're using app router
 import { useEffect, useState } from "react";
 

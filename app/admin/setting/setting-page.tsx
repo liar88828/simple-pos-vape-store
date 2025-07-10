@@ -11,6 +11,7 @@ import { InputForm, SelectForm, SwitchForm, SwitchOnlyForm, TextareaForm } from 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle, } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger, } from "@/components/ui/tabs"
+import { toastResponse } from "@/lib/helper";
 import {
     Inventory,
     InventorySchema,
@@ -19,8 +20,7 @@ import {
     Store,
     StoreOptionalDefaults,
     StoreOptionalDefaultsSchema
-} from "@/lib/generated/zod_gen";
-import { toastResponse } from "@/lib/my-utils";
+} from "@/lib/validation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Package, Plus, Trash2, Upload } from "lucide-react";
 import React, { useState } from "react";
@@ -75,11 +75,15 @@ export function RenderStoreSection({ data }: { data: Store | null }) {
     });
 
     const onSubmit = methods.handleSubmit(async (dataStore) => {
-        setIsLoading(true)
+
         // console.log("Form Data:", data);
-        toastResponse({ response: await saveSettingStore(dataStore) })
-        await saveStoreLogo(logoImage)
-        setIsLoading(false)
+        toastResponse({
+            onFinish: () => setIsLoading(false),
+            onSuccess: async () => await saveStoreLogo(logoImage),
+            onStart: () => setIsLoading(true),
+            response: await saveSettingStore(dataStore)
+        })
+
     });
 
     const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -145,8 +149,8 @@ export function RenderStoreSection({ data }: { data: Store | null }) {
                                     accept="image/*"
                                     onChange={ handleImageChange }
                                     className="text-sm text-primary file:mr-4 file:py-1 file:px-2
-                                               file:rounded file:text-sm file:font-semibold
-                                               file:bg-primary file:text-primary-foreground hover:file:bg-primary/90"
+                                                   file:rounded file:text-sm file:font-semibold
+                                                   file:bg-primary file:text-primary-foreground hover:file:bg-primary/90"
                                 />
                             </div>
                         </div>
@@ -189,10 +193,11 @@ export function RenderPaymentSection({ data }: { data: PaymentWithRelations | nu
     })
 
     const onSubmit = methods.handleSubmit(async (dataPayment) => {
-        // console.log(data)
-        setIsLoading(true)
-        toastResponse({ response: await saveSettingPayment(dataPayment) })
-        setIsLoading(false)
+        toastResponse({
+            response: await saveSettingPayment(dataPayment),
+            onStart: () => setIsLoading(true),
+            onFinish: () => setIsLoading(false)
+        })
     });
 
     return (
@@ -304,10 +309,11 @@ export function RenderShippingSection({ data }: { data: ShippingWithRelations | 
         name: 'ShippingList'
     })
     const onSubmit = methods.handleSubmit(async (dataShipping) => {
-        setIsLoading(true)
-        // console.log(data)
-        toastResponse({ response: await saveSettingShipping(dataShipping) })
-        setIsLoading(false)
+        toastResponse({
+            onStart: () => setIsLoading(true),
+            response: await saveSettingShipping(dataShipping),
+            onFinish: () => setIsLoading(false)
+        })
 
     });
     return (
@@ -414,8 +420,12 @@ export function RenderInventorySection({ data }: { data: Inventory | null }) {
     });
 
     const onSubmit = methods.handleSubmit(async (dataInventory) => {
-        toastResponse({ response: await saveSettingInventory(dataInventory) })
-    });
+        toastResponse({
+            response: await saveSettingInventory(dataInventory),
+        });
+    })
+
+
     return (
         <Card>
             <CardHeader>

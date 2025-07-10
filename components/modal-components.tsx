@@ -61,7 +61,9 @@ export function ResponsiveModal(
                 </DialogHeader>
                 { children }
                 { footer && <DialogFooter className="pt-4">
+					<DialogClose asChild>
                     { footer }
+					</DialogClose>
 					<DialogClose asChild>
 						<Button variant="outline">Tutup</Button>
 					</DialogClose>
@@ -79,7 +81,9 @@ export function ResponsiveModal(
                     </DrawerHeader>
                     <div className="px-6">{ children }</div>
                     <DrawerFooter className="pt-2">
+                        <DrawerClose asChild>
                         { footer }
+                        </DrawerClose>
                         <DrawerClose asChild>
                             <Button variant="outline">Tutup</Button>
                         </DrawerClose>
@@ -114,16 +118,15 @@ export function ResponsiveModalOnly(
                 <DialogContent className="sm:max-w-[500px]">
                     <DialogHeader>
                         <DialogTitle>{ title }</DialogTitle>
-                        { description && <DialogDescription>{ description }</DialogDescription> }
+                        <DialogDescription>{ description }</DialogDescription>
                     </DialogHeader>
-
                     { children }
-                    { footer && <DialogFooter className="pt-4">
+                    <DialogFooter className="pt-4">
                         { footer }
 						<DialogClose asChild>
 							<Button variant="outline">Tutup</Button>
 						</DialogClose>
-					</DialogFooter> }
+                    </DialogFooter>
                 </DialogContent>
         </Dialog>)
         : (<Drawer open={ isOpen } onOpenChange={ setOpenAction }>
@@ -131,7 +134,7 @@ export function ResponsiveModalOnly(
                 <div className="mx-auto w-full max-w-sm">
                     <DrawerHeader className="text-left">
                         <DrawerTitle>{ title }</DrawerTitle>
-                        { description && <DrawerDescription>{ description }</DrawerDescription> }
+                        <DrawerDescription>{ description }</DrawerDescription>
                     </DrawerHeader>
                     <div className="px-4">
                         { children }

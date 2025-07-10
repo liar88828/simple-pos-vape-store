@@ -1,4 +1,4 @@
-import { Customer, Product, Sale, SalesItem } from "@/lib/generated/zod_gen";
+import { Customer, Product, Sale, SalesItem } from "@/lib/validation";
 import { JWTPayload } from "jose";
 
 export type ActionResponse<T = any> = {
@@ -28,6 +28,12 @@ export type ProductParam = {
     productBrand: string
     productPage: string
     productLimit: string
+//
+    inventoryName: string
+    inventoryStock: string
+    inventoryExpired: string
+    inventoryLimit: string
+    inventoryPage: string
 }
 
 export type ContextPage = {

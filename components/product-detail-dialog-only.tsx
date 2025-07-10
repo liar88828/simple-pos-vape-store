@@ -1,10 +1,11 @@
 'use client'
-import { deleteProduct, getProductById } from "@/action/product-action";
+import { deleteProduct, getProductById, ProductPreorder } from "@/action/product-action";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogClose, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { Separator } from "@/components/ui/separator";
 import { ModalProps } from "@/interface/actionType";
-import { Product } from "@/lib/generated/zod_gen";
-import { toastResponse } from "@/lib/my-utils";
+import { formatDateIndo, formatRupiah } from "@/lib/formatter";
+import { toastResponse } from "@/lib/helper";
 import { useQuery } from "@tanstack/react-query";
 import { Plus, Trash2 } from "lucide-react";
 import React from "react";
@@ -19,18 +20,12 @@ function DetailItem({ label, value }: { label: string; value: string | number })
 }
 
 export function ProductDetailDialogOnly({ product, isOpen, setOpenAction, onAdd, isAdd = false, isDelete = false }: {
-    product: Product | null,
+    product: ProductPreorder,
     onAdd?: () => void,
     isAdd?: boolean,
     isDelete?: boolean,
 } & ModalProps) {
-
-    if (!product) {
-        console.log('Product not found');
-        // setOpenAction(false);
-        return
-    }
-
+    const preOrder = product.PreOrders[0];
     return (
         <Dialog
             open={ isOpen }
@@ -55,21 +50,21 @@ export function ProductDetailDialogOnly({ product, isOpen, setOpenAction, onAdd,
 
                     <div className="grid grid-cols-2 sm:gap-4 gap-2">
 
-                        <DetailItem label="Harga" value={ `Rp ${ product.price.toLocaleString() }` }/>
+                        <DetailItem label="Harga Jual" value={ formatRupiah(product.price) }/>
+                        <DetailItem label="Harga Normal" value={ formatRupiah(product.PreOrders[0].priceNormal) }/>
+                        <DetailItem label="Kategori" value={ product.category }/>
+
                         <DetailItem label="Stok" value={ product.stock }/>
                         <DetailItem label="Minimum Stok" value={ product.minStock }/>
+                        <DetailItem label="Total Terjual" value={ product.sold }/>
+
                         <DetailItem label="Tipe Produk" value={ product.type }/>
 
                         { product.brand && (
                             <DetailItem label="Merek" value={ product.brand }/>
                         ) }
 
-                        { product.nicotineLevel && (
-                            <DetailItem label="Level Nikotin" value={ product.nicotineLevel }/>
-                        ) }
-                        { product.flavor && (
-                            <DetailItem label="Rasa" value={ product.flavor }/>
-                        ) }
+
                         { product.cottonSize && (
                             <DetailItem label="Ukuran Cotton" value={ product.cottonSize }/>
                         ) }
@@ -82,20 +77,35 @@ export function ProductDetailDialogOnly({ product, isOpen, setOpenAction, onAdd,
                         { product.coilSize && (
                             <DetailItem label="Ukuran Coil" value={ product.coilSize }/>
                         ) }
-                        <DetailItem label="Kategori" value={ product.category }/>
+
+
                         {/*<DetailItem label="Deskripsi" value={ product.description }/>*/ }
-                        <DetailItem label="Total Terjual" value={ product.sold }/>
-                        { product.expired && (
+
+                    </div>
+                    <Separator/>
+                    <h1 className={ 'font-bold' }>Liquid</h1>
+
+                    <div className="grid grid-cols-2 sm:gap-4 gap-2">
+
+                        { product.flavor && (
+                            <DetailItem label="Rasa" value={ product.flavor }/>
+                        ) }
+                        { product.nicotineLevel && (
+                            <DetailItem label="Level Nikotin" value={ product.nicotineLevel }/>
+                        ) }
+
+                        { product.fluidLevel && (
+                            <DetailItem label="Level Nikotin" value={ product.fluidLevel }/>
+                        ) }
+
+                        { preOrder && (
                             <DetailItem
                                 label="Kadaluarsa"
-                                value={ new Date(product.expired).toLocaleDateString("id-ID", {
-                                    year: "numeric",
-                                    month: "long",
-                                    day: "numeric"
-                                }) }
+                                value={ formatDateIndo(preOrder?.expired) }
                             />
                         ) }
                     </div>
+
 
                     <div className="flex flex-col">
                         <span className="text-xs sm:text-base text-muted-foreground"> Deskripsi </span>
@@ -155,7 +165,7 @@ export function ProductDetailDialogOnlyFetch(
         isDelete?: boolean,
     } & ModalProps) {
 
-    const { data: productResponse, isLoading, isError } = useQuery({
+    const { data: productResponse, isLoading } = useQuery({
         queryKey: [ 'product', productId ],
         gcTime: 30 * 60 * 24,
         queryFn: () => getProductById(productId as number),
@@ -233,16 +243,16 @@ export function ProductDetailDialogOnlyFetch(
                         <DetailItem label="Kategori" value={ product.category }/>
                         {/*<DetailItem label="Deskripsi" value={ product.description }/>*/ }
                         <DetailItem label="Total Terjual" value={ product.sold }/>
-                        { product.expired && (
-                            <DetailItem
-                                label="Kadaluarsa"
-                                value={ new Date(product.expired).toLocaleDateString("id-ID", {
-                                    year: "numeric",
-                                    month: "long",
-                                    day: "numeric"
-                                }) }
-                            />
-                        ) }
+                        {/*{ product.expired && (*/ }
+                        {/*    <DetailItem*/ }
+                        {/*        label="Kadaluarsa"*/ }
+                        {/*        value={ new Date(expired).toLocaleDateString("id-ID", {*/ }
+                        {/*            year: "numeric",*/ }
+                        {/*            month: "long",*/ }
+                        {/*            day: "numeric"*/ }
+                        {/*        }) }*/ }
+                        {/*    />*/ }
+                        {/*) }*/ }
                     </div>
 
                     <div className="flex flex-col">

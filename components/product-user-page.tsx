@@ -1,6 +1,6 @@
 "use client"
 
-import { ProductPaging } from "@/action/product-action";
+import { ProductPaging, ProductPreorder } from "@/action/product-action";
 import { createTransactionUser, createTransactionUserPending } from "@/action/sale-action";
 import { ProductPending } from "@/app/user/home/page"
 import { ProductDetailDialogOnly } from "@/components/product-detail-dialog-only";
@@ -8,9 +8,9 @@ import { ProductsFilter } from "@/components/products-page";
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { useCart } from "@/hooks/use-cart";
-import { SessionPayload } from "@/interface/actionType";
-import { Product } from "@/lib/generated/zod_gen";
-import { formatRupiah, toastResponse } from "@/lib/my-utils";
+import { CartItem, SessionPayload } from "@/interface/actionType";
+import { formatRupiah } from "@/lib/formatter";
+import { toastResponse } from "@/lib/helper";
 import { MinusIcon, Plus, PlusIcon, ShoppingCart, Trash2 } from "lucide-react"
 import React, { useState } from "react"
 
@@ -27,7 +27,7 @@ export function ProductUserPage(
 
     }) {
     const [ loading, setLoading ] = useState(false)
-    const [ isProduct, setIsProduct ] = useState<Product | null>(null)
+    const [ isProduct, setIsProduct ] = useState<ProductPreorder | null>(null)
     const [ isOpen, setIsOpen ] = useState(false)
     const { cartItems, incrementItem, decrementItem, removeFromCart, addToCart } = useCart(productPending.current)
     const getTotalCart = () => {
@@ -52,20 +52,19 @@ export function ProductUserPage(
 
     return (
         <div className="p-6 max-w-7xl mx-auto">
-
-            <ProductDetailDialogOnly
-                isAdd={ true }
-                product={ isProduct }
-                isOpen={ isOpen }
-                setOpenAction={ setIsOpen }
-                onAdd={ () => {
-                    if (isProduct) {
-                        // incrementItem(isProduct.id)
-                        addToCart(isProduct)
-                    }
-                }
-                }
-            />
+            { isProduct && <ProductDetailDialogOnly
+					isAdd={ true }
+					product={ isProduct }
+					isOpen={ isOpen }
+					setOpenAction={ setIsOpen }
+					onAdd={ () => {
+                        if (isProduct) {
+                            // incrementItem(isProduct.id)
+                            addToCart(isProduct)
+                        }
+                    } }
+			/>
+            }
             <h1 className="text-3xl font-bold mb-6">User Home { session.name }</h1>
 
             <div className="grid grid-cols-1 xl:grid-cols-3 space-y-6  xl:space-y-0 xl:space-x-6  ">
@@ -103,8 +102,8 @@ export function ProductUserPage(
                                                 <h3 className="font-medium text-sm mb-1">{ product.name }</h3>
                                                 <p className="text-xs text-muted-foreground mb-2">{ product.category }</p>
                                                 <div className="flex justify-between items-center">
-                                                        <span
-                                                            className="font-bold text-sm">{ formatRupiah(product.price) }</span>
+                                                                <span
+                                                                    className="font-bold text-sm">{ formatRupiah(product.price) }</span>
                                                     <Button size="sm"
                                                             onClick={ () => addToCart(product) }
                                                             disabled={ remainingStock <= 0 }
@@ -131,78 +130,28 @@ export function ProductUserPage(
                         </CardHeader>
                         <CardContent>
                             <div className="space-y-4 ">
-                                { cartItems.length === 0 ? (
-                                    <p className="text-muted-foreground text-center py-4">Keranjang kosong</p>
-                                ) : (
-                                    <>
-                                        { cartItems.map((product) => {
-
-                                            return (
-                                                <div key={ product.id }
-                                                     className="flex justify-between items-center py-2 border-b">
-                                                    <div className="flex-1">
-                                                        <p className="font-medium text-sm">{ product.name }</p>
-                                                        <p className="text-xs text-muted-foreground">
-                                                            { product.quantity } x { formatRupiah(product.price) }
-                                                        </p>
-                                                    </div>
-
-                                                    <div className="flex items-center space-x-2">
-
-                                                        {/* Total price */ }
-                                                        <span
-                                                            className="font-medium text-sm">{ formatRupiah(product.price * product.quantity) }</span>
-                                                        {/* Counter */ }
-                                                        <div className="grid grid-cols-4 gap-2">
-                                                            <Button
-                                                                size={ 'sm' }
-                                                                onClick={ () => decrementItem(product.id) }
-                                                                disabled={ product.quantity <= 1 }
-                                                            >
-                                                                <MinusIcon/>
-                                                            </Button>
-                                                            <Button
-                                                                size={ 'sm' }
-                                                                variant={ 'ghost' }>{ product.quantity }</Button>
-                                                            <Button
-                                                                size={ 'sm' }
-                                                                onClick={ () => incrementItem(product.id) }
-                                                                disabled={ product.quantity >= getProductStock(product.id) }
-                                                            >
-                                                                <PlusIcon/>
-                                                            </Button>
-
-                                                            {/* Delete button */ }
-                                                            <Button size="sm" variant="outline"
-                                                                    onClick={ () => removeFromCart(product.id) }>
-                                                                <Trash2 className="h-3 w-3"/>
-                                                            </Button>
-                                                        </div>
+                                <ProductCart cartItems={ cartItems }
+                                             decrementItemAction={ decrementItem }
+                                             incrementItemAction={ incrementItem }
+                                             getProductStockAction={ getProductStock }
+                                             removeFromCartAction={ removeFromCart }
+                                />
+                                <div className="border-t pt-4">
+                                    <div className="flex justify-between items-center font-bold">
+                                        <span>Total:</span>
+                                        <span>{ formatRupiah(getTotalCart()) }</span>
+                                    </div>
+                                </div>
 
 
-                                                    </div>
-                                                </div>
-                                            )
-                                        }) }
-
-                                        <div className="border-t pt-4">
-                                            <div className="flex justify-between items-center font-bold">
-                                                <span>Total:</span>
-                                                <span>{ formatRupiah(getTotalCart()) }</span>
-                                            </div>
-                                        </div>
-
-
-                                        <Button className="w-full" size="lg"
-                                                disabled={ loading }
-                                                onClick={ onTransaction }
-                                        >
-                                            <ShoppingCart
-                                                className="h-4 w-4 mr-2"/>
-                                            { loading ? "Loading ...." : 'Checkout' }
-                                        </Button>
-                                    </>
-                                ) }
+                                <Button className="w-full" size="lg"
+                                        disabled={ loading }
+                                        onClick={ onTransaction }
+                                >
+                                    <ShoppingCart
+                                        className="h-4 w-4 mr-2"/>
+                                    { loading ? "Loading ...." : 'Checkout' }
+                                </Button>
                             </div>
                         </CardContent>
                     </Card>
@@ -211,3 +160,72 @@ export function ProductUserPage(
         </div>
     )
 }
+
+// @ts-ignore
+export function ProductCart(
+    {
+        cartItems,
+        decrementItemAction,
+        incrementItemAction,
+        getProductStockAction,
+        removeFromCartAction
+    }: {
+        cartItems: CartItem[],
+        decrementItemAction: (id: number) => void,
+        incrementItemAction: (id: number) => void,
+        getProductStockAction: (id: number) => number,
+        removeFromCartAction: (productId: number) => void
+    }) {
+
+    if (cartItems.length === 0) {
+        return <p className="text-muted-foreground text-center py-4">Keranjang kosong</p>
+    }
+    return cartItems.map((product) => {
+            return (
+                <div key={ product.id }
+                     className="flex justify-between items-center py-2 border-b">
+                    <div className="flex-1">
+                        <p className="font-medium text-sm">{ product.name }</p>
+                        <p className="text-xs text-muted-foreground">
+                            { product.quantity } x { formatRupiah(product.price) }
+                        </p>
+                    </div>
+
+                    <div className="flex items-center space-x-2">
+
+                        {/* Total price */ }
+                        <span
+                            className="font-medium text-sm">{ formatRupiah(product.price * product.quantity) }</span>
+                        {/* Counter */ }
+                        <div className="grid grid-cols-4 gap-2">
+                            <Button
+                                size={ 'sm' }
+                                onClick={ () => decrementItemAction(product.id) }
+                                disabled={ product.quantity <= 1 }
+                            >
+                                <MinusIcon/>
+                            </Button>
+                            <Button
+                                size={ 'sm' }
+                                variant={ 'ghost' }>{ product.quantity }</Button>
+                            <Button
+                                size={ 'sm' }
+                                onClick={ () => incrementItemAction(product.id) }
+                                disabled={ product.quantity >= getProductStockAction(product.id) }
+                            >
+                                <PlusIcon/>
+                            </Button>
+
+                            {/* Delete button */ }
+                            <Button size="sm" variant="outline"
+                                    onClick={ () => removeFromCartAction(product.id) }>
+                                <Trash2 className="h-3 w-3"/>
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+    )
+}
+

@@ -1,5 +1,5 @@
 import { CartItem } from "@/interface/actionType";
-import { Product } from "@/lib/generated/zod_gen";
+import { Product } from "@/lib/validation";
 import { useState } from "react";
 
 export function useCart(initialItems?: CartItem[]) {

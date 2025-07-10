@@ -3,7 +3,7 @@ import { DashboardStats, } from "@/action/sale-action";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { RangeStats, SaleCustomers } from "@/interface/actionType";
-import { formatDateIndo, formatRupiah } from "@/lib/my-utils";
+import { formatDateIndo, formatRupiah } from "@/lib/formatter";
 import React from "react";
 
 const salesData = {

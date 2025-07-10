@@ -1,6 +1,7 @@
 'use server'
 
 import { ActionResponse } from "@/interface/actionType";
+import { prisma } from "@/lib/prisma";
 import {
     Inventory,
     PaymentList,
@@ -8,8 +9,7 @@ import {
     ShippingList,
     ShippingWithRelations,
     StoreOptionalDefaults
-} from "@/lib/generated/zod_gen";
-import { prisma } from "@/lib/prisma";
+} from "@/lib/validation";
 import { writeFile } from 'fs/promises'
 import { revalidatePath } from 'next/cache'
 import path from 'path'

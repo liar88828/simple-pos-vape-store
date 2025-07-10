@@ -6,7 +6,7 @@ import { SlideTransition } from "@/components/slide-transition";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardTitle } from "@/components/ui/card";
 import { RegisterFormData, registerSchema } from "@/lib/auth-schema";
-import { toastResponse } from "@/lib/my-utils";
+import { toastResponse } from "@/lib/helper";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import { FormProvider, useForm } from "react-hook-form";

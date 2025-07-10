@@ -9,6 +9,14 @@ export const STATUS_PREORDER = {
     PENDING: 'Pending',
     SUCCESS: 'Success'
 }
+export const statusPreordersOptions = [
+    { label: "Pilih", value: "-" },
+    { label: "Pending", value: "pending" },
+    { label: "Success", value: "success" },
+    { label: "Empty", value: "empty" },
+    { label: "Expired", value: "expired" },
+]
+
 export const ERROR = {
     DATABASE: 'DATABASE',
     VALIDATION: 'VALIDATION',

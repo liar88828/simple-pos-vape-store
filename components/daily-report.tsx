@@ -2,7 +2,7 @@ import { DashboardStats, } from "@/action/sale-action";
 import { Card } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { RangeStats, SaleCustomers } from "@/interface/actionType";
-import { formatDateIndo, formatRupiah } from "@/lib/my-utils";
+import { formatDateIndo, formatRupiah } from "@/lib/formatter";
 import React from "react";
 
 interface ReportsPageProps {

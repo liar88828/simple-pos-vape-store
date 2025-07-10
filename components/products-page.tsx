@@ -1,6 +1,6 @@
 "use client"
 
-import { ProductPaging, upsertProduct } from "@/action/product-action";
+import { ProductPaging, ProductPreorder, upsertProduct } from "@/action/product-action";
 import { InputDateForm, InputForm, InputNumForm, SelectForm, TextareaForm } from "@/components/form-hook";
 import { ResponsiveModal, ResponsiveModalOnly } from "@/components/modal-components";
 import { ProductDetailDialogOnly } from "@/components/product-detail-dialog-only";
@@ -11,6 +11,7 @@ import { DialogFooter } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Separator } from "@/components/ui/separator";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { useDebounce, } from "@/hooks/use-debounce";
 import { ModalProps } from "@/interface/actionType";
@@ -26,20 +27,13 @@ import {
     stockStatusOptions,
     typeDeviceOption
 } from "@/lib/constants";
-import { Product, ProductOptionalDefaults, ProductOptionalDefaultsSchema } from "@/lib/generated/zod_gen";
-import {
-    formatRupiah,
-    getBadgeVariant,
-    getStockLabel,
-    getValueLabel,
-    newParam,
-    toastResponse,
-    truncateText
-} from "@/lib/my-utils";
+import { formatRupiah, getNumberSmall, truncateText } from "@/lib/formatter";
+import { getBadgeVariant, getStockLabel, newParam, toastResponse } from "@/lib/helper";
+import { ProductOptionalDefaultsSchema } from "@/lib/validation";
 import { zodResolver } from "@hookform/resolvers/zod"
 import { ChevronLeft, ChevronRight, Eye, FilterIcon, Pencil, Plus, XIcon } from "lucide-react"
 import { useRouter } from "next/navigation";
-import React, { useEffect, useState } from "react"
+import React, { HTMLInputTypeAttribute, useEffect, useState } from "react"
 import { FormProvider, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -48,7 +42,7 @@ export function ProductsPage({ products }: { products: ProductPaging }) {
     const [ openCreate, setOpenCreate ] = useState(false);
     const [ openUpdate, setOpenUpdate ] = useState(false);
     const [ openDetail, setOpenDetail ] = useState(false);
-    const [ isProduct, setIsProduct ] = useState<Product | null>(null);
+    const [ isProduct, setIsProduct ] = useState<ProductPreorder | null>(null);
     return (
         <div className="p-4 sm:p-6 max-w-7xl mx-auto">
 
@@ -58,11 +52,25 @@ export function ProductsPage({ products }: { products: ProductPaging }) {
                     <Plus className="h-4 w-4 mr-2"/>
                     Tambah Produk
                 </Button>
+                { openCreate &&
+						<ModalProductForm setOpenAction={ setOpenCreate } isOpen={ openCreate } product={ null }/>
+                }
 
-                <ModalProductForm setOpenAction={ setOpenCreate } isOpen={ openCreate } product={ null }/>
-                <ModalProductForm setOpenAction={ setOpenUpdate } isOpen={ openUpdate } product={ isProduct }/>
-                <ProductDetailDialogOnly isDelete={ true } product={ isProduct } isOpen={ openDetail }
+                { isProduct &&
+						<ModalProductForm setOpenAction={ setOpenUpdate } isOpen={ openUpdate } product={ {
+                            ...isProduct,
+                            expired: isProduct.PreOrders[0].expired ?? new Date(),
+                            price: isProduct.PreOrders[0].priceSell,
+                            priceNormal: isProduct.PreOrders[0].priceNormal,
+
+                        } }/>
+                }
+                { isProduct &&
+						<ProductDetailDialogOnly isDelete={ true }
+												 product={ isProduct }
+												 isOpen={ openDetail }
                                          setOpenAction={ setOpenDetail }/>
+                }
             </div>
 
 
@@ -115,7 +123,7 @@ export function ProductsPage({ products }: { products: ProductPaging }) {
                                     </TableCell>
                                     <TableCell>{ product.category }</TableCell>
                                     <TableCell>{ formatRupiah(product.price) }</TableCell>
-                                    <TableCell>{ getValueLabel(product.stock) }</TableCell>
+                                    <TableCell>{ getNumberSmall(product.stock) }</TableCell>
                                     <TableCell>
                                         <Badge variant={ getBadgeVariant(product.stock, product.minStock) }>
                                             { getStockLabel(product.stock, product.minStock) }
@@ -375,16 +383,17 @@ export function ProductsFilter({ products, customerName }: { customerName?: stri
 }
 
 export const productDataSchema = ProductOptionalDefaultsSchema.merge(z.object({
-    priceNormal: z.number().min(1),
+    priceNormal: z.number().min(1).nullish(),
     expired: z.date().nullish(),
 }))
-export  type ProductData = z.infer<typeof productDataSchema>
+
+export type ProductData = z.infer<typeof productDataSchema>
 
 export function ModalProductForm({ isOpen, setOpenAction, product }: ModalProps & {
-    product: ProductOptionalDefaults | null
+    product: ProductData | null
 }) {
     const [ _selectCategory, setSelectCategory ] = useState<string | null>(null);
-    // console.log(product)
+    console.log(product)
 
     const methods = useForm<ProductData>({
         resolver: zodResolver(productDataSchema),
@@ -446,10 +455,11 @@ export function ModalProductForm({ isOpen, setOpenAction, product }: ModalProps 
     return (
         <ResponsiveModalOnly isOpen={ isOpen }
                              setOpenAction={ setOpenAction }
-                             title={ 'Tambah Produk Baru' }
+                             title={ product ? 'Update Produk' : 'Tambah Produk Baru' }
                              footer={
                                  <DialogFooter>
-                                     <Button onClick={ onSubmit }>Simpan Produk</Button>
+                                     <Button
+                                         onClick={ onSubmit }>{ product ? 'Update Produk' : 'Simpan Produk' }</Button>
                                  </DialogFooter>
                              }
 
@@ -459,14 +469,11 @@ export function ModalProductForm({ isOpen, setOpenAction, product }: ModalProps 
                     <form
                         // onSubmit={ onSubmit }
                         className={ 'space-y-4' }>
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 gap-4">
                             <InputForm title="Nama Produk" name="name" placeholder="Nama produk"/>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
                             <InputForm title='Merk' name="brand" placeholder="Nama Merk"/>
-
-                            <InputNumForm name="price" title="Harga" placeholder="0" type="number"/>
-                            <InputNumForm name="priceNormal" title="Harga Normal" placeholder="0" type="number"/>
-                            <InputForm name="stock" title="Stok Awal" placeholder="0" type="number"/>
-                            <InputForm name="minStock" title="Minimum Stok" placeholder="0" type="number"/>
 
                             <SelectForm
                                 onChangeAction={ setSelectCategory }
@@ -477,16 +484,20 @@ export function ModalProductForm({ isOpen, setOpenAction, product }: ModalProps 
                             />
 
 
+                            <InputNumForm name="price" title="Harga Jual" placeholder="0" type="number"/>
+                            <InputNumForm name="priceNormal" title="Harga Normal" placeholder="0" type="number"/>
+                            <InputForm name="stock" title="Stok Awal" placeholder="0" type="number"/>
+                            <InputForm name="minStock" title="Minimum Stok" placeholder="0" type="number"/>
+
+
                             <SelectForm
                                 name="type"
                                 label="Tipe Device"
                                 placeholder="Tipe Device"
                                 options={ typeDeviceOption }
                             />
-                            <InputForm name="flavor" title="Rasa (untuk liquid)" placeholder="Rasa liquid"/>
 
 
-                            {/*{ selectCategory }*/ }
                             <SelectForm
                                 name="resistanceSize"
                                 label="Resistansi (ohm)"
@@ -516,6 +527,16 @@ export function ModalProductForm({ isOpen, setOpenAction, product }: ModalProps 
                             />
 
 
+                        </div>
+                        <Separator/>
+
+                        <h1 className={ 'font-bold ' }>Liquid</h1>
+                        <div className="grid grid-cols-2 gap-4">
+                            {/*add separation*/ }
+                            <InputForm name="flavor"
+                                       title="Rasa (untuk liquid)"
+                                       placeholder="Rasa liquid"/>
+
                             <SelectForm
                                 name="nicotineLevel"
                                 label="Level Nikotin (untuk liquid)"
@@ -529,8 +550,7 @@ export function ModalProductForm({ isOpen, setOpenAction, product }: ModalProps 
                                 placeholder="Pilih level"
                                 options={ fluidLevelsOptions }
                             />
-
-
+                            {/*add separation*/ }
 
                             <InputDateForm name={ 'expired' }
                                            title={ "Expired" }
@@ -538,6 +558,7 @@ export function ModalProductForm({ isOpen, setOpenAction, product }: ModalProps 
                                            minDate={ false }
                             />
                         </div>
+
                         <InputForm name="image" title="URL Gambar" placeholder="Link gambar produk" type="url"/>
                         <TextareaForm name="description" title="Deskripsi" placeholder="Deskripsi produk"/>
                         {/*<DialogFooter className="pt-4">*/ }
@@ -585,6 +606,35 @@ export function FilterSelect(
                     )) }
                 </SelectContent>
             </Select>
+        </div>
+    );
+}
+
+export function FilterInput(
+    {
+        type = 'text',
+        label,
+        value,
+        onChangeAction,
+        placeholder,
+    }: {
+        label: string;
+        type?: HTMLInputTypeAttribute;
+        value: string;
+        onChangeAction: (val: string) => void;
+        placeholder: string;
+    }
+) {
+    return (
+        <div>
+            <Label>{ label }</Label>
+            <Input
+                type={ type }
+                value={ value }
+                placeholder={ placeholder }
+                onChange={ e => onChangeAction(e.target.value) }
+                className="w-full min-w-6"/>
+
         </div>
     );
 }

@@ -7,9 +7,9 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { SaleCustomers } from "@/interface/actionType";
-import { Product } from "@/lib/generated/zod_gen";
-import { formatDateIndo, formatRupiah, formatRupiahShort } from "@/lib/my-utils";
+import { formatDateIndo, formatRupiah, formatRupiahShort } from "@/lib/formatter";
 import { cn } from "@/lib/utils"
+import { Product } from "@/lib/validation";
 import { AlertTriangle, Clock, DollarSign, Package, ShoppingCart, Star, TrendingUp, Users } from "lucide-react"
 import Link from "next/link"
 import React, { useState } from "react";

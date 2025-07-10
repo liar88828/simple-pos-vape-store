@@ -1,6 +1,14 @@
 import { z } from 'zod';
-import { PaymentWithRelationsSchema, PaymentPartialWithRelationsSchema, PaymentOptionalDefaultsWithRelationsSchema } from './PaymentSchema'
-import type { PaymentWithRelations, PaymentPartialWithRelations, PaymentOptionalDefaultsWithRelations } from './PaymentSchema'
+import type {
+    PaymentOptionalDefaultsWithRelations,
+    PaymentPartialWithRelations,
+    PaymentWithRelations
+} from './PaymentSchema'
+import {
+    PaymentOptionalDefaultsWithRelationsSchema,
+    PaymentPartialWithRelationsSchema,
+    PaymentWithRelationsSchema
+} from './PaymentSchema'
 
 /////////////////////////////////////////
 // PAYMENT LIST SCHEMA

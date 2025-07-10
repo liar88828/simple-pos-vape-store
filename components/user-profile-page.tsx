@@ -2,7 +2,7 @@
 import { CustomerComplete } from "@/action/customer-action";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { formatDateIndo, formatRupiah } from "@/lib/my-utils";
+import { formatDateIndo, formatRupiah } from "@/lib/formatter";
 import React, { useState } from "react";
 
 export default function UserProfilePage({ customer }: { customer: CustomerComplete }) {

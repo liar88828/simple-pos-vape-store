@@ -1,10 +1,11 @@
 "use client"
 
 import { createCustomerNew } from "@/action/customer-action";
-import { ProductPaging } from "@/action/product-action";
+import { ProductPaging, ProductPreorder } from "@/action/product-action";
 import { createTransaction } from "@/action/sale-action";
 import { InputForm } from "@/components/form-hook";
 import { ProductDetailDialogOnly } from "@/components/product-detail-dialog-only";
+import { ProductCart } from "@/components/product-user-page";
 import { ProductsFilter } from "@/components/products-page";
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -19,11 +20,12 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input"
 import { useCart } from "@/hooks/use-cart";
-import { Customer, Product } from "@/lib/generated/zod_gen";
-import { formatRupiah, newParam, toastResponse } from "@/lib/my-utils";
+import { formatRupiah } from "@/lib/formatter";
+import { newParam, toastResponse } from "@/lib/helper";
 import { CustomerModelNew, CustomerModelType } from "@/lib/schema";
+import { Customer } from "@/lib/validation";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { MinusIcon, Plus, PlusIcon, Search, ShoppingCart, Trash2 } from "lucide-react"
+import { MinusIcon, Plus, Search, ShoppingCart } from "lucide-react"
 import { useRouter } from "next/navigation";
 import React, { useMemo, useState } from "react"
 import { FormProvider, useForm } from "react-hook-form";
@@ -34,7 +36,7 @@ export function POSPage(
     const [ selectedCustomer, setSelectedCustomer ] = useState<Customer | null>(null)
     const [ loading, setLoading ] = useState(false)
     const [ searchCustomer, setSearchCustomer ] = useState("")
-    const [ isProduct, setIsProduct ] = useState<Product | null>(null)
+    const [ isProduct, setIsProduct ] = useState<ProductPreorder | null>(null)
     const [ isOpen, setIsOpen ] = useState(false)
     const { setCartItems, removeFromCart, incrementItem, decrementItem, cartItems, addToCart } = useCart([])
 
@@ -61,17 +63,18 @@ export function POSPage(
 
     return (
         <div className="p-4 sm:p-6 max-w-7xl mx-auto">
-
-            <ProductDetailDialogOnly
-                product={ isProduct } isOpen={ isOpen } isAdd={ true }
-                setOpenAction={ setIsOpen }
-                onAdd={ () => {
-                    if (isProduct) {
-                        // incrementItem(isProduct.id)
-                        addToCart(isProduct)
-                    }
-                } }
-            />
+            { isProduct &&
+					<ProductDetailDialogOnly
+							product={ isProduct } isOpen={ isOpen } isAdd={ true }
+							setOpenAction={ setIsOpen }
+							onAdd={ () => {
+                                if (isProduct) {
+                                    // incrementItem(isProduct.id)
+                                    addToCart(isProduct)
+                                }
+                            } }
+					/>
+            }
 
             {/*hidden sm:block*/ }
             <h1 className="text-lg sm:text-3xl font-bold mb-4">POS Kasir</h1>
@@ -138,117 +141,67 @@ export function POSPage(
                         </CardHeader>
                         <CardContent>
                             <div className="space-y-4">
-                                { cartItems.length === 0 ? (
-                                    <p className="text-muted-foreground text-center py-4">Keranjang kosong</p>
-                                ) : (
-                                    <>
-                                        { cartItems.map((product) => {
-                                            return (
-                                                <div key={ product.id }
-                                                     className="flex justify-between items-center py-2 border-b">
-                                                    <div className="flex-1">
-                                                        <p className="font-medium text-sm">{ product.name }</p>
-                                                        <p className="text-xs text-muted-foreground">
-                                                            { product.quantity } x { formatRupiah(product.price) }
-                                                        </p>
-                                                    </div>
+                                <ProductCart cartItems={ cartItems }
+                                             decrementItemAction={ decrementItem }
+                                             incrementItemAction={ incrementItem }
+                                             getProductStockAction={ getProductStock }
+                                             removeFromCartAction={ removeFromCart }
+                                />
 
-                                                    <div className="flex items-center space-x-2">
+                                <div className="border-t pt-4">
+                                    <div className="flex justify-between items-center font-bold">
+                                        <span>Total:</span>
+                                        <span>{ formatRupiah(getTotalCart()) }</span>
+                                    </div>
+                                </div>
 
-                                                        {/* Total price */ }
-                                                        <span
-                                                            className="font-medium text-sm">{ formatRupiah(product.price * product.quantity) }</span>
+                                {/* Age Verification */ }
+                                {/*<div className="border-t pt-4">*/ }
+                                {/*    <Label className="text-sm font-medium">Verifikasi Umur</Label>*/ }
+                                {/*    <div className="flex items-center space-x-2 mt-2">*/ }
+                                {/*        <Checkbox id="age-verify" onClick={ () => setAgeValid(!ageValid) }/>*/ }
+                                {/*        <Label htmlFor="age-verify" className="text-sm">*/ }
+                                {/*            Pembeli berusia 18+ tahun*/ }
+                                {/*        </Label>*/ }
+                                {/*    </div>*/ }
+                                {/*</div>*/ }
 
+                                <div className="">
+                                    { selectedCustomer ? <div
+                                            className={ 'border rounded-xl p-2 flex  items-end justify-between' }>
+                                            <div className="">
+                                                <h1 className="font-medium">{ selectedCustomer.name }</h1>
+                                                <p className="text-sm text-muted-foreground">
+                                                    {/*Usia: { selectedCustomer.age } • Total*/ }
+                                                    {/*Belanja : <Badge*/ }
+                                                    {/*variant={ getStatusVariant(selectedCustomer.status) }>*/ }
+                                                    {/*{ chooseStatus(selectedCustomer.status) }</Badge>*/ }
 
-                                                        {/* Counter */ }
-                                                        <div className="grid grid-cols-4 gap-2">
-                                                            <Button
-                                                                size={ 'sm' }
-                                                                onClick={ () => decrementItem(product.id) }
-                                                                disabled={ product.quantity <= 1 }
-                                                            >
-                                                                <MinusIcon/>
-                                                            </Button>
-                                                            <Button
-                                                                size={ 'sm' }
-                                                                variant={ 'ghost' }>{ product.quantity }</Button>
-                                                            <Button
-                                                                size={ 'sm' }
-                                                                onClick={ () => incrementItem(product.id) }
-                                                                // disabled={ product.quantity >= getProductStock(product.id) }
-                                                                disabled={ product.quantity >= getProductStock(product.id) } // ✅ perbaikan di sini
-                                                            >
-                                                                <PlusIcon/>
-                                                            </Button>
-
-                                                            {/* Delete button */ }
-                                                            <Button size="sm" variant="outline"
-                                                                    onClick={ () => removeFromCart(product.id) }>
-                                                                <Trash2 className="h-3 w-3"/>
-                                                            </Button>
-                                                        </div>
-
-
-                                                    </div>
-                                                </div>
-                                            )
-                                        }) }
-
-                                        <div className="border-t pt-4">
-                                            <div className="flex justify-between items-center font-bold">
-                                                <span>Total:</span>
-                                                <span>{ formatRupiah(getTotalCart()) }</span>
+                                                </p>
                                             </div>
+
+                                            <Button
+                                                size="sm"
+                                                onClick={ () => setSelectedCustomer(null) }>
+                                                <MinusIcon/>
+                                            </Button>
                                         </div>
+                                        : <SelectCustomer
+                                            setCustomerNameAction={ setSearchCustomer }
+                                            customerName={ searchCustomer }
+                                            customers={ customers }
+                                            onSelectAction={ (customer) => setSelectedCustomer(customer) }
+                                        /> }
 
-                                        {/* Age Verification */ }
-                                        {/*<div className="border-t pt-4">*/ }
-                                        {/*    <Label className="text-sm font-medium">Verifikasi Umur</Label>*/ }
-                                        {/*    <div className="flex items-center space-x-2 mt-2">*/ }
-                                        {/*        <Checkbox id="age-verify" onClick={ () => setAgeValid(!ageValid) }/>*/ }
-                                        {/*        <Label htmlFor="age-verify" className="text-sm">*/ }
-                                        {/*            Pembeli berusia 18+ tahun*/ }
-                                        {/*        </Label>*/ }
-                                        {/*    </div>*/ }
-                                        {/*</div>*/ }
-                                        <div className="">
-                                            { selectedCustomer ? <div
-                                                    className={ 'border rounded-xl p-2 flex  items-end justify-between' }>
-                                                    <div className="">
-                                                        <h1 className="font-medium">{ selectedCustomer.name }</h1>
-                                                        <p className="text-sm text-muted-foreground">
-                                                            {/*Usia: { selectedCustomer.age } • Total*/ }
-                                                            {/*Belanja : <Badge*/ }
-                                                            {/*variant={ getStatusVariant(selectedCustomer.status) }>*/ }
-                                                            {/*{ chooseStatus(selectedCustomer.status) }</Badge>*/ }
-
-                                                        </p>
-                                                    </div>
-
-                                                    <Button
-                                                        size="sm"
-                                                        onClick={ () => setSelectedCustomer(null) }>
-                                                        <MinusIcon/>
-                                                    </Button>
-                                                </div>
-                                                : <SelectCustomer
-                                                    setCustomerNameAction={ setSearchCustomer }
-                                                    customerName={ searchCustomer }
-                                                    customers={ customers }
-                                                    onSelectAction={ (customer) => setSelectedCustomer(customer) }
-                                                /> }
-
-                                        </div>
-                                        <Button className="w-full" size="lg"
-                                                disabled={ loading || !selectedCustomer }
-                                                onClick={ onTransaction }
-                                        >
-                                            <ShoppingCart
-                                                className="h-4 w-4 mr-2"/>
-                                            { loading ? "Loading ...." : 'Checkout' }
-                                        </Button>
-                                    </>
-                                ) }
+                                </div>
+                                <Button className="w-full" size="lg"
+                                        disabled={ loading || !selectedCustomer }
+                                        onClick={ onTransaction }
+                                >
+                                    <ShoppingCart
+                                        className="h-4 w-4 mr-2"/>
+                                    { loading ? "Loading ...." : 'Checkout' }
+                                </Button>
                             </div>
                         </CardContent>
                     </Card>

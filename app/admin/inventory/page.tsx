@@ -6,9 +6,16 @@ import { ContextPage } from "@/interface/actionType";
 export default async function Inventory(context: ContextPage) {
 
     return <InventoryPage
-        preorders={ await getPreorder() }
         expiredProduct={ await getExpiredProduct() }
         lowStockProducts={ await getProductLowStockComplete() }
+
+        preorders={ await getPreorder({
+            inventoryName: await getContextPage(context, 'inventoryName'),
+            inventoryStock: await getContextPage(context, 'inventoryStock'),
+            inventoryExpired: await getContextPage(context, 'inventoryExpired'),
+            inventoryLimit: await getContextPage(context, 'inventoryLimit'),
+            inventoryPage: await getContextPage(context, 'inventoryPage'),
+        }) }
         products={
             await getProduct({
                 productName: await getContextPage(context, 'productName'),

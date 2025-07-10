@@ -1,5 +1,6 @@
 "use client"
 
+import { ProductPreorder } from "@/action/product-action";
 import { DashboardStats, TopSellingProducts, transactionStatus } from "@/action/sale-action";
 import { ResponsiveModalOnly } from "@/components/modal-components";
 import { ProductDetailDialogOnly } from "@/components/product-detail-dialog-only";
@@ -19,22 +20,14 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { ModalProps, RangeStats, SaleCustomers } from "@/interface/actionType"
-import { Product } from "@/lib/generated/zod_gen";
-import { formatDateIndo, formatRupiah, formatRupiahShort, toastResponse } from "@/lib/my-utils";
+import { formatDateIndo, formatRupiah, formatRupiahShort, getGrowthColorClass } from "@/lib/formatter";
+import { toastResponse } from "@/lib/helper";
 import { BarChart3, Eye, ReceiptText } from "lucide-react"
 import { useRouter } from "next/navigation"
 import React, { useRef, useState } from "react"
 import { useReactToPrint } from "react-to-print";
 import * as XLSX from 'xlsx';
 import { Invoice } from "./invoice"
-
-function getGrowthColorClass(growth: number | boolean) {
-    if (typeof growth === "boolean") {
-        return growth ? "text-green-600" : "text-red-600";
-    }
-
-    return growth < 0 ? "text-red-600" : "text-green-600";
-}
 
 interface ReportsPageProps {
     range: RangeStats,
@@ -53,7 +46,7 @@ export function ReportsPage({ range, sales, stats, topSellers, }: ReportsPagePro
     const [ selectedRange, setSelectedRange ] = useState<RangeStats>(range);
 
     const [ isProductModal, setIsProductModal ] = useState(false);
-    const [ isProduct, setIsProduct ] = useState<Product | null>(null)
+    const [ isProduct, setIsProduct ] = useState<ProductPreorder | null>(null)
     const [ isSaleModal, setIsSaleModal ] = useState(false)
     const [ isSale, setIsSale ] = useState<SaleCustomers | null>(null)
     const handleSelectChange = (value: RangeStats) => {
@@ -144,10 +137,12 @@ export function ReportsPage({ range, sales, stats, topSellers, }: ReportsPagePro
 
     return (
         <div className="p-4 sm:p-6 max-w-7xl mx-auto">
-            <ProductDetailDialogOnly product={ isProduct }
-                                     isOpen={ isProductModal }
-                                     setOpenAction={ setIsProductModal }
-            />
+            { isProduct &&
+					<ProductDetailDialogOnly product={ isProduct }
+											 isOpen={ isProductModal }
+											 setOpenAction={ setIsProductModal }
+					/>
+            }
 
             <ModalSalesDetail sale={ isSale }
                               isOpen={ isSaleModal }
@@ -529,7 +524,6 @@ export function ModalSalesDetail({ sale, isOpen, setOpenAction }: { sale: SaleCu
         </ResponsiveModalOnly>
     );
 }
-
 
 export function ModalInvoice({ sale }: { sale: SaleCustomers }) {
     const contentRef = useRef<HTMLDivElement>(null);

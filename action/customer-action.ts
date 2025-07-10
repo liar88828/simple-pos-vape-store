@@ -1,8 +1,8 @@
 'use server'
 import { ActionResponse } from "@/interface/actionType";
-import { Customer, CustomerSchema, Product, Sale, SalesItem } from "@/lib/generated/zod_gen";
 import { prisma } from "@/lib/prisma";
 import { CustomerModelNew, CustomerModelType } from "@/lib/schema";
+import { Customer, CustomerSchema, Product, Sale, SalesItem } from "@/lib/validation";
 import { revalidatePath } from "next/cache";
 
 // Create a new customer

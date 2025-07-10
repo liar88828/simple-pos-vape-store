@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle, 
 import { Separator } from '@/components/ui/separator';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, } from '@/components/ui/table';
 import { SaleCustomers } from '@/interface/actionType';
-import { formatDateIndo, formatRupiah } from '@/lib/my-utils';
+import { formatDateIndo, formatRupiah } from "@/lib/formatter";
 import React from 'react';
 
 export function Invoice({ invoiceData }: { invoiceData: SaleCustomers }) {

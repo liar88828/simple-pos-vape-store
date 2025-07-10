@@ -1,8 +1,10 @@
 'use server'
 
+import { InventoryPaging } from "@/components/inventory-page";
 import { ProductData } from "@/components/products-page";
 import { ActionResponse, LowStockProducts, SaleCustomers } from "@/interface/actionType";
 import { STATUS_PREORDER } from "@/lib/constants";
+import { prisma } from "@/lib/prisma";
 import {
     Customer,
     PreOrder,
@@ -11,8 +13,7 @@ import {
     Product,
     ProductOptionalDefaults,
     ProductOptionalDefaultsSchema
-} from "@/lib/generated/zod_gen";
-import { prisma } from "@/lib/prisma";
+} from "@/lib/validation";
 import { Prisma, } from "@prisma/client";
 import { revalidatePath } from 'next/cache'
 
@@ -21,11 +22,14 @@ export type TopSellingProduct = Product & {
 }
 export type BrandsProps = { brand: string | null }[];
 
+export type ProductPreorder = Product & { PreOrders: PreOrder[] }
+
 export type ProductPaging = {
-    data: Product[],
+    data: ProductPreorder[],
     total: number,
     brands: BrandsProps
 };
+
 export const getProduct = async (
     filter: {
         productBrand: string | undefined,
@@ -86,9 +90,22 @@ export const getProduct = async (
             ? { contains: filter.productFluid, }
             : undefined,
     }
-    console.log(where)
+    // console.log(where)
     return {
-        data: await prisma.product.findMany({ where, take: limit, skip: page * limit, }),
+        data: await prisma.product.findMany({
+            where,
+            take: limit,
+            skip: page * limit,
+            include: {
+                PreOrders: {
+                    take: 1,
+                    orderBy: {
+                        updatedAt: 'desc'
+                    }
+                }
+            },
+            orderBy: { updatedAt: 'desc' },
+        }),
         total: await prisma.product.count({ where }),
         brands: await getBrands()
     }
@@ -165,9 +182,9 @@ export async function addProduct({ priceNormal, expired, ...formData }: ProductD
                     quantity: productDB.stock,
                     status: STATUS_PREORDER.SUCCESS,
                     priceSell: productDB.price,
-                    priceNormal,
+                    priceNormal: priceNormal ?? 0,
                     expired,
-                }satisfies PreOrderOptionalDefaults)
+                } satisfies PreOrderOptionalDefaults)
             })
         })
 
@@ -276,7 +293,7 @@ export async function getTodayVsYesterdaySales() {
 
 export const getBrands = async () => await prisma.product.groupBy({ by: 'brand' })
 
-export const getProductById = async (id: number): Promise<ActionResponse<Product | null>> => {
+export const getProductById = async (id: number): Promise<ActionResponse<ProductPreorder | null>> => {
 
     try {
         const response = await fetch(`http://localhost:3000/api/product/${ id }`, {
@@ -341,14 +358,77 @@ export const getExpiredProduct = async (): Promise<PreorderProduct[]> => {
     });
 }
 
-export const getPreorder = async (): Promise<PreorderProduct[]> => {
-    return prisma.preOrder.findMany({
-        take: 100,
-        orderBy: { updatedAt: "desc" },
+export const getPreorder = async (
+    filter: {
+        inventoryName: string | undefined,
+        inventoryStock: string | undefined,
+        inventoryExpired: string | undefined,
+        inventoryLimit: string | undefined,
+        inventoryPage: string | undefined,
+    },
+): Promise<InventoryPaging> => {
+    const limit = Number(filter.inventoryLimit ?? 10);
+    const page = Number(filter.inventoryPage ?? 0);
+
+    // console.log(filter.inventoryStock)//'low'/"high"/'-'
+    // console.log(filter.inventoryExpired)//'low'/"high"/'-'
+    const where: Prisma.PreOrderWhereInput = {
+        product: filter.inventoryName && filter.inventoryName !== '-'
+            ? {
+                name: {
+                    contains: filter.inventoryName,
+                },
+            }
+            : undefined,
+
+        // quantity:
+        //     filter.inventoryStock === 'low'
+        //         ? { lt: 5 }
+        //         : filter.inventoryStock === 'high'
+        //             ? { gte: 5 }
+        //             : undefined,
+        //
+        // expired:
+        //     filter.inventoryExpired === 'low'
+        //         ? {
+        //             lt: new Date(),
+        //             not: null,
+        //         }
+        //         : filter.inventoryExpired === 'high'
+        //             ? {
+        //                 gte: new Date(),
+        //                 not: null,
+        //             }
+        //             : undefined,
+    };
+
+    const orderBy: Prisma.PreOrderOrderByWithRelationInput[] = [];
+
+    if (filter.inventoryStock === 'low') {
+        orderBy.push({ quantity: 'asc' });
+    } else if (filter.inventoryStock === 'high') {
+        orderBy.push({ quantity: 'desc' });
+    } else if (filter.inventoryExpired === 'low') {
+        orderBy.push({ expired: 'asc' });
+    } else if (filter.inventoryExpired === 'high') {
+        orderBy.push({ expired: 'desc' });
+    }
+    // Always fallback sort
+    orderBy.push({ updatedAt: 'desc' });
+
+    const data = await prisma.preOrder.findMany({
+        take: limit,
+        skip: page * limit,
+        orderBy,
+        where,
         include: {
             product: true, // optional
         },
-
     });
+    return {
+        data,
+        total: await prisma.preOrder.count({ where }),
+
+    }
 }
 

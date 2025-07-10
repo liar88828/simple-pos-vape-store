@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { ModalProps, SaleCustomers } from "@/interface/actionType"
-import { formatDateIndo, formatRupiah } from "@/lib/my-utils";
+import { formatDateIndo, formatRupiah } from "@/lib/formatter";
 import { useQuery } from "@tanstack/react-query";
 import { Eye, ReceiptText } from "lucide-react"
 import React, { useRef, useState } from "react"

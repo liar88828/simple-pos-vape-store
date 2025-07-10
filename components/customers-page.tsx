@@ -8,13 +8,9 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogT
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import {
-    Customer,
-    CustomerOptionalDefaults,
-    CustomerOptionalDefaultsSchema,
-    CustomerSchema
-} from "@/lib/generated/zod_gen";
-import { formatDateIndo, formatRupiah, toastResponse } from "@/lib/my-utils";
+import { formatDateIndo, formatRupiah } from "@/lib/formatter";
+import { toastResponse } from "@/lib/helper";
+import { Customer, CustomerOptionalDefaults, CustomerOptionalDefaultsSchema, CustomerSchema } from "@/lib/validation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ChevronLeft, ChevronRight, Edit, Eye, Plus, SearchIcon, XIcon } from "lucide-react"
 import React, { useState } from "react";

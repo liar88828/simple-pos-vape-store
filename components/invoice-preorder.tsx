@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/dialog"
 import { Separator } from '@/components/ui/separator';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { formatDateIndo, formatRupiah } from '@/lib/my-utils';
+import { formatDateIndo, formatRupiah } from "@/lib/formatter";
 import { cn } from '@/lib/utils';
 import { Droplets, Eye, Printer } from 'lucide-react';
 import React, { useRef, useState } from 'react';

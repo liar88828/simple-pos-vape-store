@@ -1,9 +1,9 @@
 'use server'
-import { TopSellingProduct } from "@/action/product-action";
+import { ProductPreorder, TopSellingProduct } from "@/action/product-action";
 import { ActionResponse, CartItem, LastBuyer, RangeStats, SaleCustomers, SessionPayload } from "@/interface/actionType";
 import { ERROR, STATUS_TRANSACTION } from "@/lib/constants";
-import { Customer, Product, Sale, SalesItemOptionalDefaults } from "@/lib/generated/zod_gen";
 import { prisma } from "@/lib/prisma";
+import { Customer, Product, Sale, SalesItemOptionalDefaults } from "@/lib/validation";
 import { Prisma } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { getSessionUserPage } from "./auth-action";
@@ -13,7 +13,7 @@ export type TopSellingProducts = {
     productId: number,
     totalSold: number,
     totalPrice: number,
-    product?: Product | null,
+    product?: ProductPreorder | null,
 };
 
 export async function getSaleCustomers(range: RangeStats): Promise<SaleCustomers[]> {
@@ -793,7 +793,7 @@ export async function getTopSellingProductsByRangeReport(
         orderBy: { _sum: { quantity: "desc", }, },
         take: limit,
     });
-    console.log("grouped", grouped);
+    // console.log("grouped getTopSellingProductsByRangeReport", grouped);
     // [
     //     { productId: 8, totalSold: 2, totalPrice: 10000 },
     //     { productId: 8, totalSold: 2, totalPrice: 15000 }
@@ -830,7 +830,10 @@ export async function getTopSellingProductsByRangeReport(
     const productIds = merged.map((item) => item.productId);
 
     const products = await prisma.product.findMany({
-        where: { id: { in: productIds } },
+        include: { PreOrders: { take: 1 } },
+        where: {
+            id: { in: productIds },
+        },
     });
 
     const data = merged.map((item): TopSellingProducts => ({
@@ -949,7 +952,7 @@ export async function getTopSellingProductDashboard_(
                 createdAt: product.createdAt,
                 updatedAt: product.updatedAt,
                 sold: product.sold,
-                expired: product.expired,
+                // expired: product.expired,
             } satisfies TopSellingProduct
         }
     }).filter(item => item !== undefined)

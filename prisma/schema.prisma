@@ -12,7 +12,7 @@ generator client {
 
 generator zod {
     provider                         = "zod-prisma-types"
-    output                           = "../lib/generated/zod_gen"
+    output = "../lib/validation"
     // output                           = "./generated/zod_types" // default is ./generated/zod
     useMultipleFiles                 = true // default is false
     // writeBarrelFiles                 = false // default is true
@@ -100,15 +100,15 @@ model Customer {
 }
 
 model PreOrder {
-    id            Int      @id @default(autoincrement())
+    id            Int       @id @default(autoincrement())
     // customer      Customer @relation(fields: [customerId], references: [id])
     // customerId    Int
-    product       Product  @relation(fields: [productId], references: [id])
+    product       Product   @relation(fields: [productId], references: [id])
     productId     Int
     quantity      Int /// @zod.number.min(1)
     priceNormal   Int /// @zod.number.min(1)
     priceSell     Int /// @zod.number.min(1)
-    estimatedDate DateTime @default(now()) /// @zod.date.nullish()
+    estimatedDate DateTime? //@default(now())
     expired       DateTime?
     status        String /// @zod.string.min(1)//Pending, Terima
 

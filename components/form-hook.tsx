@@ -22,36 +22,34 @@ type FormHookProps = {
     minDate?: boolean;
 };
 
-export function InputNumForm({ name, description, placeholder, title, disabled, type = 'text' }: FormHookProps) {
-    const { control } = useFormContext(); // retrieve control from context
+export function InputNumForm({ name, description, placeholder, title, disabled }: FormHookProps) {
+    const { control } = useFormContext(); // from react-hook-form
 
     return (
         <div>
             <FormField
                 control={ control }
                 name={ name }
-                render={ ({ field }: { field: ControllerRenderProps, }) => (
-                    <FormItem className="col-span-2 ">
-                        {/* bg-red-300 rounded-md */ }
-                        <FormLabel className={ disabled ? 'text-primary/50' : "" }>{ title }</FormLabel>
+                render={ ({ field }: { field: ControllerRenderProps }) => (
+                    <FormItem className="col-span-2">
+                        <FormLabel className={ disabled ? 'text-primary/50' : '' }>{ title }</FormLabel>
                         <FormControl>
                             <Input
-                                type={ type === "number" ? "text" : type }
+                                type="text" // 👈 use text to allow formatting like "1.000.000"
                                 disabled={ disabled }
                                 placeholder={ placeholder }
                                 value={
-                                    type === "number" && typeof field.value === "number"
-                                        ? new Intl.NumberFormat("id-ID").format(field.value)
-                                        : field.value ?? ""
+                                    typeof field.value === 'number'
+                                        ? new Intl.NumberFormat('id-ID').format(field.value)
+                                        : ''
                                 }
                                 onChange={ (e) => {
-                                    const raw = e.target.value.replace(/\./g, "").replace(/[^0-9]/g, "");
-                                    const parsed = raw === "" ? undefined : Number(raw);
-                                    if (type === "number") {
-                                        field.onChange(parsed);
-                                    } else {
-                                        field.onChange(e.target.value);
-                                    }
+                                    const raw = e.target.value
+                                    .replace(/\./g, '')        // remove dots
+                                    .replace(/[^0-9]/g, '');   // keep only digits
+
+                                    const parsed = raw === '' ? undefined : Number(raw);
+                                    field.onChange(parsed);
                                 } }
                             />
                         </FormControl>
@@ -63,7 +61,6 @@ export function InputNumForm({ name, description, placeholder, title, disabled, 
         </div>
     );
 }
-
 export function InputForm({ name, description, placeholder, title, disabled, type = 'text' }: FormHookProps) {
     const { control } = useFormContext(); // retrieve control from context
 
