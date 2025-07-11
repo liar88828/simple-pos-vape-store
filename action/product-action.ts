@@ -1,9 +1,11 @@
 'use server'
 
+import { getContextPage } from "@/components/context-action";
 import { InventoryPaging } from "@/components/inventory-page";
 import { ProductData } from "@/components/products-page";
-import { ActionResponse, LowStockProducts, SaleCustomers } from "@/interface/actionType";
+import { ActionResponse, ContextPage, SaleCustomers } from "@/interface/actionType";
 import { STATUS_PREORDER } from "@/lib/constants";
+import { logger } from "@/lib/logger";
 import { prisma } from "@/lib/prisma";
 import {
     Customer,
@@ -12,7 +14,7 @@ import {
     PreOrderOptionalDefaultsSchema,
     Product,
     ProductOptionalDefaults,
-    ProductOptionalDefaultsSchema
+    ProductOptionalDefaultsSchema,
 } from "@/lib/validation";
 import { Prisma, } from "@prisma/client";
 import { revalidatePath } from 'next/cache'
@@ -29,6 +31,16 @@ export type ProductPaging = {
     total: number,
     brands: BrandsProps
 };
+
+export type PreorderProductCustomer = PreOrder & {
+    customer: Customer
+    product: Product
+};
+
+export type PreorderProduct = PreOrder & {
+    product: Product
+};
+
 
 export const getProduct = async (
     filter: {
@@ -91,88 +103,119 @@ export const getProduct = async (
             : undefined,
     }
     // console.log(where)
-    return {
-        data: await prisma.product.findMany({
-            where,
-            take: limit,
-            skip: page * limit,
-            include: {
-                PreOrders: {
-                    take: 1,
-                    orderBy: {
-                        updatedAt: 'desc'
-                    }
+    const data = await prisma.product.findMany({
+        where,
+        take: limit,
+        skip: page * limit,
+        include: {
+            PreOrders: {
+                take: 1,
+                orderBy: {
+                    updatedAt: 'desc'
                 }
-            },
-            orderBy: { updatedAt: 'desc' },
-        }),
+            }
+        },
+        orderBy: { updatedAt: 'desc' },
+    })
+    logger.info('data : getProduct')
+    return {
+        data,
         total: await prisma.product.count({ where }),
         brands: await getBrands()
     }
 }
 
+export const getProductPage = async (context: ContextPage): Promise<ProductPaging> => {
+    return getProduct({
+        productName: await getContextPage(context, 'productName'),
+        productBrand: await getContextPage(context, 'productBrand'),
+        productCategory: await getContextPage(context, 'productCategory'),
+        productTypeDevice: await getContextPage(context, 'productTypeDevice'),
+        productNicotine: await getContextPage(context, 'productNicotine'),
+        productResistant: await getContextPage(context, 'productResistant'),
+        productCoil: await getContextPage(context, 'productCoil'),
+        productBattery: await getContextPage(context, 'productBattery'),
+        productCotton: await getContextPage(context, 'productCotton'),
+        productFluid: await getContextPage(context, 'productFluid'),
+        productLimit: await getContextPage(context, 'productLimit'),
+        productPage: await getContextPage(context, 'productPage')
+    })
+}
+export type LowStockProducts = { stock: number, minStock: number, id: number };
+
 export async function getProductLowStock(): Promise<LowStockProducts[]> {
-    return prisma.$queryRaw<
+    'use cache'
+    const data = await prisma.$queryRaw<
         Array<{ stock: number; minStock: number; id: number }>
     >(Prisma.sql`
         SELECT id, stock, minStock
         FROM Product
         WHERE stock <= minStock
     `);
+    logger.info('data : getProductLowStock')
+    return data
 }
 
 export async function getProductLowStockComplete(): Promise<Product[]> {
-    return prisma.$queryRaw<
+    const data = await prisma.$queryRaw<
         Array<Product>
     >(Prisma.sql`
         SELECT *
         FROM Product
         WHERE stock <= minStock
     `);
+    logger.info('data : getProductLowStockComplete')
+    return data
 }
 
 // export async function getProductLowStockComplete(): Promise<Product[]> {
 //     return prisma.product.findMany({ where: { stock: { lte: 5 } } });
 // }
 
-export const deleteProduct = async (idProduct: Product['id']): Promise<ActionResponse> => {
+export const deleteProductAction = async (idProduct: Product['id']): Promise<ActionResponse> => {
+    // logger.info('action input : deleteProduct')
+
     if (await prisma.product.findUnique({ where: { id: idProduct }, select: { id: true } })) {
         revalidatePath('/') // agar halaman ter-refresh
+        logger.info('success : deleteProduct')
         return {
             success: true,
             data: await prisma.product.delete({ where: { id: idProduct } }),
             message: 'Success Delete Product'
         }
     }
+
+    logger.error('error :  deleteProduct')
     return {
         success: false,
         message: 'Fail Delete Product'
     }
 }
 
-export async function upsertProduct(formData: ProductData): Promise<ActionResponse> {
-    if (formData.id) return await updateProduct(formData)
-    else return await addProduct(formData)
+export async function upsertProductAction(formData: ProductData): Promise<ActionResponse> {
+    if (formData.id) return await updateProductAction(formData)
+    else return await addProductAction(formData)
 }
 
-export async function addProduct({ priceNormal, expired, ...formData }: ProductData): Promise<ActionResponse> {
+export async function addProductAction({ priceNormal, expired, ...formData }: ProductData): Promise<ActionResponse> {
+    logger.info('action addProductAction')
+
     try {
-
         const valid = ProductOptionalDefaultsSchema.safeParse(formData)
-
         if (!valid.success) {
-
-            console.error('Validation failed:', valid.error.flatten())
+            const errorValidation = valid.error.flatten().fieldErrors
+            logger.error('error validation addProductAction', errorValidation)
+            // console.error('Validation failed:', valid.error.flatten())
             // throw new Error('Data produk tidak valid.')
             return {
                 data: valid.data,
                 message: "Product Gagal di Tambahkan",
-                error: valid.error.flatten().fieldErrors,
+                error: errorValidation,
                 success: false
             }
         }
-        const { id, ...data } = valid.data
 
+        const { id, ...data } = valid.data
         await prisma.$transaction(async (tx) => {
             const productDB = await tx.product.create({ data })
 
@@ -189,27 +232,31 @@ export async function addProduct({ priceNormal, expired, ...formData }: ProductD
         })
 
         revalidatePath('/') // agar halaman ter-refresh
+        logger.info('success addProductAction')
         return {
             data: valid.data,
             success: true,
             message: 'Produk berhasil ditambahkan'
         };
     } catch (error) {
-        console.log(error)
+        // console.log(error)
+        logger.error('error catch addProductAction')
         return {
             data: null,
             success: false,
-            message: 'Something went wrong addProduct'
+            message: 'Something went wrong addProductAction'
         }
     }
 }
 
-export async function updateProduct(formData: ProductOptionalDefaults): Promise<ActionResponse> {
-    try {
+export async function updateProductAction(formData: ProductOptionalDefaults): Promise<ActionResponse> {
+    logger.info('action input updateProductAction')
 
+    try {
         const valid = ProductOptionalDefaultsSchema.safeParse(formData)
         const productFound = await prisma.product.findUnique({ where: { id: formData.id }, select: { id: true } })
         if (!productFound) {
+            logger.error('error DB updateProductAction')
             return {
                 data: valid.data,
                 success: true,
@@ -219,10 +266,12 @@ export async function updateProduct(formData: ProductOptionalDefaults): Promise<
         }
 
         if (!valid.success) {
+            const dataValidation = valid.error.flatten().fieldErrors
+            logger.error('error validation updateProductAction', dataValidation)
             return {
                 data: valid.data,
                 message: "Product Gagal diperbarui",
-                error: valid.error.flatten().fieldErrors,
+                error: dataValidation,
                 success: false
             }
         }
@@ -233,6 +282,7 @@ export async function updateProduct(formData: ProductOptionalDefaults): Promise<
         })
 
         revalidatePath('/') // agar halaman ter-refresh
+        logger.info('success : updateProductAction')
         return {
             data: valid.data,
             success: true,
@@ -240,7 +290,8 @@ export async function updateProduct(formData: ProductOptionalDefaults): Promise<
         };
 
     } catch (error) {
-        console.log(error)
+        // console.log(error)
+        logger.error('error catch updateProductAction')
         return {
             data: null,
             success: false,
@@ -250,14 +301,6 @@ export async function updateProduct(formData: ProductOptionalDefaults): Promise<
 
 }
 
-export type PreorderProductCustomer = PreOrder & {
-    customer: Customer
-    product: Product
-};
-
-export type PreorderProduct = PreOrder & {
-    product: Product
-};
 
 export async function getTodayVsYesterdaySales() {
     const now = new Date();
@@ -287,15 +330,22 @@ export async function getTodayVsYesterdaySales() {
     const percentChange = yesterdayTotal === 0
         ? 100
         : ((todayTotal - yesterdayTotal) / yesterdayTotal) * 100;
-
-    return { todayTotal, percentChange };
+    const data = { todayTotal, percentChange }
+    logger.info('data : getTodayVsYesterdaySales')
+    return data;
 }
 
-export const getBrands = async () => await prisma.product.groupBy({ by: 'brand' })
+export const getBrands = async () => {
+    'use cache'
+    const data = await prisma.product.groupBy({ by: 'brand' })
+    logger.info('data : getBrands')
+    return data
+}
 
 export const getProductById = async (id: number): Promise<ActionResponse<ProductPreorder | null>> => {
 
     try {
+        'use cache'
         const response = await fetch(`http://localhost:3000/api/product/${ id }`, {
             method: "GET",
             // cache:"reload",
@@ -305,9 +355,12 @@ export const getProductById = async (id: number): Promise<ActionResponse<Product
             },
         })
 
-        return await response.json()
+        const data = await response.json()
+        logger.info('fetch success : getProductById', data)
+        return data
     } catch (error) {
-        console.error("Error fetching product:", error)
+        logger.error('fetch error catch : getProductById', error)
+        // console.error("Error fetching product:", error)
         return {
             data: null,
             success: false,
@@ -328,9 +381,11 @@ export const getSaleById = async (id: number): Promise<ActionResponse<SaleCustom
             },
         })
 
-        return await response.json()
+        const data = await response.json()
+        logger.info('fetch success : getSaleById', data)
+        return data
     } catch (error) {
-        console.error("Error fetching product:", error)
+        logger.error("error catch fetching getSaleById:", error)
         return {
             data: null,
             success: false,
@@ -344,7 +399,7 @@ export const getExpiredProduct = async (): Promise<PreorderProduct[]> => {
     const oneYearAgo = new Date();
     oneYearAgo.setFullYear(now.getFullYear() - 1);
 
-    return prisma.preOrder.findMany({
+    const data = await prisma.preOrder.findMany({
         where: {
             expired: {
                 not: null,
@@ -356,6 +411,8 @@ export const getExpiredProduct = async (): Promise<PreorderProduct[]> => {
             product: true, // optional
         },
     });
+    logger.info('data : getExpiredProduct')
+    return data
 }
 
 export const getPreorder = async (
@@ -425,10 +482,18 @@ export const getPreorder = async (
             product: true, // optional
         },
     });
-    return {
-        data,
-        total: await prisma.preOrder.count({ where }),
+    const total = await prisma.preOrder.count({ where })
 
-    }
+    logger.info('data : getPreorder')
+    return { data, total }
 }
 
+export const getPreorderPage = async (context: ContextPage): Promise<InventoryPaging> => {
+    return await getPreorder({
+        inventoryName: await getContextPage(context, 'inventoryName'),
+        inventoryStock: await getContextPage(context, 'inventoryStock'),
+        inventoryExpired: await getContextPage(context, 'inventoryExpired'),
+        inventoryLimit: await getContextPage(context, 'inventoryLimit'),
+        inventoryPage: await getContextPage(context, 'inventoryPage'),
+    })
+}

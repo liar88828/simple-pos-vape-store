@@ -1,6 +1,5 @@
 import { getSessionUserPage } from '@/action/auth-action';
-import { getProduct } from '@/action/product-action';
-import { getContextPage } from '@/components/context-action';
+import { getProductPage } from '@/action/product-action';
 import { ProductUserPage } from '@/components/product-user-page';
 import { CartItem, ContextPage, SaleCustomers } from '@/interface/actionType';
 import { STATUS_TRANSACTION } from '@/lib/constants';
@@ -34,7 +33,7 @@ export default async function Page(context: ContextPage) {
 
         }
     }).then((item): ProductPending => {
-        console.log('currentProduct ' + item)
+        // console.log('currentProduct ' + item)
         if (item) {
             return {
                 current: item.SaleItems.map(i => ({ ...i.product, quantity: i.quantity })),
@@ -48,27 +47,10 @@ export default async function Page(context: ContextPage) {
         }
     })
 
-
-
     return (
-
         <ProductUserPage
             session={session}
-            products={
-                await getProduct({
-                    productName: await getContextPage(context, 'productName'),
-                    productBrand: await getContextPage(context, 'productBrand'),
-                    productCategory: await getContextPage(context, 'productCategory'),
-                    productTypeDevice: await getContextPage(context, 'productTypeDevice'),
-                    productNicotine: await getContextPage(context, 'productNicotine'),
-                    productResistant: await getContextPage(context, 'productResistant'),
-                    productCoil: await getContextPage(context, 'productCoil'),
-                    productBattery: await getContextPage(context, 'productBattery'),
-                    productCotton: await getContextPage(context, 'productCotton'),
-                    productFluid: await getContextPage(context, 'productFluid'),
-                    productLimit: await getContextPage(context, 'productLimit'),
-                    productPage: await getContextPage(context, 'productPage')
-                }) }
+            products={ await getProductPage(context) }
             productPending={ await currentProductUser() }
         />
     );

@@ -11,22 +11,23 @@ export default async function Layout({ children }: { children: React.ReactNode }
     const cookieStore = await cookies()
     const defaultOpen = cookieStore.get("sidebar_state")?.value === "true"
     const session = await getSessionUserPage()
-
+    const lowStockProducts = await getProductLowStock()
     return (
-        <SidebarProvider defaultOpen={defaultOpen}>
+        <SidebarProvider defaultOpen={ defaultOpen }>
             <AppSidebar
                 asLink='/admin'
-                navItems={adminNavItems}
-                lowStockProducts={await getProductLowStock()}
+                navItems={ adminNavItems }
+                lowStockProducts={ lowStockProducts }
                 session={ session }
-            // totalTransaction={ await getTransactionCountToday() }
-            // totalSellToday={ await getTotalSoldToday() }
+                // totalTransaction={ await getTransactionCountToday() }
+                // totalSellToday={ await getTotalSoldToday() }
             />
             <SidebarInset>
                 <main className="flex-1 overflow-y-auto">
-                    <HeaderComponent lowStockProducts={ await getProductLowStock() }
-                                     isLoggedIn={ Boolean(session) }/>
-                    {children}
+                    <HeaderComponent
+                        lowStockProducts={ lowStockProducts }
+                        isLoggedIn={ Boolean(session) }/>
+                    { children }
                 </main>
             </SidebarInset>
         </SidebarProvider>

@@ -1,6 +1,7 @@
 'use server'
 import { PreorderProduct } from "@/action/product-action";
 import { ActionResponse } from "@/interface/actionType";
+import { logger } from "@/lib/logger";
 import { prisma } from "@/lib/prisma";
 import { PreOrderOptionalDefaults, Product } from "@/lib/validation";
 import { revalidatePath } from "next/cache";
@@ -8,6 +9,8 @@ import { revalidatePath } from "next/cache";
 export async function preOrderProductAction(
     preorder: PreOrderOptionalDefaults
 ): Promise<ActionResponse> {
+    // logger.info(`input data preOrderProductAction`)
+
     try {
         await prisma.$transaction(async (tx) => {
             await tx.preOrder.create({ data: preorder })
@@ -18,20 +21,20 @@ export async function preOrderProductAction(
         })
 
         revalidatePath('/')
-        console.log('success preOrderProductAction')
+        // console.log('success preOrderProductAction')
+        logger.info(`success : preOrderProductAction`)
         return {
             success: true,
             message: "Successfully ordered",
             // data: dataPreorder
         }
     } catch (error) {
-        console.error(error)
+        logger.error(`error catch : ${ error }`)
         return {
             success: false,
             message: 'Something went wrong preOrderProduct'
         }
     }
-
 }
 
 export async function preOrderAction(
@@ -82,14 +85,14 @@ export async function preOrderAction(
         })
 
         revalidatePath('/')
-
+        logger.info("success preOrderAction",)
         return {
             success: true,
             message: "Successfully Edit ordered",
             // data: dataPreorder
         }
     } catch (error) {
-        console.error(error)
+        logger.error(`error catch preOrderAction : ${ error }`,)
         return {
             success: false,
             message: 'Something went wrong Edit preOrderProduct'
@@ -178,8 +181,10 @@ export async function deletePreorderProduct(id: number): Promise<ActionResponse>
 }
 
 export async function getPreOrderStatusCount(status: 'Pending' | 'Success') {
-    return prisma.preOrder.count({
+    const data = await prisma.preOrder.count({
         where: { status }
     })
+    logger.info("data : getPreOrderStatusCount",)
+    return data
 }
 

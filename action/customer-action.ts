@@ -1,5 +1,6 @@
 'use server'
-import { ActionResponse } from "@/interface/actionType";
+import { type ActionResponse } from "@/interface/actionType";
+import { logger } from "@/lib/logger";
 import { prisma } from "@/lib/prisma";
 import { CustomerModelNew, CustomerModelType } from "@/lib/schema";
 import { Customer, CustomerSchema, Product, Sale, SalesItem } from "@/lib/validation";
@@ -8,7 +9,6 @@ import { revalidatePath } from "next/cache";
 // Create a new customer
 export async function createCustomerNew(formData: CustomerModelType): Promise<ActionResponse<Customer>> {
     try {
-
         const valid = CustomerModelNew.safeParse(formData);
         if (!valid.success) {
             return {
@@ -29,14 +29,16 @@ export async function createCustomerNew(formData: CustomerModelType): Promise<Ac
         });
 
         revalidatePath("/"); // Refresh halaman agar data baru tampil
-
+        logger.info("success createCustomerNew ", customer);
         return {
             data: customer,
             success: true,
             message: "Pelanggan berhasil ditambahkan",
         };
     } catch (error) {
-        console.log(error);
+        // console.log(error);
+        logger.error("error createCustomerNew ", error);
+
         return {
             success: true,
             message: "Pelanggan berhasil ditambahkan",
@@ -45,7 +47,7 @@ export async function createCustomerNew(formData: CustomerModelType): Promise<Ac
 
 }
 
-export async function createCustomer(formData: CustomerModelType): Promise<ActionResponse> {
+export async function createCustomerAction(formData: CustomerModelType): Promise<ActionResponse> {
     try {
 
         const valid = CustomerSchema.safeParse(formData);
@@ -63,14 +65,15 @@ export async function createCustomer(formData: CustomerModelType): Promise<Actio
         });
 
         revalidatePath("/"); // Refresh halaman agar data baru tampil
-
+        logger.info("success createCustomerAction", id);
         return {
             data: valid.data,
             success: true,
             message: "Pelanggan berhasil ditambahkan",
         };
     } catch (error) {
-        console.log(error);
+        // console.log(error);
+        logger.error("error createCustomerAction", error);
         return {
             success: true,
             message: "Pelanggan berhasil ditambahkan",
@@ -80,11 +83,14 @@ export async function createCustomer(formData: CustomerModelType): Promise<Actio
 }
 
 export async function getAllCustomers(name: string = ''): Promise<Customer[]> {
-    return prisma.customer.findMany({
+    'use cache'
+    const data = await prisma.customer.findMany({
         where: { name: { contains: name } },
         orderBy: { updatedAt: 'desc' },
         take: 20,
     });
+    logger.info("data : getAllCustomers");
+    return data
 }
 
 export type CustomerRelational = Customer & {
@@ -93,6 +99,7 @@ export type CustomerRelational = Customer & {
 }
 
 export async function getAllCustomerRelational(): Promise<CustomerRelational[]> {
+    logger.info("data : getAllCustomerRelational");
     return prisma.customer.findMany({
         include: {
             Sales: true,
@@ -105,69 +112,83 @@ export async function getAllCustomerRelational(): Promise<CustomerRelational[]> 
     })
 }
 
-export async function updateCustomer(formData: Customer): Promise<ActionResponse> {
-    const valid = CustomerSchema.safeParse(formData);
+export async function updateCustomerAction(formData: Customer): Promise<ActionResponse> {
+    try {
 
-    const customerFound = await prisma.customer.findUnique({
-        where: { id: formData.id },
-        select: { id: true },
-    });
+        const valid = CustomerSchema.safeParse(formData);
+        const customerFound = await prisma.customer.findUnique({
+            where: { id: formData.id },
+            select: { id: true },
+        });
 
-    if (!customerFound) {
+        if (!customerFound) {
+            logger.error(`error DB customer customer not found by id ${ formData.id }`);
+            return {
+                data: valid.data,
+                success: true,
+                message: "Pelanggan tidak ditemukan",
+            };
+        }
+
+        if (!valid.success) {
+            const validationError = valid.error.flatten().fieldErrors
+            logger.error("error validation updateCustomerAction ", validationError);
+            return {
+                data: valid.data,
+                message: "Pelanggan gagal diperbarui",
+                error: validationError,
+                success: false,
+            };
+        }
+
+        const { id, ...rest } = valid.data;
+
+        await prisma.customer.update({
+            where: { id },
+            data: rest,
+        });
+
+        revalidatePath("/");
+        logger.info("success updateCustomerAction", id);
         return {
             data: valid.data,
             success: true,
-            message: "Pelanggan tidak ditemukan",
+            message: "Pelanggan berhasil diperbarui",
         };
-    }
-
-    if (!valid.success) {
+    } catch (error) {
+        logger.error("error catch : updateCustomerAction", error);
         return {
-            data: valid.data,
-            message: "Pelanggan gagal diperbarui",
-            error: valid.error.flatten().fieldErrors,
             success: false,
-        };
+            message: "Something went wrong : updateCustomerAction",
+        }
     }
-
-    const { id, ...rest } = valid.data;
-
-    await prisma.customer.update({
-        where: { id },
-        data: rest,
-    });
-
-    revalidatePath("/");
-    return {
-        data: valid.data,
-        success: true,
-        message: "Pelanggan berhasil diperbarui",
-    };
 }
 
-export async function deleteCustomer(id: Customer['id']): Promise<ActionResponse> {
+export async function deleteCustomerAction(id: Customer['id']): Promise<ActionResponse> {
     try {
+        const customerFound = await prisma.customer.findUnique({ where: { id } });
+        if (!customerFound) {
+            logger.error(`error DB deleteCustomerAction `, id);
+            return {
+                success: false,
+                message: "Pelanggan tidak ditemukan",
+            };
+        }
 
-    const customerFound = await prisma.customer.findUnique({ where: { id } });
+        await prisma.customer.delete({ where: { id } });
 
-    if (!customerFound) {
+        revalidatePath("/");
+        logger.info("success : deleteCustomerAction");
         return {
-            success: false,
-            message: "Pelanggan tidak ditemukan",
+            success: true,
+            message: "Pelanggan berhasil dihapus",
         };
-    }
 
-    await prisma.customer.delete({ where: { id } });
-
-    revalidatePath("/");
-    return {
-        success: true,
-        message: "Pelanggan berhasil dihapus",
-    };
     } catch (error) {
+        logger.error("error catch : deleteCustomerAction", error);
         return {
             success: false,
-            message: "Something went wrong : deleteCustomer",
+            message: "Something went wrong : deleteCustomerAction",
         }
     }
 
@@ -182,10 +203,11 @@ export type CustomerComplete = Customer & {
 };
 export const getDataCustomer = async (customerId: number): Promise<CustomerComplete | null> => {
     if (!customerId) {
+        logger.error("data : getDataCustomer");
         return null
     }
 
-    return prisma.customer.findUnique({
+    const data = await prisma.customer.findUnique({
         where: { id: customerId },
         include: {
             Sales: {
@@ -200,4 +222,6 @@ export const getDataCustomer = async (customerId: number): Promise<CustomerCompl
             },
         },
     });
+    logger.info("data : getDataCustomer");
+    return data;
 };

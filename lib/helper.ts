@@ -21,6 +21,8 @@ export const toastResponse = (
         onFinish?: () => void
     }
 ) => {
+    try {
+
     onStart()
     if (response.success) {
         toast.success(response.message)
@@ -30,6 +32,11 @@ export const toastResponse = (
         onFailure()
     }
     onFinish()
+    } catch (e) {
+        toast.error('Something went wrong ... 😭😭😭')
+        onFailure()
+        onFinish()
+    }
 }
 
 export function newParam(params: Record<string, string | undefined>) {

@@ -8,7 +8,6 @@ export type ActionResponse<T = any> = {
     error?: any,
 }
 
-export type LowStockProducts = { stock: number, minStock: number, id: number };
 
 export type CartItem = Product & {
     quantity: number
@@ -47,9 +46,7 @@ export type ContextPage = {
 export type RangeStats = 'today' | "week" | "month" | "year"
 
 export type ChartData = { name: string, desktop: number }
-export type LastBuyer = Customer & {
-    Sales: Sale[]
-};
+
 export type SaleCustomers = Sale & {
     customer: Customer
     SaleItems: (SalesItem & { product: Product })[]

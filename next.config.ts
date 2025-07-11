@@ -3,6 +3,9 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
 
     experimental: {
+        useCache: true,
+
+        // clientInstrumentationHook: true,
         // typedRoutes: true,
         viewTransition: true,
         serverActions: {

@@ -3,6 +3,7 @@
 import { signJwt, signRefreshJwt, verifyJwt, verifyRefreshJwt } from "@/action/jwt-token";
 import { ActionResponse } from "@/interface/actionType";
 import { LoginFormData, loginSchema, RegisterFormData, registerSchema } from "@/lib/auth-schema";
+import { logger } from "@/lib/logger";
 import { prisma } from "@/lib/prisma"; // Adjust this path
 import bcrypt from "bcrypt";
 import { revalidatePath } from "next/cache";
@@ -47,6 +48,7 @@ export async function registerAction(rawData: RegisterFormData): Promise<ActionR
 }
 
 export async function loginAction(rawData: LoginFormData): Promise<ActionResponse> {
+    logger.info(` input loginAction`)
     const parsed = loginSchema.safeParse(rawData);
 
     if (!parsed.success) {
@@ -100,7 +102,7 @@ export async function loginAction(rawData: LoginFormData): Promise<ActionRespons
     });
 
     revalidatePath('/')
-
+    logger.info('loginAction')
     if (user.role === 'ADMIN') {
         redirect("/admin/dashboard");
     } else if (user.role === 'USER') {
@@ -116,6 +118,8 @@ export async function loginAction(rawData: LoginFormData): Promise<ActionRespons
 
 // Refresh token server action
 export async function refreshTokenAction() {
+    logger.info('refreshTokenAction')
+
     const cookieStore = await cookies();
     const token = cookieStore.get("refreshToken")?.value;
 
@@ -139,6 +143,7 @@ export async function refreshTokenAction() {
         }
     })
     if (!user) {
+        logger.error('refreshTokenAction')
         redirect("/login");
     }
 
@@ -154,11 +159,12 @@ export async function refreshTokenAction() {
         secure: process.env.NODE_ENV === "production",
         sameSite: "lax",
     });
-
+    logger.info('refreshTokenAction')
     redirect("/dashboard");
 }
 
 export async function getUserFromRequest() {
+    logger.info('refreshTokenAction')
     const cookieStore = await cookies();
     const token = cookieStore.get("token")?.value;
 
@@ -172,11 +178,15 @@ export async function getUserFromRequest() {
 }
 
 export const deleteCookie = async () => {
+    logger.info('deleteCookie')
+
     const cookieStore = await cookies()
     cookieStore.delete('token')
 }
 
 export async function getSessionUserPage() {
+    // logger.info('load getSessionUserPage')
+
     const cookieStore = await cookies()
     const token = cookieStore.get("token")?.value
     // console.log("token : " + token)

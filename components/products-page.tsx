@@ -1,6 +1,6 @@
 "use client"
 
-import { ProductPaging, ProductPreorder, upsertProduct } from "@/action/product-action";
+import { ProductPaging, ProductPreorder, upsertProductAction } from "@/action/product-action";
 import { InputDateForm, InputForm, InputNumForm, SelectForm, TextareaForm } from "@/components/form-hook";
 import { ResponsiveModal, ResponsiveModalOnly } from "@/components/modal-components";
 import { ProductDetailDialogOnly } from "@/components/product-detail-dialog-only";
@@ -432,7 +432,7 @@ export function ModalProductForm({ isOpen, setOpenAction, product }: ModalProps 
 
     const onSubmit = methods.handleSubmit(async (data) => {
         toastResponse({
-                response: await upsertProduct(data),
+            response: await upsertProductAction(data),
                 onSuccess: () => {
                     setOpenAction(false); // ✅ Close the dialog
                     methods.reset()

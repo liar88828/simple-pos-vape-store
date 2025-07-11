@@ -1,7 +1,7 @@
 "use client"
 
 import { ProductPaging, ProductPreorder } from "@/action/product-action";
-import { createTransactionUser, createTransactionUserPending } from "@/action/sale-action";
+import { createTransactionUserAction, createTransactionUserPendingAction } from "@/action/sale-action";
 import { ProductPending } from "@/app/user/home/page"
 import { ProductDetailDialogOnly } from "@/components/product-detail-dialog-only";
 import { ProductsFilter } from "@/components/products-page";
@@ -38,10 +38,10 @@ export function ProductUserPage(
         setLoading(true)
         if (productPending.isPending) {
             if (productPending.data) {
-                toastResponse({ response: await createTransactionUserPending(cartItems, productPending.data), })
+                toastResponse({ response: await createTransactionUserPendingAction(cartItems, productPending.data), })
             }
         } else {
-            toastResponse({ response: await createTransactionUser(cartItems), })
+            toastResponse({ response: await createTransactionUserAction(cartItems), })
         }
         setLoading(false)
     }

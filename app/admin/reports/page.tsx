@@ -6,10 +6,11 @@ import {
 } from "@/action/sale-action";
 import { ReportsPage } from "@/components/reports-page"
 import { ContextPage, RangeStats } from "@/interface/actionType";
+import { logger } from "@/lib/logger";
 
 export default async function Reports({ searchParams }: ContextPage) {
+    logger.info('page : Reports')
     const range = (await searchParams).range as RangeStats || 'week'//"today"
-
     return <ReportsPage
         // chartData={ await getChartData(range) }
         range={ range }

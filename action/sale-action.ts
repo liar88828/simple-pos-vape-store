@@ -1,7 +1,8 @@
 'use server'
 import { ProductPreorder, TopSellingProduct } from "@/action/product-action";
-import { ActionResponse, CartItem, LastBuyer, RangeStats, SaleCustomers, SessionPayload } from "@/interface/actionType";
+import { ActionResponse, CartItem, RangeStats, SaleCustomers, SessionPayload } from "@/interface/actionType";
 import { ERROR, STATUS_TRANSACTION } from "@/lib/constants";
+import { logger } from "@/lib/logger";
 import { prisma } from "@/lib/prisma";
 import { Customer, Product, Sale, SalesItemOptionalDefaults } from "@/lib/validation";
 import { Prisma } from "@prisma/client";
@@ -46,7 +47,7 @@ export async function getSaleCustomers(range: RangeStats): Promise<SaleCustomers
             break;
     }
 
-    return prisma.sale.findMany({
+    const data = await prisma.sale.findMany({
         take: 10,
         orderBy: { date: "desc" },
         where: {
@@ -63,12 +64,15 @@ export async function getSaleCustomers(range: RangeStats): Promise<SaleCustomers
             },
         },
     });
+    logger.info('data : getSaleCustomers')
+    return data
 }
 
-export async function createTransaction(product: CartItem[], customer: Customer | null): Promise<ActionResponse> {
+export async function createTransactionAction(product: CartItem[], customer: Customer | null): Promise<ActionResponse> {
     // console.log('execute');
     try {
         if (!customer) {
+            logger.error("error : customer data is not found createTransaction ");
             return {
                 error: ERROR.NOT_FOUND,
                 message: "Please Select Customer Data",
@@ -122,13 +126,12 @@ export async function createTransaction(product: CartItem[], customer: Customer 
 
             // console.log('execute finish')
 
-            return {
-                saleItemDB,
-                saleDB
-            }
+            return { saleItemDB, saleDB }
         })
+
         // console.log('execute revalidatePath')
         revalidatePath('/')
+        logger.info('data : createTransaction')
         return {
             data: dataTransaction,
             message: "Success Create Data",
@@ -136,7 +139,7 @@ export async function createTransaction(product: CartItem[], customer: Customer 
         }
 
     } catch (error) {
-
+        logger.error('error catch : createTransaction');
         if (error instanceof PrismaClientKnownRequestError) {
             return {
                 success: false,
@@ -144,7 +147,6 @@ export async function createTransaction(product: CartItem[], customer: Customer 
                 error: ERROR.DATABASE,
                 message: error.message
             }
-
         }
 
         return {
@@ -155,13 +157,11 @@ export async function createTransaction(product: CartItem[], customer: Customer 
     }
 }
 
-
-export async function createTransactionUserPending(
+export async function createTransactionUserPendingAction(
     product: CartItem[],
     salePending: SaleCustomers
-
 ): Promise<ActionResponse> {
-    console.log('execute pending');
+    // console.log('execute pending');
     try {
         const dataTransaction = await prisma.$transaction(async (tx) => {
 
@@ -174,11 +174,9 @@ export async function createTransactionUserPending(
                 }
             })
             await tx.salesItem.deleteMany({ where: { saleId: saleDB.id } })
-            console.log('execute salesItem.deleteMany')
+            logger.debug('executed salesItem.deleteMany')
+
             // Old Data--------
-            console.log('execute product OLD')
-
-
             const saleItemListOld = salePending.SaleItems.map(item => {
                 return {
                     saleId: saleDB.id,
@@ -197,12 +195,10 @@ export async function createTransactionUserPending(
                     },
                 });
             }
-            console.log('execute product.update OLD')
-
-
+            logger.debug('executed saleItemListOld OLD')
 
             // Now Data --------
-            console.log('execute product.update NOW')
+            // console.log('execute product.update NOW')
 
             const saleItemListNew = product.map(item => {
                 return {
@@ -226,9 +222,11 @@ export async function createTransactionUserPending(
                     },
                 });
             }
+            logger.debug('executed saleItemListNew NEW')
+
             const totalBuyNow = saleItemListNew.reduce((a, b) => a + b.priceAtBuy * b.quantity, 0);
             const totalBuyOld = saleItemListOld.reduce((a, b) => a + b.priceAtBuy * b.quantity, 0);
-            // console.log('execute customer.update')
+
             await tx.customer.update({
                 where: { id: salePending.customerId },
                 data: {
@@ -236,17 +234,17 @@ export async function createTransactionUserPending(
                     totalPurchase: { increment: totalBuyNow - totalBuyOld },
                 },
             });
+            logger.debug('executed customer.update')
             // Now Data --------
 
-            console.log('execute finish')
+            // console.log('execute finish')
 
-            return {
-                saleItemDB,
-                saleDB
-            }
+            return { saleItemDB, saleDB }
         })
+
         // console.log('execute revalidatePath')
         revalidatePath('/')
+        logger.info('data : createTransactionUserPending')
         return {
             data: dataTransaction,
             message: "Success Create Data",
@@ -254,7 +252,7 @@ export async function createTransactionUserPending(
         }
 
     } catch (error) {
-
+        logger.error('error catch : createTransactionUserPending');
         if (error instanceof PrismaClientKnownRequestError) {
             return {
                 success: false,
@@ -273,7 +271,7 @@ export async function createTransactionUserPending(
     }
 }
 
-export async function createTransactionUser(product: CartItem[]): Promise<ActionResponse> {
+export async function createTransactionUserAction(product: CartItem[]): Promise<ActionResponse> {
     // console.log('execute');
     try {
         let customerId
@@ -282,14 +280,19 @@ export async function createTransactionUser(product: CartItem[]): Promise<Action
 
         if (!customer) {
             const customerDB = await prisma.customer.create({
-                data: { name: session?.name ?? '', age: 0, lastPurchase: new Date(), status: "Pending", totalPurchase: 0 }
+                data: {
+                    name: session?.name ?? '',
+                    age: 0,
+                    lastPurchase: new Date(),
+                    status: "Pending",
+                    totalPurchase: 0
+                }
             })
 
             customerId = customerDB?.id
         } else {
             customerId = customer.id
         }
-
 
         const dataTransaction = await prisma.$transaction(async (tx) => {
 
@@ -337,13 +340,11 @@ export async function createTransactionUser(product: CartItem[]): Promise<Action
 
             // console.log('execute finish')
 
-            return {
-                saleItemDB,
-                saleDB
-            }
+            return { saleItemDB, saleDB }
         })
         // console.log('execute revalidatePath')
         revalidatePath('/')
+        logger.info('data : createTransactionUserAction')
         return {
             data: dataTransaction,
             message: "Success Create Data",
@@ -351,7 +352,7 @@ export async function createTransactionUser(product: CartItem[]): Promise<Action
         }
 
     } catch (error) {
-
+        logger.error('error catch createTransactionUserAction')
         if (error instanceof PrismaClientKnownRequestError) {
             return {
                 success: false,
@@ -370,6 +371,9 @@ export async function createTransactionUser(product: CartItem[]): Promise<Action
     }
 }
 
+type LastBuyer = Customer & {
+    Sales: Sale[]
+};
 export async function lastBuyer(): Promise<LastBuyer[]> {
     return prisma.customer.findMany({
         take: 5,
@@ -382,7 +386,7 @@ export async function lastBuyer(): Promise<LastBuyer[]> {
 }
 
 export async function lastBuyerPending(): Promise<SaleCustomers[]> {
-    return prisma.sale.findMany({
+    const data = prisma.sale.findMany({
         take: 10,
         orderBy: { date: "desc" },
         where: {
@@ -397,10 +401,9 @@ export async function lastBuyerPending(): Promise<SaleCustomers[]> {
             },
         },
     });
+    logger.info("data : lastBuyerPending");
+    return data
 }
-
-
-
 
 export const getTransactionCountToday = async () => {
     return prisma.sale.count({
@@ -441,8 +444,6 @@ export const getHistoriesById = async (id: number): Promise<SaleCustomers | null
         }
     }
 })
-
-
 
 export async function getTotalSoldToday() {
     const result = await prisma.salesItem.aggregate({
@@ -517,7 +518,6 @@ export async function getTotalSoldToday() {
 
 export async function getMonthlySalesChange(range: RangeStats) {
     const now = new Date();
-
     let startCurrent: Date;
     let endCurrent: Date;
     let startPrevious: Date;
@@ -559,7 +559,6 @@ export async function getMonthlySalesChange(range: RangeStats) {
         case "year":
             startCurrent = new Date(now.getFullYear(), 0, 1);
             endCurrent = new Date(now.getFullYear() + 1, 0, 1);
-
             startPrevious = new Date(now.getFullYear() - 1, 0, 1);
             endPrevious = new Date(now.getFullYear(), 0, 1);
             break;
@@ -602,12 +601,13 @@ export async function getMonthlySalesChange(range: RangeStats) {
 
     const isUp = percentageChange >= 0;
     const formattedChange = Math.abs(percentageChange).toFixed(1);
-
-    return {
-        changeText: `${isUp ? "Trending up" : "Trending down"} by ${formattedChange}% this ${range}`,
+    const data = {
+        changeText: `${ isUp ? "Trending up" : "Trending down" } by ${ formattedChange }% this ${ range }`,
         isUp,
         value: currentTotal,
     };
+    logger.info('data : getMonthlySalesChange')
+    return data
 }
 
 export type DashboardStats = {
@@ -717,12 +717,13 @@ export async function getDashboardStats(range: RangeStats) {
 
     // 7. Top-selling product current period by units sold
     const topProduct = await prisma.salesItem.groupBy({
-        by: ["productId"],
+        by: [ "productId" ],
         _sum: { quantity: true },
         where: { sale: { date: { gte: startCurrent, lt: endCurrent } } },
         orderBy: { _sum: { quantity: "desc" } },
         take: 1,
     });
+
     // console.log(topProduct,'--------');
     const topProductInfo =
         topProduct.length > 0
@@ -752,36 +753,36 @@ export async function getDashboardStats(range: RangeStats) {
 
         topProduct: topProductInfo,
     };
-
+    logger.info('data : getMonthlySalesChange')
     return responseData;
-}
-function getRangeDate(range: RangeStats): Date {
-    const date = new Date();
-
-    switch (range) {
-        case "today":
-            date.setHours(0, 0, 0, 0);
-            return date;
-        case "week":
-            date.setDate(date.getDate() - 7);
-            return date;
-        case "month":
-            date.setMonth(date.getMonth() - 1);
-            return date;
-        case "year":
-            date.setFullYear(date.getFullYear() - 1);
-            return date;
-        default:
-            return date;
-    }
 }
 
 export async function getTopSellingProductsByRangeReport(
     range: RangeStats,
     limit = 10
 ): Promise<TopSellingProducts[]> {
-    const startDate = getRangeDate(range);
 
+    function getRangeDate(range: RangeStats): Date {
+        const date = new Date();
+        switch (range) {
+            case "today":
+                date.setHours(0, 0, 0, 0);
+                return date;
+            case "week":
+                date.setDate(date.getDate() - 7);
+                return date;
+            case "month":
+                date.setMonth(date.getMonth() - 1);
+                return date;
+            case "year":
+                date.setFullYear(date.getFullYear() - 1);
+                return date;
+            default:
+                return date;
+        }
+    }
+
+    const startDate = getRangeDate(range);
     const grouped = await prisma.salesItem.groupBy({
         // sale: { statusTransaction: STATUS_TRANSACTION.SUCCESS }
         by: [ "productId", 'priceAtBuy' ],
@@ -842,12 +843,12 @@ export async function getTopSellingProductsByRangeReport(
         totalPrice: item.totalPrice,
         product: products.find((p) => p.id === item.productId),
     }));
-    // console.log("data----",data);
 
+    logger.info("data : getTopSellingProductsByRangeReport");
     return data
 }
 
-export async function transactionStatus(
+export async function transactionStatusAction(
     statusTransaction: string,
     sale: Sale
 ): Promise<ActionResponse> {
@@ -858,6 +859,8 @@ export async function transactionStatus(
             data: { statusTransaction }
         })
         revalidatePath('/')
+        logger.info('success : transactionStatusAction')
+
         return {
             message: 'Success Update Status Transaction id : ' + sale.id,
             data: response,
@@ -865,6 +868,7 @@ export async function transactionStatus(
         }
 
     } catch {
+        logger.error('error catch : transactionStatusAction')
         return {
             success: false,
             message: 'Fail Update Status Transaction id : ' + sale.id,

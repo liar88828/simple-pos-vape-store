@@ -1,8 +1,8 @@
 "use client"
 
 import { createCustomerNew } from "@/action/customer-action";
-import { ProductPaging, ProductPreorder } from "@/action/product-action";
-import { createTransaction } from "@/action/sale-action";
+import { type  ProductPaging, type ProductPreorder } from "@/action/product-action";
+import { createTransactionAction } from "@/action/sale-action";
 import { InputForm } from "@/components/form-hook";
 import { ProductDetailDialogOnly } from "@/components/product-detail-dialog-only";
 import { ProductCart } from "@/components/product-user-page";
@@ -43,7 +43,7 @@ export function POSPage(
     async function onTransaction() {
         setLoading(true)
         toastResponse({
-            response: await createTransaction(cartItems, selectedCustomer),
+            response: await createTransactionAction(cartItems, selectedCustomer),
             onSuccess: () => {
                 setSelectedCustomer(null)
                 setCartItems([])
@@ -67,13 +67,7 @@ export function POSPage(
 					<ProductDetailDialogOnly
 							product={ isProduct } isOpen={ isOpen } isAdd={ true }
 							setOpenAction={ setIsOpen }
-							onAdd={ () => {
-                                if (isProduct) {
-                                    // incrementItem(isProduct.id)
-                                    addToCart(isProduct)
-                                }
-                            } }
-					/>
+							onAdd={ () => addToCart(isProduct) }/>
             }
 
             {/*hidden sm:block*/ }

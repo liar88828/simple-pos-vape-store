@@ -1,9 +1,9 @@
 'use client'
-import { deleteProduct, getProductById, ProductPreorder } from "@/action/product-action";
+import { deleteProductAction, getProductById, type ProductPreorder } from "@/action/product-action";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogClose, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
-import { ModalProps } from "@/interface/actionType";
+import { type ModalProps } from "@/interface/actionType";
 import { formatDateIndo, formatRupiah } from "@/lib/formatter";
 import { toastResponse } from "@/lib/helper";
 import { useQuery } from "@tanstack/react-query";
@@ -130,7 +130,7 @@ export function ProductDetailDialogOnly({ product, isOpen, setOpenAction, onAdd,
 								className="min-w-24"
 								onClick={ async () => {
                                     if (confirm('Are you Sure to Delete ?')) {
-                                        toastResponse({ response: await deleteProduct(product.id) })
+                                        toastResponse({ response: await deleteProductAction(product.id) })
                                     }
                                 } }
 						>
@@ -278,7 +278,7 @@ export function ProductDetailDialogOnlyFetch(
 								className="min-w-24"
 								onClick={ async () => {
                                     if (confirm('Are you Sure to Delete ?')) {
-                                        toastResponse({ response: await deleteProduct(product.id) })
+                                        toastResponse({ response: await deleteProductAction(product.id) })
                                     }
                                 } }
 						>

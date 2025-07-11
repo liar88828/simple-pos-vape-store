@@ -1,7 +1,7 @@
 "use client"
 
 import { ProductPreorder } from "@/action/product-action";
-import { DashboardStats, TopSellingProducts, transactionStatus } from "@/action/sale-action";
+import { DashboardStats, TopSellingProducts, transactionStatusAction } from "@/action/sale-action";
 import { ResponsiveModalOnly } from "@/components/modal-components";
 import { ProductDetailDialogOnly } from "@/components/product-detail-dialog-only";
 import { Badge } from "@/components/ui/badge"
@@ -425,7 +425,7 @@ export function ModalSalesDetailOld({ sale, isOpen, setOpenAction }: { sale: Sal
                 <Button variant="default"
                         onClick={ async () => {
                             if (selectStatus) {
-                                toastResponse({ response: await transactionStatus(selectStatus, sale) })
+                                toastResponse({ response: await transactionStatusAction(selectStatus, sale) })
                             }
                         } }>
                     Simpan
@@ -482,7 +482,7 @@ export function ModalSalesDetail({ sale, isOpen, setOpenAction }: { sale: SaleCu
                     <Button variant="default"
                             onClick={ async () => {
                                 if (selectStatus) {
-                                    toastResponse({ response: await transactionStatus(selectStatus, sale) })
+                                    toastResponse({ response: await transactionStatusAction(selectStatus, sale) })
                                 }
                             } }>
                         Simpan

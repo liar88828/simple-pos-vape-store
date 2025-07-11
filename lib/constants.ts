@@ -114,3 +114,32 @@ export const stockStatusOptions = [
 ];
 
 export const pageSizeOptions = [ 5, 10, 15, 50, 100 ];
+
+export const _exampleMemberTierData = () => {
+    const total = 0
+    const bronze = []
+    const silver = []
+    const gold = []
+
+    return [
+        {
+            name: "Member Bronze",
+            range: "Pembelian < Rp 1.000.000",
+            count: bronze.length,
+            // progress: Math.round((bronze.length / total) * 100),
+            progress: bronze.length / total,
+        },
+        {
+            name: "Member Silver",
+            range: "Pembelian Rp 1.000.000 - 5.000.000",
+            count: silver.length,
+            progress: silver.length / total,
+        },
+        {
+            name: "Member Gold",
+            range: "Pembelian > Rp 5.000.000",
+            count: gold.length,
+            progress: gold.length / total,
+        },
+    ];
+}

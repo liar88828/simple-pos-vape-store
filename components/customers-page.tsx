@@ -1,6 +1,11 @@
 'use client'
 
-import { createCustomer, CustomerRelational, deleteCustomer, updateCustomer } from "@/action/customer-action";
+import {
+    createCustomerAction,
+    CustomerRelational,
+    deleteCustomerAction,
+    updateCustomerAction
+} from "@/action/customer-action";
 import { InputDateForm, InputForm, SelectForm } from "@/components/form-hook";
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -103,7 +108,7 @@ export function CustomersPage({ customers, }: {
                                             <Button size="sm" variant="outline"
                                                     onClick={ async () => {
                                                         if (confirm('Are you Sure to Delete ?')) {
-                                                            toastResponse({ response: await deleteCustomer(customer.id) })
+                                                            toastResponse({ response: await deleteCustomerAction(customer.id) })
                                                         }
                                                     } }
                                             >
@@ -251,7 +256,7 @@ export function ModalTambahCustomer() {
     const onSubmit = methods.handleSubmit(async (data) => {
         setLoading(true)
         toastResponse({
-                response: await createCustomer(data),
+            response: await createCustomerAction(data),
                 onSuccess: () => {
                     setOpen(false)
                     setLoading(false)
@@ -314,7 +319,7 @@ export function ModalEditCustomer({ customer }: { customer: CustomerOptionalDefa
     const onSubmit = methods.handleSubmit(async (data) => {
         setLoading(true)
         toastResponse({
-                response: await updateCustomer(data),
+            response: await updateCustomerAction(data),
                 onSuccess: () => {
                     setOpen(false)
                     setLoading(false)
