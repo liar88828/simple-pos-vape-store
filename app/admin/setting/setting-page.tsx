@@ -7,7 +7,7 @@ import {
     saveSettingStore,
     saveStoreLogo
 } from "@/action/setting-action";
-import { InputForm, SelectForm, SwitchForm, SwitchOnlyForm, TextareaForm } from "@/components/form-hook";
+import { InputForm, SelectForm, SwitchForm, SwitchOnlyForm, TextareaForm } from "@/components/mini/form-hook";
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle, } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger, } from "@/components/ui/tabs"

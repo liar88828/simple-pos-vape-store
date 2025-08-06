@@ -1,15 +1,15 @@
 "use client"
 
 import { ProductPaging, ProductPreorder, upsertProductAction } from "@/action/product-action";
-import { InputDateForm, InputForm, InputNumForm, SelectForm, TextareaForm } from "@/components/form-hook";
-import { ResponsiveModal, ResponsiveModalOnly } from "@/components/modal-components";
-import { ProductDetailDialogOnly } from "@/components/product-detail-dialog-only";
+import { FilterSelect } from "@/components/mini/filter-input";
+import { InputDateForm, InputForm, InputNumForm, SelectForm, TextareaForm } from "@/components/mini/form-hook";
+import { ResponsiveModal, ResponsiveModalOnly } from "@/components/mini/modal-components";
+import { ProductDetailDialogOnly } from "@/components/page/product-detail-dialog-only";
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { DialogFooter } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Separator } from "@/components/ui/separator";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -33,10 +33,17 @@ import { ProductOptionalDefaultsSchema } from "@/lib/validation";
 import { zodResolver } from "@hookform/resolvers/zod"
 import { ChevronLeft, ChevronRight, Eye, FilterIcon, Pencil, Plus, XIcon } from "lucide-react"
 import { useRouter } from "next/navigation";
-import React, { HTMLInputTypeAttribute, useEffect, useState } from "react"
+import React, { useEffect, useState } from "react"
 import { FormProvider, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
+
+export const productDataSchema = ProductOptionalDefaultsSchema.merge(z.object({
+    priceNormal: z.number().min(1).nullish(),
+    expired: z.date().nullish(),
+}))
+
+export type ProductData = z.infer<typeof productDataSchema>
 
 export function ProductsPage({ products }: { products: ProductPaging }) {
     const [ openCreate, setOpenCreate ] = useState(false);
@@ -382,18 +389,9 @@ export function ProductsFilter({ products, customerName }: { customerName?: stri
     );
 }
 
-export const productDataSchema = ProductOptionalDefaultsSchema.merge(z.object({
-    priceNormal: z.number().min(1).nullish(),
-    expired: z.date().nullish(),
-}))
-
-export type ProductData = z.infer<typeof productDataSchema>
-
-export function ModalProductForm({ isOpen, setOpenAction, product }: ModalProps & {
-    product: ProductData | null
-}) {
+export function ModalProductForm({ isOpen, setOpenAction, product }: ModalProps & { product: ProductData | null }) {
     const [ _selectCategory, setSelectCategory ] = useState<string | null>(null);
-    console.log(product)
+    // console.log(product)
 
     const methods = useForm<ProductData>({
         resolver: zodResolver(productDataSchema),
@@ -571,70 +569,3 @@ export function ModalProductForm({ isOpen, setOpenAction, product }: ModalProps 
     );
 }
 
-export function FilterSelect(
-    {
-        label,
-        value,
-        onChangeAction,
-        placeholder,
-        options,
-        labelClassName
-    }: {
-        label: string;
-        value: string;
-        onChangeAction: (val: string) => void;
-        placeholder: string;
-        options: {
-            label: string;
-            value: string;
-        }[];
-        labelClassName?: string;
-    }
-) {
-    return (
-        <div>
-            <Label className={ labelClassName }>{ label }</Label>
-            <Select value={ value } onValueChange={ onChangeAction }>
-                <SelectTrigger className="w-full min-w-6">
-                    <SelectValue placeholder={ placeholder }/>
-                </SelectTrigger>
-                <SelectContent>
-                    { options.map((item) => (
-                        <SelectItem key={ item.value } value={ item.value }>
-                            { item.label }
-                        </SelectItem>
-                    )) }
-                </SelectContent>
-            </Select>
-        </div>
-    );
-}
-
-export function FilterInput(
-    {
-        type = 'text',
-        label,
-        value,
-        onChangeAction,
-        placeholder,
-    }: {
-        label: string;
-        type?: HTMLInputTypeAttribute;
-        value: string;
-        onChangeAction: (val: string) => void;
-        placeholder: string;
-    }
-) {
-    return (
-        <div>
-            <Label>{ label }</Label>
-            <Input
-                type={ type }
-                value={ value }
-                placeholder={ placeholder }
-                onChange={ e => onChangeAction(e.target.value) }
-                className="w-full min-w-6"/>
-
-        </div>
-    );
-}

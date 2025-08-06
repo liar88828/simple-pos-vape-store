@@ -1,4 +1,4 @@
-import { LoadingSpinPage } from "@/components/loading-spin";
+import { LoadingSpinPage } from "@/components/mini/loading-spin";
 import React from 'react';
 
 function Loading() {

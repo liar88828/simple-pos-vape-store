@@ -1,5 +1,5 @@
 // RegisterPage.tsx
-import RegisterPage from "@/components/register-page";
+import RegisterPage from "@/components/auth/register-page";
 import { logger } from "@/lib/logger";
 import React from 'react';
 

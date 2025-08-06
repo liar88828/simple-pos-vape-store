@@ -1,6 +1,6 @@
 import { getDataCustomer } from "@/action/customer-action";
-import { DataNotFound } from "@/components/empty-data";
-import UserProfilePage from "@/components/user-profile-page";
+import { DataNotFound } from "@/components/mini/empty-data";
+import UserProfilePage from "@/components/page/user-profile-page";
 import { logger } from "@/lib/logger";
 import React from 'react';
 

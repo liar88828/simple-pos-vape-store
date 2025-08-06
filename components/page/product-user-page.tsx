@@ -3,8 +3,8 @@
 import { ProductPaging, ProductPreorder } from "@/action/product-action";
 import { createTransactionUserAction, createTransactionUserPendingAction } from "@/action/sale-action";
 import { ProductPending } from "@/app/user/home/page"
-import { ProductDetailDialogOnly } from "@/components/product-detail-dialog-only";
-import { ProductsFilter } from "@/components/products-page";
+import { ProductDetailDialogOnly } from "@/components/page/product-detail-dialog-only";
+import { ProductsFilter } from "@/components/page/products-page";
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { useCart } from "@/hooks/use-cart";

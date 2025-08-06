@@ -1,10 +1,10 @@
 'use server'
 
-import { getContextPage } from "@/components/context-action";
-import { InventoryPaging } from "@/components/inventory-page";
-import { ProductData } from "@/components/products-page";
+import { InventoryPaging } from "@/components/page/inventory-page";
+import { ProductData } from "@/components/page/products-page";
 import { ActionResponse, ContextPage, SaleCustomers } from "@/interface/actionType";
 import { STATUS_PREORDER } from "@/lib/constants";
+import { getContextPage } from "@/lib/context-action";
 import { logger } from "@/lib/logger";
 import { prisma } from "@/lib/prisma";
 import {
@@ -40,7 +40,6 @@ export type PreorderProductCustomer = PreOrder & {
 export type PreorderProduct = PreOrder & {
     product: Product
 };
-
 
 export const getProduct = async (
     filter: {
@@ -167,10 +166,6 @@ export async function getProductLowStockComplete(): Promise<Product[]> {
     logger.info('data : getProductLowStockComplete')
     return data
 }
-
-// export async function getProductLowStockComplete(): Promise<Product[]> {
-//     return prisma.product.findMany({ where: { stock: { lte: 5 } } });
-// }
 
 export const deleteProductAction = async (idProduct: Product['id']): Promise<ActionResponse> => {
     // logger.info('action input : deleteProduct')
@@ -301,7 +296,6 @@ export async function updateProductAction(formData: ProductOptionalDefaults): Pr
 
 }
 
-
 export async function getTodayVsYesterdaySales() {
     const now = new Date();
 
@@ -431,11 +425,7 @@ export const getPreorder = async (
     // console.log(filter.inventoryExpired)//'low'/"high"/'-'
     const where: Prisma.PreOrderWhereInput = {
         product: filter.inventoryName && filter.inventoryName !== '-'
-            ? {
-                name: {
-                    contains: filter.inventoryName,
-                },
-            }
+            ? { name: { contains: filter.inventoryName } }
             : undefined,
 
         // quantity:

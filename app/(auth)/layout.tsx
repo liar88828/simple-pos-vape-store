@@ -1,4 +1,4 @@
-import HeaderComponent from "@/components/header-page";
+import HeaderComponent from "@/components/layout/header-page";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import React from 'react';
 

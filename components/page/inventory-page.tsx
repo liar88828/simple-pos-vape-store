@@ -2,9 +2,10 @@
 
 import { preOrderAction, preOrderProductAction } from "@/action/inventory-action";
 import { PreorderProduct, ProductPaging } from "@/action/product-action";
-import { InputDateForm, InputForm, InputNumForm, SelectForm } from "@/components/form-hook";
-import { ResponsiveModal, ResponsiveModalOnly } from "@/components/modal-components";
-import { FilterInput, FilterSelect, ProductsFilter } from "@/components/products-page";
+import { FilterInput, FilterSelect } from "@/components/mini/filter-input";
+import { InputDateForm, InputForm, InputNumForm, SelectForm } from "@/components/mini/form-hook";
+import { ResponsiveModal, ResponsiveModalOnly } from "@/components/mini/modal-components";
+import { ProductsFilter } from "@/components/page/products-page";
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -162,12 +163,15 @@ export function InventoryFilter({ inventory }: { inventory: InventoryPaging, }) 
     );
 }
 
-export function InventoryPage({ products, lowStockProducts, expiredProduct, preorders }: {
+type InventoryPageProps = {
     products: ProductPaging,
     preorders: InventoryPaging
     lowStockProducts: Product[],
     expiredProduct: PreorderProduct[],
-}) {
+};
+
+export function InventoryPage({ products, lowStockProducts, expiredProduct, preorders }: InventoryPageProps) {
+
     // console.log(products)
     const [ isModalStock, setIsModalStock ] = useState(false)
     const [ isStock, setIsStock ] = useState<Product | null>(null)
@@ -176,7 +180,7 @@ export function InventoryPage({ products, lowStockProducts, expiredProduct, preo
     const [ isPreorder, setIsPreorder ] = useState<PreorderProduct | null>(null)
 
     const [ isModalExpired, setIsModalExpired ] = useState(false)
-    const [ isExpired, setIsExpired ] = useState<PreorderProduct | null>(null)
+    const [ isPreorderExpired, setIsPreorderExpired ] = useState<PreorderProduct | null>(null)
 
     // const [ isLowStock, setIsLowStock ] = useState('-')
     // const [ isLowExpired, setIsLowExpired ] = useState('-')
@@ -191,18 +195,19 @@ export function InventoryPage({ products, lowStockProducts, expiredProduct, preo
 
 
                 { isPreorder && isModalPreorder &&
-						<ReorderModal isPreorder={ isPreorder }
+						<ReorderModal preorderProduct={ isPreorder }
 									  isOpen={ isModalPreorder }
 									  setOpenAction={ setIsModalPreorder }/> }
 
+
                 { isStock && isModalStock &&
-						<ReorderStockModal product={ isStock }
+						<ReorderStockModal isStock={ isStock }
 										   isOpen={ isModalStock }
 										   setOpenAction={ setIsModalStock }/> }
 
 
-                { isExpired && isModalExpired &&
-						<ReorderModal isPreorder={ isExpired }
+                { isPreorderExpired && isModalExpired &&
+						<ReorderModal preorderProduct={ isPreorderExpired }
 									  isOpen={ isModalExpired }
 									  setOpenAction={ setIsModalExpired }/> }
 
@@ -238,8 +243,8 @@ export function InventoryPage({ products, lowStockProducts, expiredProduct, preo
                                                 />
                                             </picture>
                                             <div className="flex flex-col">
-                                                                        <span
-                                                                            className="font-bold w-auto text-wrap">{ item.product.name }</span>
+                                                <span
+                                                    className="font-bold w-auto text-wrap">{ item.product.name }</span>
                                                 <div className="flex gap-2">
                                                     <span
                                                         className="font-light">Normal: { formatRupiah(item.priceNormal) }</span>
@@ -394,7 +399,7 @@ export function InventoryPage({ products, lowStockProducts, expiredProduct, preo
                                         <Button
                                             size="sm"
                                             onClick={ () => {
-                                                setIsExpired(item)
+                                                setIsPreorderExpired(item)
                                                 setIsModalExpired(true)
                                             } }
                                         >
@@ -414,23 +419,23 @@ export function InventoryPage({ products, lowStockProducts, expiredProduct, preo
     )
 }
 
-export function ReorderModal(
-    { isPreorder, setOpenAction, isOpen }
-    : { isPreorder: PreorderProduct } & ModalProps) {
+export function ReorderModal({ preorderProduct, setOpenAction, isOpen }: {
+    preorderProduct: PreorderProduct
+} & ModalProps) {
 
     const [ loading, setLoading ] = useState(false)
 
     const methods = useForm<PreOrderOptionalDefaults>({
             resolver: zodResolver(PreOrderOptionalDefaultsSchema),
             defaultValues: {
-                id: isPreorder.id,
-                productId: isPreorder.productId,
-                quantity: isPreorder.quantity,
-                status: isPreorder.status,
-                priceNormal: isPreorder.priceNormal,
-                priceSell: isPreorder.priceSell,
-                estimatedDate: new Date(isPreorder?.estimatedDate ?? new Date()),
-                expired: new Date(isPreorder?.expired ?? new Date()),
+                id: preorderProduct.id,
+                productId: preorderProduct.productId,
+                quantity: preorderProduct.quantity,
+                status: preorderProduct.status,
+                priceNormal: preorderProduct.priceNormal,
+                priceSell: preorderProduct.priceSell,
+                estimatedDate: new Date(preorderProduct?.estimatedDate ?? new Date()),
+                expired: new Date(preorderProduct?.expired ?? new Date()),
             } satisfies PreOrderOptionalDefaults
         }
     );
@@ -440,7 +445,7 @@ export function ReorderModal(
             onStart: () => {
                 setLoading(true)
             },
-            response: await preOrderAction(data, isPreorder),
+            response: await preOrderAction(data, preorderProduct),
             onFinish: () => setLoading(false),
             onSuccess: () => {
                 setOpenAction(false)
@@ -484,9 +489,7 @@ export function ReorderModal(
     );
 }
 
-export function ReorderStockModal(
-    { product, setOpenAction, isOpen }
-    : { product: Product } & ModalProps) {
+export function ReorderStockModal({ isStock, setOpenAction, isOpen }: { isStock: Product } & ModalProps) {
 
     // const [ productToAddStock, setProductToAddStock ] = useState<Product | null>(null)
     const [ loading, setLoading ] = useState(false)
@@ -495,8 +498,8 @@ export function ReorderStockModal(
             resolver: zodResolver(PreOrderOptionalDefaultsSchema),
             defaultValues: {
                 status: '-',
-                productId: product.id,
-                priceSell: product.price,
+                productId: isStock.id,
+                priceSell: isStock.price,
                 priceNormal: 0,
                 quantity: 0,
                 estimatedDate: new Date(),
@@ -551,144 +554,7 @@ export function ReorderStockModal(
     );
 }
 
-// atas
-export function AddStockModal_Old({ products }: { products: ProductPaging, }) {
-    const [ isModalOpen, setIsModalOpen ] = useState(false)
-    const [ stockAmount, setStockAmount ] = useState("")
-    const [ nameProduct, setNameProduct ] = useState<string>('')
-    const [ productData, setProductData ] = useState<Product | null>(null)
 
-    const handleSubmit = () => {
-        const product = products.data.find((p) => p.id === Number(nameProduct))
-        const amount = parseInt(stockAmount)
-
-        if (product && !isNaN(amount)) {
-            product.stock += amount
-            alert(`Stok ${ product.name } ditambah ${ amount }`)
-            setIsModalOpen(false)
-            setStockAmount("")
-            setNameProduct('')
-        }
-    }
-    const handleAddStock = (product: Product | null) => {
-        setProductData(product)
-    }
-    const router = useRouter()
-
-    const { value, isLoading } = useDebounceLoad(nameProduct, 1000);
-
-    useEffect(() => {
-        if (value.trim()) {
-            router.push(newParam({ name: value }));
-        }
-    }, [ value, router ]);
-
-    return (
-        <Dialog open={ isModalOpen } onOpenChange={ setIsModalOpen }>
-            <DialogTrigger asChild>
-                <Button>
-                    <Plus className="h-4 w-4 mr-2"/>
-                    Tambah Stok
-                </Button>
-            </DialogTrigger>
-
-            <DialogContent>
-                <DialogHeader>
-                    <DialogTitle>Tambah Stok Produk</DialogTitle>
-                </DialogHeader>
-
-                <div className="space-y-4">
-                    <ProductsFilter products={ products }/>
-
-                    <div>
-                        <Label htmlFor="stock">Tambah Stok</Label>
-                        <Input
-                            id="stock"
-                            type="number"
-                            value={ stockAmount }
-                            onChange={ (e) => setStockAmount(e.target.value) }
-                        />
-                    </div>
-                </div>
-
-                { productData ?
-                    <Card className="flex items-center gap-4 p-4 flex-row border-green-800 border-2">
-                        <picture>
-                            <img
-                                src={ productData.image }
-                                alt={ productData.name }
-                                className="size-10  rounded-md object-cover"
-                            />
-                        </picture>
-
-                        <div className="flex-1">
-                            <p className="text-sm font-semibold">{ productData.name }</p>
-                            <p className="text-xs text-muted-foreground">
-                                Stok: { productData.stock } | { formatRupiah(productData.price) }
-                            </p>
-                        </div>
-
-                        <Button
-                            size="sm"
-                            variant="secondary"
-                            onClick={ () => handleAddStock(null) }
-                        >
-                            Hapus
-                        </Button>
-                    </Card>
-                    :
-                    <div className="space-y-3 overflow-y-auto h-96">
-                        {
-                            isLoading
-                                ? <Card className="flex items-center gap-4 p-4 ">Loading...</Card>
-                                : products.data.length === 0
-                                    ? <Card className="flex items-center gap-4 p-4">Product Is Not Found</Card>
-                                    : products.data
-                                    .filter((p) => p.name.toLowerCase().includes(nameProduct.toLowerCase()))
-                                    .map((product) => (
-                                        <Card key={ product.id }
-                                              className="flex items-center gap-4 p-4 flex-row hover:border-primary">
-                                            <picture>
-                                                <img
-                                                    src={ product.image }
-                                                    alt={ product.name }
-                                                    className="size-10  rounded-md object-cover"
-                                                />
-                                            </picture>
-
-                                            <div className="flex-1">
-                                                <p className="text-sm font-semibold">{ product.name }</p>
-                                                <p className="text-xs text-muted-foreground">
-                                                    Stok: { product.stock } | { formatRupiah(product.price) }
-                                                </p>
-                                            </div>
-
-                                            <Button
-                                                size="sm"
-                                                variant="secondary"
-                                                onClick={ () => handleAddStock(product) }
-                                            >
-                                                Tambah
-                                            </Button>
-                                        </Card>
-                                    )) }
-                    </div>
-                }
-
-                <DialogFooter className="pt-4">
-                    <Button
-                        onClick={ handleSubmit }
-                        disabled={ !nameProduct || !stockAmount }
-                    >
-                        Simpan
-                    </Button>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
-    )
-}
-
-// atas
 export function AddStockModal({ products }: { products: ProductPaging, }) {
     const router = useRouter()
     const [ nameProduct, setNameProduct ] = useState<string>('')
@@ -848,5 +714,142 @@ export function AddStockModal({ products }: { products: ProductPaging, }) {
                 }
             </div>
         </ResponsiveModal>
+    )
+}
+
+// atas
+export function AddStockModal_Old({ products }: { products: ProductPaging, }) {
+    const [ isModalOpen, setIsModalOpen ] = useState(false)
+    const [ stockAmount, setStockAmount ] = useState("")
+    const [ nameProduct, setNameProduct ] = useState<string>('')
+    const [ productData, setProductData ] = useState<Product | null>(null)
+
+    const handleSubmit = () => {
+        const product = products.data.find((p) => p.id === Number(nameProduct))
+        const amount = parseInt(stockAmount)
+
+        if (product && !isNaN(amount)) {
+            product.stock += amount
+            alert(`Stok ${ product.name } ditambah ${ amount }`)
+            setIsModalOpen(false)
+            setStockAmount("")
+            setNameProduct('')
+        }
+    }
+    const handleAddStock = (product: Product | null) => {
+        setProductData(product)
+    }
+    const router = useRouter()
+
+    const { value, isLoading } = useDebounceLoad(nameProduct, 1000);
+
+    useEffect(() => {
+        if (value.trim()) {
+            router.push(newParam({ name: value }));
+        }
+    }, [ value, router ]);
+
+    return (
+        <Dialog open={ isModalOpen } onOpenChange={ setIsModalOpen }>
+            <DialogTrigger asChild>
+                <Button>
+                    <Plus className="h-4 w-4 mr-2"/>
+                    Tambah Stok
+                </Button>
+            </DialogTrigger>
+
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Tambah Stok Produk</DialogTitle>
+                </DialogHeader>
+
+                <div className="space-y-4">
+                    <ProductsFilter products={ products }/>
+
+                    <div>
+                        <Label htmlFor="stock">Tambah Stok</Label>
+                        <Input
+                            id="stock"
+                            type="number"
+                            value={ stockAmount }
+                            onChange={ (e) => setStockAmount(e.target.value) }
+                        />
+                    </div>
+                </div>
+
+                { productData ?
+                    <Card className="flex items-center gap-4 p-4 flex-row border-green-800 border-2">
+                        <picture>
+                            <img
+                                src={ productData.image }
+                                alt={ productData.name }
+                                className="size-10  rounded-md object-cover"
+                            />
+                        </picture>
+
+                        <div className="flex-1">
+                            <p className="text-sm font-semibold">{ productData.name }</p>
+                            <p className="text-xs text-muted-foreground">
+                                Stok: { productData.stock } | { formatRupiah(productData.price) }
+                            </p>
+                        </div>
+
+                        <Button
+                            size="sm"
+                            variant="secondary"
+                            onClick={ () => handleAddStock(null) }
+                        >
+                            Hapus
+                        </Button>
+                    </Card>
+                    :
+                    <div className="space-y-3 overflow-y-auto h-96">
+                        {
+                            isLoading
+                                ? <Card className="flex items-center gap-4 p-4 ">Loading...</Card>
+                                : products.data.length === 0
+                                    ? <Card className="flex items-center gap-4 p-4">Product Is Not Found</Card>
+                                    : products.data
+                                    .filter((p) => p.name.toLowerCase().includes(nameProduct.toLowerCase()))
+                                    .map((product) => (
+                                        <Card key={ product.id }
+                                              className="flex items-center gap-4 p-4 flex-row hover:border-primary">
+                                            <picture>
+                                                <img
+                                                    src={ product.image }
+                                                    alt={ product.name }
+                                                    className="size-10  rounded-md object-cover"
+                                                />
+                                            </picture>
+
+                                            <div className="flex-1">
+                                                <p className="text-sm font-semibold">{ product.name }</p>
+                                                <p className="text-xs text-muted-foreground">
+                                                    Stok: { product.stock } | { formatRupiah(product.price) }
+                                                </p>
+                                            </div>
+
+                                            <Button
+                                                size="sm"
+                                                variant="secondary"
+                                                onClick={ () => handleAddStock(product) }
+                                            >
+                                                Tambah
+                                            </Button>
+                                        </Card>
+                                    )) }
+                    </div>
+                }
+
+                <DialogFooter className="pt-4">
+                    <Button
+                        onClick={ handleSubmit }
+                        disabled={ !nameProduct || !stockAmount }
+                    >
+                        Simpan
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
     )
 }

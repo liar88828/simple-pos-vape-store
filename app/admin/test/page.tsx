@@ -1,4 +1,4 @@
-import { LoadingSpin } from "@/components/loading-spin";
+import { LoadingSpin } from "@/components/mini/loading-spin";
 import React from 'react';
 
 async function Page() {

@@ -1,5 +1,5 @@
 import { getAllCustomerRelational } from "@/action/customer-action";
-import { CustomersPage } from "@/components/customers-page"
+import { CustomersPage } from "@/components/page/customers-page"
 import { logger } from "@/lib/logger";
 
 export default async function Customers() {

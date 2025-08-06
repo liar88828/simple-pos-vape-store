@@ -1,8 +1,8 @@
 'use client'
 
 import { registerAction } from "@/action/auth-action";
-import { InputForm } from "@/components/form-hook";
-import { SlideTransition } from "@/components/slide-transition";
+import { InputForm } from "@/components/mini/form-hook";
+import { SlideTransition } from "@/components/mini/slide-transition";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardTitle } from "@/components/ui/card";
 import { RegisterFormData, registerSchema } from "@/lib/auth-schema";

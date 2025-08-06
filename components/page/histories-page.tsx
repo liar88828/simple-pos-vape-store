@@ -1,6 +1,7 @@
 "use client"
 
 import { getSaleById } from "@/action/product-action";
+import { InvoiceLetter } from "@/components/page/invoice-letter";
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -21,7 +22,6 @@ import { useQuery } from "@tanstack/react-query";
 import { Eye, ReceiptText } from "lucide-react"
 import React, { useRef, useState } from "react"
 import { useReactToPrint } from "react-to-print";
-import { Invoice } from "./invoice"
 
 export function HistoriesPage({ histories, }: { histories: SaleCustomers[] }) {
     // const contentRef = useRef<HTMLDivElement>(null)
@@ -184,7 +184,7 @@ export function ModalInvoice({ sale, isOpen, setOpenAction }: { sale: SaleCustom
                 </DialogHeader>
 
                 <div ref={contentRef}>
-                    <Invoice invoiceData={sale} />
+                    <InvoiceLetter invoiceData={ sale }/>
                 </div>
 
                 <DialogFooter>
@@ -249,7 +249,7 @@ export function ModalInvoiceFetch({ saleId, isOpen, setOpenAction }: { saleId: n
                 </DialogHeader>
 
                 <div ref={ contentRef }>
-                    <Invoice invoiceData={ sale }/>
+                    <InvoiceLetter invoiceData={ sale }/>
                 </div>
 
                 <DialogFooter>

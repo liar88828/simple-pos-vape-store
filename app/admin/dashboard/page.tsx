@@ -1,7 +1,7 @@
 import { getPreOrderStatusCount } from "@/action/inventory-action";
 import { getProductLowStockComplete, getTodayVsYesterdaySales } from "@/action/product-action";
 import { getTopSellingProductsByRangeReport, lastBuyerPending } from "@/action/sale-action";
-import { DashboardPage } from "@/components/dashboard-page"
+import { DashboardPage } from "@/components/page/dashboard-page"
 import { logger } from "@/lib/logger";
 
 export default async function Dashboard() {

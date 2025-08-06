@@ -4,7 +4,7 @@ import {
     getSaleCustomers,
     getTopSellingProductsByRangeReport
 } from "@/action/sale-action";
-import { ReportsPage } from "@/components/reports-page"
+import { ReportsPage } from "@/components/page/reports-page"
 import { ContextPage, RangeStats } from "@/interface/actionType";
 import { logger } from "@/lib/logger";
 

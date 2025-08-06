@@ -6,7 +6,7 @@ import {
     deleteCustomerAction,
     updateCustomerAction
 } from "@/action/customer-action";
-import { InputDateForm, InputForm, SelectForm } from "@/components/form-hook";
+import { InputDateForm, InputForm, SelectForm } from "@/components/mini/form-hook";
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";

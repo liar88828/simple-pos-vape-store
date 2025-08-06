@@ -7,7 +7,7 @@ import { SaleCustomers } from '@/interface/actionType';
 import { formatDateIndo, formatRupiah } from "@/lib/formatter";
 import React from 'react';
 
-export function Invoice({ invoiceData }: { invoiceData: SaleCustomers }) {
+export function InvoiceLetter({ invoiceData }: { invoiceData: SaleCustomers }) {
     const calculateSubtotal = (quantity: number, price: number) => quantity * price;
     // container mx-auto  p-4 md:p-8
     return (

@@ -4,7 +4,7 @@ import {
     getProductLowStockComplete,
     getProductPage
 } from "@/action/product-action";
-import { InventoryPage } from "@/components/inventory-page"
+import { InventoryPage } from "@/components/page/inventory-page"
 import { ContextPage } from "@/interface/actionType";
 
 export default async function page(context: ContextPage) {

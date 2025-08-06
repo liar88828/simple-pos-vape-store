@@ -1,6 +1,6 @@
 import { getSessionUserPage } from '@/action/auth-action';
 import { getHistories } from "@/action/sale-action";
-import { HistoriesPage } from '@/components/histories-page';
+import { HistoriesPage } from '@/components/page/histories-page';
 import { ContextPage } from '@/interface/actionType';
 import React from 'react';
 

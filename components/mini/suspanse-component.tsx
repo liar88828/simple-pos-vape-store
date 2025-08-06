@@ -1,4 +1,4 @@
-import { LoadingSpin } from "@/components/loading-spin";
+import { LoadingSpin } from "@/components/mini/loading-spin";
 import React, { useEffect, useState } from "react";
 
 interface Customer_ {

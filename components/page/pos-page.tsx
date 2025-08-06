@@ -3,10 +3,10 @@
 import { createCustomerNew } from "@/action/customer-action";
 import { type  ProductPaging, type ProductPreorder } from "@/action/product-action";
 import { createTransactionAction } from "@/action/sale-action";
-import { InputForm } from "@/components/form-hook";
-import { ProductDetailDialogOnly } from "@/components/product-detail-dialog-only";
-import { ProductCart } from "@/components/product-user-page";
-import { ProductsFilter } from "@/components/products-page";
+import { InputForm } from "@/components/mini/form-hook";
+import { ProductDetailDialogOnly } from "@/components/page/product-detail-dialog-only";
+import { ProductCart } from "@/components/page/product-user-page";
+import { ProductsFilter } from "@/components/page/products-page";
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {

@@ -1,7 +1,7 @@
 import { getSessionUserPage } from "@/action/auth-action";
 import { getProductLowStock } from "@/action/product-action";
-import { AppSidebar } from "@/components/app-sidebar";
-import HeaderComponent from "@/components/header-page";
+import { AppSidebar } from "@/components/layout/app-sidebar";
+import HeaderComponent from "@/components/layout/header-page";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { userNavItems } from '@/lib/link-sidebar';
 import { cookies } from "next/headers";

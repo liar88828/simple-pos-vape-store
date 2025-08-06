@@ -1,5 +1,5 @@
 import { getProductPage } from "@/action/product-action";
-import { ProductsPage } from "@/components/products-page"
+import { ProductsPage } from "@/components/page/products-page"
 import { ContextPage } from "@/interface/actionType";
 import { logger } from "@/lib/logger";
 

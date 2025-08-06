@@ -2,8 +2,9 @@
 
 import { ProductPreorder } from "@/action/product-action";
 import { DashboardStats, TopSellingProducts, transactionStatusAction } from "@/action/sale-action";
-import { ResponsiveModalOnly } from "@/components/modal-components";
-import { ProductDetailDialogOnly } from "@/components/product-detail-dialog-only";
+import { ResponsiveModalOnly } from "@/components/mini/modal-components";
+import { InvoiceLetter } from "@/components/page/invoice-letter";
+import { ProductDetailDialogOnly } from "@/components/page/product-detail-dialog-only";
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -27,7 +28,6 @@ import { useRouter } from "next/navigation"
 import React, { useRef, useState } from "react"
 import { useReactToPrint } from "react-to-print";
 import * as XLSX from 'xlsx';
-import { Invoice } from "./invoice"
 
 interface ReportsPageProps {
     range: RangeStats,
@@ -546,7 +546,7 @@ export function ModalInvoice({ sale }: { sale: SaleCustomers }) {
                     </p>
                 </DialogHeader>
                 <div ref={ contentRef }>
-                    <Invoice invoiceData={ sale }/>
+                    <InvoiceLetter invoiceData={ sale }/>
                 </div>
 
                 <DialogFooter>

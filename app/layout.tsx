@@ -1,5 +1,5 @@
-import ProviderComponent from "@/components/provider-component";
-import { ThemeProvider } from "@/components/theme-provider"
+import ProviderComponent from "@/components/layout/provider-component";
+import { ThemeProvider } from "@/components/layout/theme-provider"
 import type { Metadata } from "next"
 import { Inter } from "next/font/google"
 import "./globals.css"

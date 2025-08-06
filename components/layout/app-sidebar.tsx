@@ -1,6 +1,6 @@
 "use client"
 import { deleteCookie } from "@/action/auth-action";
-import { ModeToggle } from "@/components/theme-provider";
+import { ModeToggle } from "@/components/layout/theme-provider";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
     DropdownMenu,

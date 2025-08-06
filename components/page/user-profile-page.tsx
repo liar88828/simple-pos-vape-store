@@ -22,20 +22,10 @@ export default function UserProfilePage({ customer }: { customer: CustomerComple
                 </CardHeader>
                 <Separator/>
                 <CardContent>
-                    <p>
-                        <strong>Name:</strong> { customer.name }
-                    </p>
-                    <p>
-                        <strong>Status:</strong> { customer.status }
-                    </p>
-                    <p>
-                        <strong>Created At:</strong>
-                        { formatDateIndo(customer.createdAt) }
-                    </p>
-                    <p>
-                        <strong>Last Updated:</strong>
-                        { formatDateIndo(customer.updatedAt) }
-                    </p>
+                    <p><strong>Name:</strong> { customer.name }</p>
+                    <p><strong>Status:</strong> { customer.status }</p>
+                    <p><strong>Created At:</strong>{ formatDateIndo(customer.createdAt) }</p>
+                    <p><strong>Last Updated:</strong>{ formatDateIndo(customer.updatedAt) }</p>
                 </CardContent>
             </Card>
 
