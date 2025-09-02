@@ -1,20 +1,20 @@
 import { z } from 'zod';
-import type {
-    ProductOptionalDefaultsWithRelations,
-    ProductPartialWithRelations,
-    ProductWithRelations
-} from './ProductSchema'
 import {
-    ProductOptionalDefaultsWithRelationsSchema,
-    ProductPartialWithRelationsSchema,
-    ProductWithRelationsSchema
-} from './ProductSchema'
-import type { SaleOptionalDefaultsWithRelations, SalePartialWithRelations, SaleWithRelations } from './SaleSchema'
-import {
-    SaleOptionalDefaultsWithRelationsSchema,
+    SaleWithRelationsSchema,
     SalePartialWithRelationsSchema,
-    SaleWithRelationsSchema
+    SaleOptionalDefaultsWithRelationsSchema
 } from './SaleSchema'
+import type { SaleWithRelations, SalePartialWithRelations, SaleOptionalDefaultsWithRelations } from './SaleSchema'
+import {
+    ProductWithRelationsSchema,
+    ProductPartialWithRelationsSchema,
+    ProductOptionalDefaultsWithRelationsSchema
+} from './ProductSchema'
+import type {
+    ProductWithRelations,
+    ProductPartialWithRelations,
+    ProductOptionalDefaultsWithRelations
+} from './ProductSchema'
 
 /////////////////////////////////////////
 // SALES ITEM SCHEMA

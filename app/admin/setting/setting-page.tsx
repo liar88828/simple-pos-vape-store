@@ -6,10 +6,11 @@ import {
     saveSettingShipping,
     saveSettingStore,
     saveStoreLogo
-} from "@/action/setting-action";
+} from "@/app/admin/setting/setting-action";
 import { InputForm, SelectForm, SwitchForm, SwitchOnlyForm, TextareaForm } from "@/components/mini/form-hook";
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle, } from "@/components/ui/card"
+import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger, } from "@/components/ui/tabs"
 import { toastResponse } from "@/lib/helper";
 import {
@@ -64,7 +65,7 @@ export function RenderStoreSection({ data }: { data: Store | null }) {
     const methods = useForm<StoreOptionalDefaults>({
         resolver: zodResolver(StoreOptionalDefaultsSchema),
         defaultValues: {
-            id: data?.id ?? '',
+            id: data?.id ?? undefined,
             name: data?.name ?? '',
             currency: data?.currency ?? 'IDR',
             description: data?.description ?? '',
@@ -73,10 +74,8 @@ export function RenderStoreSection({ data }: { data: Store | null }) {
             address: data?.address ?? '',
         } satisfies StoreOptionalDefaults
     });
-
+    console.log(methods.formState.errors)
     const onSubmit = methods.handleSubmit(async (dataStore) => {
-
-        // console.log("Form Data:", data);
         toastResponse({
             onFinish: () => setIsLoading(false),
             onSuccess: async () => await saveStoreLogo(logoImage),
@@ -129,28 +128,26 @@ export function RenderStoreSection({ data }: { data: Store | null }) {
                         {/* Store logo upload with preview */ }
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-2">Store Logo</label>
-                            <div className="flex items-center space-x-4">
+                            <div className="flex sm:flex-row sm:items-end flex-col gap-4 ">
                                 <div
-                                    className=" size-32 bg-gray-100 rounded-lg overflow-hidden border-2 border-dashed border-gray-300 flex items-center justify-center">
+                                    className=" w-36 h-36 bg-gray-100 rounded-lg overflow-hidden border-2 border-dashed border-gray-300 flex items-center justify-center">
                                     { logoPreview ? (
                                         <picture>
                                             <img
                                                 src={ logoPreview }
                                                 alt="Logo Preview"
-                                                className="object-cover w-full h-full"
+                                                className="object-cover w-full h-full "
                                             />
                                         </picture>
                                     ) : (
-                                        <Upload className="size-6  text-gray-400"/>
+                                        <Upload className="size-6 text-gray-400"/>
                                     ) }
                                 </div>
-                                <input
+
+                                <Input
                                     type="file"
                                     accept="image/*"
                                     onChange={ handleImageChange }
-                                    className="text-sm text-primary file:mr-4 file:py-1 file:px-2
-                                                   file:rounded file:text-sm file:font-semibold
-                                                   file:bg-primary file:text-primary-foreground hover:file:bg-primary/90"
                                 />
                             </div>
                         </div>
@@ -159,7 +156,8 @@ export function RenderStoreSection({ data }: { data: Store | null }) {
                 </FormProvider>
             </CardContent>
             <CardFooter>
-                <Button disabled={ isLoading } onClick={ onSubmit }>Save changes</Button>
+                <Button disabled={ isLoading }
+                        onClick={ onSubmit }>Save changes</Button>
             </CardFooter>
         </Card>
     );
@@ -168,14 +166,16 @@ export function RenderStoreSection({ data }: { data: Store | null }) {
 export function RenderPaymentSection({ data }: { data: PaymentWithRelations | null }) {
     const [ isLoading, setIsLoading ] = useState(false)
     const [ isCod, setIsCod ] = useState(data?.isCod ?? false)
+    const [ isTax, setIsTax ] = useState(data?.isTax ?? false)
 
     const methods = useForm<PaymentWithRelations>({
         // resolver: zodResolver(RelatedPaymentModel),
         defaultValues: {
             id: data?.id ?? '',
             isCod: data?.isCod ?? false,
+            isTax: data?.isTax ?? false,
             valueCod: data?.valueCod ?? 0,
-
+            valueTax: data?.valueTax ?? 0,
             PaymentList: data?.PaymentList ?? [ {
                 value: "",
                 fee: 0,
@@ -214,7 +214,7 @@ export function RenderPaymentSection({ data }: { data: PaymentWithRelations | nu
                     <div className="space-y-6 ">
                         <div>
                             <div className="flex items-center justify-between mb-2">
-                                <h4 className="font-medium">Domestic Shipping Rates</h4>
+                                <h4 className="font-medium">Payment list</h4>
                                 <Button type="button" size="sm"
                                         onClick={ () => append({
                                             id: '',
@@ -228,10 +228,10 @@ export function RenderPaymentSection({ data }: { data: PaymentWithRelations | nu
                                 </Button>
                             </div>
 
-                            <div className="space-y-3">
+                            <div className="space-y-3 w-full">
                                 { fields.map((field, index) => (
                                     <div key={ field.id }
-                                         className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end border p-4 rounded-lg">
+                                         className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end border p-4 rounded-lg ">
                                         <InputForm name={ `PaymentList.${ index }.title` } title="Name"
                                                    placeholder="Shipping Method"/>
                                         <InputForm name={ `PaymentList.${ index }.value` } title="Rekening"
@@ -244,7 +244,7 @@ export function RenderPaymentSection({ data }: { data: PaymentWithRelations | nu
                                             variant="destructive"
                                             size="icon"
                                             onClick={ () => remove(index) }
-                                            className="mt-2 md:mt-0"
+                                            className="mt-2 md:mt-0 w-auto"
                                         >
                                             <Trash2 className="w-4 h-4"/>
                                         </Button>
@@ -270,6 +270,28 @@ export function RenderPaymentSection({ data }: { data: PaymentWithRelations | nu
                         <InputForm name={ 'valueCod' } type={ "number" } title={ 'COD Fee' }
                                    disabled={ !isCod }
                                    placeholder={ 'Pembayaran COD Fee' }/>
+
+                        {/* Tax */ }
+                        <div className="flex items-center justify-between mb-4">
+                            <div className="flex items-center space-x-3">
+                                <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                                    <Package className="w-5 h-5 text-blue-600"/>
+                                </div>
+                                <div>
+                                    <h4 className="font-medium">Tax</h4>
+                                    <p className="text-sm text-gray-500">Additional tax fee</p>
+                                </div>
+                            </div>
+                            <SwitchOnlyForm name={ "isTax" } onChange={ setIsTax }/>
+                        </div>
+                        <InputForm
+                            name={ "valueTax" }
+                            type={ "number" }
+                            title={ "Tax Fee" }
+                            disabled={ !isTax }
+                            placeholder={ "Masukkan Tax Fee" }
+                        />
+
                     </div>
                 </FormProvider>
             </CardContent>

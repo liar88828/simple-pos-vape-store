@@ -1,4 +1,9 @@
-import { getSettingInventory, getSettingPayment, getSettingShipping, getStoreLoader } from "@/action/setting-action";
+import {
+    getSettingInventory,
+    getSettingPayment,
+    getSettingShipping,
+    getStoreLoader
+} from "@/app/admin/setting/setting-action";
 import SettingPage from "@/app/admin/setting/setting-page";
 import React from 'react';
 

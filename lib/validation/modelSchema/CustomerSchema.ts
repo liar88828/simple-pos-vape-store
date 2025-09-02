@@ -1,10 +1,10 @@
 import { z } from 'zod';
-import type { SaleOptionalDefaultsWithRelations, SalePartialWithRelations, SaleWithRelations } from './SaleSchema'
 import {
-    SaleOptionalDefaultsWithRelationsSchema,
+    SaleWithRelationsSchema,
     SalePartialWithRelationsSchema,
-    SaleWithRelationsSchema
+    SaleOptionalDefaultsWithRelationsSchema
 } from './SaleSchema'
+import type { SaleWithRelations, SalePartialWithRelations, SaleOptionalDefaultsWithRelations } from './SaleSchema'
 
 /////////////////////////////////////////
 // CUSTOMER SCHEMA

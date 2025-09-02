@@ -5,7 +5,7 @@ import {
     CustomerRelational,
     deleteCustomerAction,
     updateCustomerAction
-} from "@/action/customer-action";
+} from "@/app/admin/customers/customers-action";
 import { InputDateForm, InputForm, SelectForm } from "@/components/mini/form-hook";
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"

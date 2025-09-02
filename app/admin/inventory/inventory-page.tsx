@@ -1,11 +1,11 @@
 "use client"
 
-import { preOrderAction, preOrderProductAction } from "@/action/inventory-action";
 import { PreorderProduct, ProductPaging } from "@/action/product-action";
+import { deletePreorderProduct, preOrderAction, preOrderProductAction } from "@/app/admin/inventory/inventory-action";
+import { ProductsFilter } from "@/app/admin/products/products-page";
 import { FilterInput, FilterSelect } from "@/components/mini/filter-input";
 import { InputDateForm, InputForm, InputNumForm, SelectForm } from "@/components/mini/form-hook";
 import { ResponsiveModal, ResponsiveModalOnly } from "@/components/mini/modal-components";
-import { ProductsFilter } from "@/components/page/products-page";
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -171,7 +171,7 @@ type InventoryPageProps = {
 };
 
 export function InventoryPage({ products, lowStockProducts, expiredProduct, preorders }: InventoryPageProps) {
-
+    const [ isLoadingHistoryPreorder, setIsLoadingHistoryPreorder ] = useState(false)
     // console.log(products)
     const [ isModalStock, setIsModalStock ] = useState(false)
     const [ isStock, setIsStock ] = useState<Product | null>(null)
@@ -191,15 +191,14 @@ export function InventoryPage({ products, lowStockProducts, expiredProduct, preo
 
             <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-6">
                 <h1 className="text-lg sm:text-3xl font-bold">Manajemen Inventori</h1>
-                <AddStockModal products={ products }/>
 
+                <AddStockModal products={ products }/>
 
                 { isPreorder && isModalPreorder &&
 						<ReorderModal preorderProduct={ isPreorder }
 									  isOpen={ isModalPreorder }
 									  setOpenAction={ setIsModalPreorder }/> }
-
-
+                {/*Tambah Stok*/ }
                 { isStock && isModalStock &&
 						<ReorderStockModal isStock={ isStock }
 										   isOpen={ isModalStock }
@@ -281,10 +280,18 @@ export function InventoryPage({ products, lowStockProducts, expiredProduct, preo
                                                     } }
                                             >Ubah</Button>
 
-                                            <Button size="sm" variant={ 'destructive' }
-                                                    onClick={ () => {
+                                            <Button
+                                                disabled={ isLoadingHistoryPreorder }
+                                                size="sm" variant={ 'destructive' }
+
+                                                onClick={ async () => {
                                                         if (confirm(`Apakah Anda Yakin Untuk Hapus Data ini ${ item.product.name } ?`)) {
                                                             console.log('delete')
+                                                            toastResponse({
+                                                                onStart: () => setIsLoadingHistoryPreorder(true),
+                                                                onFinish: () => setIsLoadingHistoryPreorder(false),
+                                                                response: await deletePreorderProduct(item.id),
+                                                            })
                                                         }
                                                     } }
                                             >Hapus</Button>
@@ -489,13 +496,22 @@ export function ReorderModal({ preorderProduct, setOpenAction, isOpen }: {
     );
 }
 
+{/*Tambah Stok*/
+}
 export function ReorderStockModal({ isStock, setOpenAction, isOpen }: { isStock: Product } & ModalProps) {
 
     // const [ productToAddStock, setProductToAddStock ] = useState<Product | null>(null)
     const [ loading, setLoading ] = useState(false)
 
     const methods = useForm<PreOrderOptionalDefaults>({
-            resolver: zodResolver(PreOrderOptionalDefaultsSchema),
+        resolver: zodResolver(PreOrderOptionalDefaultsSchema
+            // .extend({
+            //     status: PreOrderOptionalDefaultsSchema.shape.status.refine(
+            //         (val) => val !== "-",
+            //         { message: "Status cannot be '-'" }
+            //     )
+            // })
+        ),
             defaultValues: {
                 status: '-',
                 productId: isStock.id,
@@ -532,11 +548,7 @@ export function ReorderStockModal({ isStock, setOpenAction, isOpen }: { isStock:
                             name="status"
                             label="Status"
                             placeholder="Pilih status"
-                            options={ [
-                                { label: "Pilih", value: "-" },
-                                { label: "Pending", value: "pending" },
-                                { label: "Success", value: "success" },
-                            ] }
+                            options={ statusPreordersOptions }
                         />
                         <InputNumForm name={ 'priceNormal' } title={ 'Harga Beli' }/>
                         <InputNumForm name={ 'priceSell' } title={ 'Harga Jual' }/>

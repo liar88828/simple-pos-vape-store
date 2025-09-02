@@ -1,6 +1,6 @@
 "use client"
 
-import { getSaleById } from "@/action/product-action";
+import { _getSaleById, } from "@/action/product-action";
 import { InvoiceLetter } from "@/components/page/invoice-letter";
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -207,7 +207,7 @@ export function ModalInvoiceFetch({ saleId, isOpen, setOpenAction }: { saleId: n
     const { data, isLoading, isError } = useQuery({
         queryKey: [ 'sale', saleId ],
         gcTime: 30 * 60 * 24,
-        queryFn: () => getSaleById(saleId as number),
+        queryFn: () => _getSaleById(saleId as number),
         enabled: !!saleId, // only fetch if idProduct is truthy
     });
 

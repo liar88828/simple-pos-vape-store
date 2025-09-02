@@ -64,7 +64,7 @@ model Product {
     category       String /// @zod.string.min(1)
     name           String /// @zod.string.min(1)
     price          Int /// @zod.number.min(1)
-    stock          Int /// @zod.number.min(0)
+    stock      Int     @default(0) /// @zod.number.min(0)
     minStock       Int         @default(5)
     sold           Int         @default(0)
     image          String /// @zod.string.min(1)
@@ -182,8 +182,10 @@ model Store {
 
 model Payment {
     id          String        @id @default(uuid())
-    isCod       Boolean
-    valueCod    Int /// @zod.number.min(0)
+    isCod    Boolean @default(false)
+    isTax    Boolean @default(false)
+    valueCod Int     @default(0) /// @zod.number.min(0)
+    valueTax Int     @default(0) /// @zod.number.min(0)
     PaymentList PaymentList[]
 }
 

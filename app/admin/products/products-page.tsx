@@ -1,6 +1,7 @@
 "use client"
 
-import { ProductPaging, ProductPreorder, upsertProductAction } from "@/action/product-action";
+import { ProductPaging, ProductPreorder } from "@/action/product-action";
+import { upsertProductAction } from "@/app/admin/products/product-action";
 import { FilterSelect } from "@/components/mini/filter-input";
 import { InputDateForm, InputForm, InputNumForm, SelectForm, TextareaForm } from "@/components/mini/form-hook";
 import { ResponsiveModal, ResponsiveModalOnly } from "@/components/mini/modal-components";

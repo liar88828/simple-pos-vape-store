@@ -1,13 +1,13 @@
 import { z } from 'zod';
-import type {
-    PaymentListOptionalDefaultsWithRelations,
-    PaymentListPartialWithRelations,
-    PaymentListWithRelations
-} from './PaymentListSchema'
 import {
-    PaymentListOptionalDefaultsWithRelationsSchema,
+    PaymentListWithRelationsSchema,
     PaymentListPartialWithRelationsSchema,
-    PaymentListWithRelationsSchema
+    PaymentListOptionalDefaultsWithRelationsSchema
+} from './PaymentListSchema'
+import type {
+    PaymentListWithRelations,
+    PaymentListPartialWithRelations,
+    PaymentListOptionalDefaultsWithRelations
 } from './PaymentListSchema'
 
 /////////////////////////////////////////
@@ -17,7 +17,9 @@ import {
 export const PaymentSchema = z.object({
   id: z.string().uuid(),
   isCod: z.boolean(),
+    isTax: z.boolean(),
   valueCod: z.number().min(0),
+    valueTax: z.number().min(0),
 })
 
 export type Payment = z.infer<typeof PaymentSchema>
@@ -36,6 +38,10 @@ export type PaymentPartial = z.infer<typeof PaymentPartialSchema>
 
 export const PaymentOptionalDefaultsSchema = PaymentSchema.merge(z.object({
   id: z.string().uuid().optional(),
+    isCod: z.boolean().optional(),
+    isTax: z.boolean().optional(),
+    valueCod: z.number().min(0).optional(),
+    valueTax: z.number().min(0).optional(),
 }))
 
 export type PaymentOptionalDefaults = z.infer<typeof PaymentOptionalDefaultsSchema>

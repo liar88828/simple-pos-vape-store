@@ -11,10 +11,10 @@ export const STATUS_PREORDER = {
 }
 export const statusPreordersOptions = [
     { label: "Pilih", value: "-" },
-    { label: "Pending", value: "pending" },
-    { label: "Success", value: "success" },
-    { label: "Empty", value: "empty" },
-    { label: "Expired", value: "expired" },
+    { label: "Pending", value: "Pending" },
+    { label: "Success", value: "Success" },
+    { label: "Empty", value: "Empty" },
+    { label: "Expired", value: "Expired" },
 ]
 
 export const ERROR = {

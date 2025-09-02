@@ -1,50 +1,28 @@
 'use server'
-import { type ActionResponse } from "@/interface/actionType";
+import type { ActionResponse } from "@/interface/actionType";
 import { logger } from "@/lib/logger";
 import { prisma } from "@/lib/prisma";
-import { CustomerModelNew, CustomerModelType } from "@/lib/schema";
+import { CustomerModelType } from "@/lib/schema";
 import { Customer, CustomerSchema, Product, Sale, SalesItem } from "@/lib/validation";
 import { revalidatePath } from "next/cache";
 
-// Create a new customer
-export async function createCustomerNew(formData: CustomerModelType): Promise<ActionResponse<Customer>> {
-    try {
-        const valid = CustomerModelNew.safeParse(formData);
-        if (!valid.success) {
-            return {
-                data: valid.data,
-                message: "Pelanggan gagal ditambahkan",
-                error: valid.error.flatten().fieldErrors,
-                success: false,
-            };
+export type CustomerRelational = Customer & {
+    Sales: Sale[]
+    // PreOrders: (PreOrder & { product: Product })[]
+}
+
+export async function getAllCustomerRelational(): Promise<CustomerRelational[]> {
+    logger.info("data : getAllCustomerRelational");
+    return prisma.customer.findMany({
+        include: {
+            Sales: true,
+            // PreOrders: {
+            //     include: {
+            //         product: true
+            //     }
+            // },
         }
-        const customer = await prisma.customer.create({
-            data: {
-                status: "pending",
-                age: 0,
-                lastPurchase: new Date(),
-                name: valid.data.name,
-                totalPurchase: 0,
-            }
-        });
-
-        revalidatePath("/"); // Refresh halaman agar data baru tampil
-        logger.info("success createCustomerNew ", customer);
-        return {
-            data: customer,
-            success: true,
-            message: "Pelanggan berhasil ditambahkan",
-        };
-    } catch (error) {
-        // console.log(error);
-        logger.error("error createCustomerNew ", error);
-
-        return {
-            success: true,
-            message: "Pelanggan berhasil ditambahkan",
-        };
-    }
-
+    })
 }
 
 export async function createCustomerAction(formData: CustomerModelType): Promise<ActionResponse> {
@@ -91,25 +69,6 @@ export async function getAllCustomers(name: string = ''): Promise<Customer[]> {
     });
     logger.info("data : getAllCustomers");
     return data
-}
-
-export type CustomerRelational = Customer & {
-    Sales: Sale[]
-    // PreOrders: (PreOrder & { product: Product })[]
-}
-
-export async function getAllCustomerRelational(): Promise<CustomerRelational[]> {
-    logger.info("data : getAllCustomerRelational");
-    return prisma.customer.findMany({
-        include: {
-            Sales: true,
-            // PreOrders: {
-            //     include: {
-            //         product: true
-            //     }
-            // },
-        }
-    })
 }
 
 export async function updateCustomerAction(formData: Customer): Promise<ActionResponse> {
@@ -193,35 +152,3 @@ export async function deleteCustomerAction(id: Customer['id']): Promise<ActionRe
     }
 
 }
-
-export type CustomerComplete = Customer & {
-    Sales: (Sale & {
-        SaleItems: (SalesItem & {
-            product: Product
-        })[]
-    })[]
-};
-export const getDataCustomer = async (customerId: number): Promise<CustomerComplete | null> => {
-    if (!customerId) {
-        logger.error("data : getDataCustomer");
-        return null
-    }
-
-    const data = await prisma.customer.findUnique({
-        where: { id: customerId },
-        include: {
-            Sales: {
-                include: {
-                    SaleItems: {
-                        include: {
-                            product: true,
-                        },
-                    },
-                },
-                orderBy: { date: 'desc' },
-            },
-        },
-    });
-    logger.info("data : getDataCustomer");
-    return data;
-};

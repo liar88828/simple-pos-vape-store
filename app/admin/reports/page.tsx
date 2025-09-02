@@ -1,16 +1,15 @@
 import {
-    getDashboardStats,
-    getMonthlySalesChange,
-    getSaleCustomers,
     getTopSellingProductsByRangeReport
 } from "@/action/sale-action";
-import { ReportsPage } from "@/components/page/reports-page"
+import { getDashboardStats, getMonthlySalesChange, getSaleCustomers } from "@/app/admin/reports/reports-action";
+import { ReportsPage } from "@/app/admin/reports/reports-page"
 import { ContextPage, RangeStats } from "@/interface/actionType";
 import { logger } from "@/lib/logger";
 
 export default async function Reports({ searchParams }: ContextPage) {
-    logger.info('page : Reports')
     const range = (await searchParams).range as RangeStats || 'week'//"today"
+    logger.info('page : Reports')
+
     return <ReportsPage
         // chartData={ await getChartData(range) }
         range={ range }

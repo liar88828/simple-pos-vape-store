@@ -1,7 +1,8 @@
 "use client"
 
 import { ProductPreorder } from "@/action/product-action";
-import { DashboardStats, TopSellingProducts, transactionStatusAction } from "@/action/sale-action";
+import { DashboardStats, TopSellingProducts, } from "@/action/sale-action";
+import { transactionStatusAction } from "@/app/admin/reports/reports-action";
 import { ResponsiveModalOnly } from "@/components/mini/modal-components";
 import { InvoiceLetter } from "@/components/page/invoice-letter";
 import { ProductDetailDialogOnly } from "@/components/page/product-detail-dialog-only";
@@ -425,7 +426,7 @@ export function ModalSalesDetailOld({ sale, isOpen, setOpenAction }: { sale: Sal
                 <Button variant="default"
                         onClick={ async () => {
                             if (selectStatus) {
-                                toastResponse({ response: await transactionStatusAction(selectStatus, sale) })
+                                // toastResponse({ response: await transactionStatusAction(selectStatus, sale) })
                             }
                         } }>
                     Simpan

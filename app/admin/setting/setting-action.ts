@@ -36,8 +36,8 @@ export const getStoreLoader = async () => {
 }
 
 export async function saveSettingStore(data: StoreOptionalDefaults): Promise<ActionResponse> {
+    console.log("setting action:", data);
     const storeDB = await getStoreLoader()
-
     if (!storeDB) await prisma.store.create({ data })
     else await prisma.store.update({ where: { id: storeDB.id }, data })
     revalidatePath('/')
@@ -65,6 +65,7 @@ export async function saveSettingPayment(
             const updatedPayment = await tx.payment.update({ where: { id: shippingDB.id }, data })
             paymentID = updatedPayment.id
         }
+
         if (await tx.paymentList.count() > 0) {
             await tx.paymentList.deleteMany({ where: { paymentId: paymentID } })
         }

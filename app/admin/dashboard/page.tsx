@@ -1,7 +1,11 @@
-import { getPreOrderStatusCount } from "@/action/inventory-action";
-import { getProductLowStockComplete, getTodayVsYesterdaySales } from "@/action/product-action";
-import { getTopSellingProductsByRangeReport, lastBuyerPending } from "@/action/sale-action";
-import { DashboardPage } from "@/components/page/dashboard-page"
+import { getProductLowStockComplete, } from "@/action/product-action";
+import { getTopSellingProductsByRangeReport, } from "@/action/sale-action";
+import {
+    getPreOrderStatusCount,
+    getTodayVsYesterdaySales,
+    lastBuyerPending
+} from "@/app/admin/dashboard/dashboard-action";
+import { DashboardPage } from "@/app/admin/dashboard/dashboard-page"
 import { logger } from "@/lib/logger";
 
 export default async function Dashboard() {

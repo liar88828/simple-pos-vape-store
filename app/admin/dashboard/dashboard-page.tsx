@@ -1,7 +1,7 @@
 "use client"
 
 import { TopSellingProducts } from "@/action/sale-action";
-import { ModalSalesDetail } from "@/components/page/reports-page";
+import { ModalSalesDetail } from "@/app/admin/reports/reports-page";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"

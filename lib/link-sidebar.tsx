@@ -6,7 +6,7 @@ import {
     History,
     Home,
     LucideIcon,
-    Package,
+    Package, SettingsIcon,
     ShoppingCart,
     Users,
 } from "lucide-react"
@@ -61,12 +61,20 @@ export const adminNavItems: NavItems[] = [
         path: "/reports",
         description: "Sales & Analytics",
     },
+
+    {
+        title: "Setting",
+        icon: SettingsIcon,
+        path: "/setting",
+        description: "Setting App",
+    },
     {
         title: "Test",
         icon: FlaskConical,
         path: "/test",
         description: "For Test App",
     },
+
 ]
 
 

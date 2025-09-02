@@ -1,53 +1,58 @@
+import { create } from "zustand";
 import { CartItem } from "@/interface/actionType";
 import { Product } from "@/lib/validation";
-import { useState } from "react";
 
-export function useCart(initialItems?: CartItem[]) {
-    const [ cartItems, setCartItems ] = useState<CartItem[]>(initialItems ?? []);
+interface CartState {
+    cartItems: CartItem[];
+    addToCart: (product: Product) => void;
+    removeFromCart: (productId: number) => void;
+    incrementItem: (id: number) => void;
+    decrementItem: (id: number) => void;
+    setCartItems: (items: CartItem[]) => void;
+}
 
-    const addToCart = (product: Product) => {
+export const useCartStore = create<CartState>((set, get) => ({
+    cartItems: [],
+
+    addToCart: (product) => {
+        const { cartItems } = get();
         const existingItem = cartItems.find((item) => item.id === product.id);
+
         if (existingItem) {
-            setCartItems(cartItems.map((item) =>
-                item.id === product.id
-                    ? { ...item, quantity: item.quantity + 1 }
-                    : item
-            ));
+            set({
+                cartItems: cartItems.map((item) =>
+                    item.id === product.id
+                        ? { ...item, quantity: item.quantity + 1 }
+                        : item
+                ),
+            });
         } else {
-            setCartItems([ ...cartItems, { ...product, quantity: 1 } ]);
+            set({
+                cartItems: [ ...cartItems, { ...product, quantity: 1 } ],
+            });
         }
-    };
+    },
 
-    const removeFromCart = (productId: number) => {
-        setCartItems(cartItems.filter((item) => item.id !== productId));
-    };
+    removeFromCart: (productId) =>
+        set((state) => ({
+            cartItems: state.cartItems.filter((item) => item.id !== productId),
+        })),
 
-    const incrementItem = (id: number) => {
-        setCartItems((prev) =>
-            prev.map((item) =>
-                item.id === id
-                    ? { ...item, quantity: item.quantity + 1 }
-                    : item
-            )
-        );
-    };
+    incrementItem: (id) =>
+        set((state) => ({
+            cartItems: state.cartItems.map((item) =>
+                item.id === id ? { ...item, quantity: item.quantity + 1 } : item
+            ),
+        })),
 
-    const decrementItem = (id: number) => {
-        setCartItems((prev) =>
-            prev.map((item) =>
+    decrementItem: (id) =>
+        set((state) => ({
+            cartItems: state.cartItems.map((item) =>
                 item.id === id && item.quantity > 1
                     ? { ...item, quantity: item.quantity - 1 }
                     : item
-            )
-        );
-    };
+            ),
+        })),
 
-    return {
-        cartItems,
-        addToCart,
-        removeFromCart,
-        incrementItem,
-        decrementItem,
-        setCartItems, // optional, in case you need full control
-    };
-}
+    setCartItems: (items) => set({ cartItems: items }),
+}));

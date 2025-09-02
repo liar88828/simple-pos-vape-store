@@ -1,5 +1,5 @@
 'use client'
-import { deleteProductAction, getProductById, type ProductPreorder } from "@/action/product-action";
+import { _getProductById, deleteProductAction, type ProductPreorder } from "@/action/product-action";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogClose, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
@@ -8,7 +8,7 @@ import { formatDateIndo, formatRupiah } from "@/lib/formatter";
 import { toastResponse } from "@/lib/helper";
 import { useQuery } from "@tanstack/react-query";
 import { Plus, Trash2 } from "lucide-react";
-import React from "react";
+import React, { useState } from "react";
 
 function DetailItem({ label, value }: { label: string; value: string | number }) {
     return (
@@ -165,10 +165,11 @@ export function ProductDetailDialogOnlyFetch(
         isDelete?: boolean,
     } & ModalProps) {
 
+    const [ _isLoading, setIsLoading ] = useState(false)
     const { data: productResponse, isLoading } = useQuery({
         queryKey: [ 'product', productId ],
         gcTime: 30 * 60 * 24,
-        queryFn: () => getProductById(productId as number),
+        queryFn: () => _getProductById(productId as number),
         enabled: !!productId, // only fetch if idProduct is truthy
     });
 
@@ -274,11 +275,17 @@ export function ProductDetailDialogOnlyFetch(
                     }
 
                     { isDelete && <DialogClose asChild>
-						<Button variant="outline"
+						<Button
+								disabled={ _isLoading }
+								variant="outline"
 								className="min-w-24"
 								onClick={ async () => {
                                     if (confirm('Are you Sure to Delete ?')) {
-                                        toastResponse({ response: await deleteProductAction(product.id) })
+                                        // toastResponse({
+                                        //     onStart: () => setIsLoading(true),
+                                        //     onFinish: () => setIsLoading(false),
+                                        //     response: await deleteProductAction(product.id)
+                                        // })
                                     }
                                 } }
 						>

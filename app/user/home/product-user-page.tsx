@@ -1,18 +1,18 @@
 "use client"
 
 import { ProductPaging, ProductPreorder } from "@/action/product-action";
-import { createTransactionUserAction, createTransactionUserPendingAction } from "@/action/sale-action";
+import { ProductsFilter } from "@/app/admin/products/products-page";
+import { createTransactionUserAction, createTransactionUserPendingAction } from "@/app/user/home/home-action";
 import { ProductPending } from "@/app/user/home/page"
 import { ProductDetailDialogOnly } from "@/components/page/product-detail-dialog-only";
-import { ProductsFilter } from "@/components/page/products-page";
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { useCart } from "@/hooks/use-cart";
+import { useCartStore } from "@/hooks/use-cart";
 import { CartItem, SessionPayload } from "@/interface/actionType";
 import { formatRupiah } from "@/lib/formatter";
 import { toastResponse } from "@/lib/helper";
 import { MinusIcon, Plus, PlusIcon, ShoppingCart, Trash2 } from "lucide-react"
-import React, { useState } from "react"
+import React, { useEffect, useState } from "react"
 
 export function ProductUserPage(
     {
@@ -29,7 +29,18 @@ export function ProductUserPage(
     const [ loading, setLoading ] = useState(false)
     const [ isProduct, setIsProduct ] = useState<ProductPreorder | null>(null)
     const [ isOpen, setIsOpen ] = useState(false)
-    const { cartItems, incrementItem, decrementItem, removeFromCart, addToCart } = useCart(productPending.current)
+
+    // Zustand state/actions
+    const { cartItems, incrementItem, decrementItem, removeFromCart, addToCart, setCartItems } =
+        useCartStore();
+
+    // ✅ initialize cart items from productPending.current
+    useEffect(() => {
+        if (productPending?.current) {
+            setCartItems(productPending.current);
+        }
+    }, [ productPending, setCartItems ]);
+
     const getTotalCart = () => {
         return cartItems.reduce((total, item) => total + item.price * item.quantity, 0)
     }
@@ -183,7 +194,7 @@ export function ProductCart(
     return cartItems.map((product) => {
             return (
                 <div key={ product.id }
-                     className="flex justify-between items-center py-2 border-b">
+                     className="flex justify-between items-center py-2 border-b xl:flex-col xl:items-start">
                     <div className="flex-1">
                         <p className="font-medium text-sm">{ product.name }</p>
                         <p className="text-xs text-muted-foreground">

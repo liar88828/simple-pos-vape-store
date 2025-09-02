@@ -1,13 +1,13 @@
 import { z } from 'zod';
-import type {
-    ProductOptionalDefaultsWithRelations,
-    ProductPartialWithRelations,
-    ProductWithRelations
-} from './ProductSchema'
 import {
-    ProductOptionalDefaultsWithRelationsSchema,
+    ProductWithRelationsSchema,
     ProductPartialWithRelationsSchema,
-    ProductWithRelationsSchema
+    ProductOptionalDefaultsWithRelationsSchema
+} from './ProductSchema'
+import type {
+    ProductWithRelations,
+    ProductPartialWithRelations,
+    ProductOptionalDefaultsWithRelations
 } from './ProductSchema'
 
 /////////////////////////////////////////
@@ -46,7 +46,6 @@ export type PreOrderPartial = z.infer<typeof PreOrderPartialSchema>
 
 export const PreOrderOptionalDefaultsSchema = PreOrderSchema.merge(z.object({
   id: z.number().int().optional(),
-    estimatedDate: z.date().optional(),
   createdAt: z.date().optional(),
   updatedAt: z.date().optional(),
 }))

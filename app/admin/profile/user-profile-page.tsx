@@ -1,5 +1,5 @@
 'use client'
-import { CustomerComplete } from "@/action/customer-action";
+import { CustomerComplete } from "@/app/admin/profile/profile-action";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { formatDateIndo, formatRupiah } from "@/lib/formatter";

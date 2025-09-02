@@ -1,6 +1,6 @@
 import { getSessionUserPage } from '@/action/auth-action';
 import { getProductPage } from '@/action/product-action';
-import { ProductUserPage } from '@/components/page/product-user-page';
+import { ProductUserPage } from '@/app/user/home/product-user-page';
 import { CartItem, ContextPage, SaleCustomers } from '@/interface/actionType';
 import { STATUS_TRANSACTION } from '@/lib/constants';
 import { prisma } from '@/lib/prisma';

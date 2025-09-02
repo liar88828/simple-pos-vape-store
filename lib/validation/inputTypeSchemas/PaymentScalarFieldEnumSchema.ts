@@ -1,5 +1,5 @@
 import { z } from 'zod';
 
-export const PaymentScalarFieldEnumSchema = z.enum(['id','isCod','valueCod']);
+export const PaymentScalarFieldEnumSchema = z.enum([ 'id', 'isCod', 'isTax', 'valueCod', 'valueTax' ]);
 
 export default PaymentScalarFieldEnumSchema;

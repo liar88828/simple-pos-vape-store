@@ -1,13 +1,13 @@
 import { z } from 'zod';
-import type {
-    ShippingListOptionalDefaultsWithRelations,
-    ShippingListPartialWithRelations,
-    ShippingListWithRelations
-} from './ShippingListSchema'
 import {
-    ShippingListOptionalDefaultsWithRelationsSchema,
+    ShippingListWithRelationsSchema,
     ShippingListPartialWithRelationsSchema,
-    ShippingListWithRelationsSchema
+    ShippingListOptionalDefaultsWithRelationsSchema
+} from './ShippingListSchema'
+import type {
+    ShippingListWithRelations,
+    ShippingListPartialWithRelations,
+    ShippingListOptionalDefaultsWithRelations
 } from './ShippingListSchema'
 
 /////////////////////////////////////////

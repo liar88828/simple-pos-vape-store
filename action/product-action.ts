@@ -1,21 +1,11 @@
 'use server'
 
-import { InventoryPaging } from "@/components/page/inventory-page";
-import { ProductData } from "@/components/page/products-page";
+import { InventoryPaging } from "@/app/admin/inventory/inventory-page";
 import { ActionResponse, ContextPage, SaleCustomers } from "@/interface/actionType";
-import { STATUS_PREORDER } from "@/lib/constants";
 import { getContextPage } from "@/lib/context-action";
 import { logger } from "@/lib/logger";
 import { prisma } from "@/lib/prisma";
-import {
-    Customer,
-    PreOrder,
-    PreOrderOptionalDefaults,
-    PreOrderOptionalDefaultsSchema,
-    Product,
-    ProductOptionalDefaults,
-    ProductOptionalDefaultsSchema,
-} from "@/lib/validation";
+import { Customer, PreOrder, Product, } from "@/lib/validation";
 import { Prisma, } from "@prisma/client";
 import { revalidatePath } from 'next/cache'
 
@@ -140,6 +130,7 @@ export const getProductPage = async (context: ContextPage): Promise<ProductPagin
         productPage: await getContextPage(context, 'productPage')
     })
 }
+
 export type LowStockProducts = { stock: number, minStock: number, id: number };
 
 export async function getProductLowStock(): Promise<LowStockProducts[]> {
@@ -187,148 +178,6 @@ export const deleteProductAction = async (idProduct: Product['id']): Promise<Act
     }
 }
 
-export async function upsertProductAction(formData: ProductData): Promise<ActionResponse> {
-    if (formData.id) return await updateProductAction(formData)
-    else return await addProductAction(formData)
-}
-
-export async function addProductAction({ priceNormal, expired, ...formData }: ProductData): Promise<ActionResponse> {
-    logger.info('action addProductAction')
-
-    try {
-        const valid = ProductOptionalDefaultsSchema.safeParse(formData)
-        if (!valid.success) {
-            const errorValidation = valid.error.flatten().fieldErrors
-            logger.error('error validation addProductAction', errorValidation)
-            // console.error('Validation failed:', valid.error.flatten())
-            // throw new Error('Data produk tidak valid.')
-            return {
-                data: valid.data,
-                message: "Product Gagal di Tambahkan",
-                error: errorValidation,
-                success: false
-            }
-        }
-
-        const { id, ...data } = valid.data
-        await prisma.$transaction(async (tx) => {
-            const productDB = await tx.product.create({ data })
-
-            await tx.preOrder.create({
-                data: PreOrderOptionalDefaultsSchema.parse({
-                    productId: productDB.id,
-                    quantity: productDB.stock,
-                    status: STATUS_PREORDER.SUCCESS,
-                    priceSell: productDB.price,
-                    priceNormal: priceNormal ?? 0,
-                    expired,
-                } satisfies PreOrderOptionalDefaults)
-            })
-        })
-
-        revalidatePath('/') // agar halaman ter-refresh
-        logger.info('success addProductAction')
-        return {
-            data: valid.data,
-            success: true,
-            message: 'Produk berhasil ditambahkan'
-        };
-    } catch (error) {
-        // console.log(error)
-        logger.error('error catch addProductAction')
-        return {
-            data: null,
-            success: false,
-            message: 'Something went wrong addProductAction'
-        }
-    }
-}
-
-export async function updateProductAction(formData: ProductOptionalDefaults): Promise<ActionResponse> {
-    logger.info('action input updateProductAction')
-
-    try {
-        const valid = ProductOptionalDefaultsSchema.safeParse(formData)
-        const productFound = await prisma.product.findUnique({ where: { id: formData.id }, select: { id: true } })
-        if (!productFound) {
-            logger.error('error DB updateProductAction')
-            return {
-                data: valid.data,
-                success: true,
-                message: "Product Tidak Di Temukan",
-
-            };
-        }
-
-        if (!valid.success) {
-            const dataValidation = valid.error.flatten().fieldErrors
-            logger.error('error validation updateProductAction', dataValidation)
-            return {
-                data: valid.data,
-                message: "Product Gagal diperbarui",
-                error: dataValidation,
-                success: false
-            }
-        }
-        const { id, ...rest } = valid.data
-        await prisma.product.update({
-            where: { id },
-            data: rest
-        })
-
-        revalidatePath('/') // agar halaman ter-refresh
-        logger.info('success : updateProductAction')
-        return {
-            data: valid.data,
-            success: true,
-            message: 'Produk berhasil diperbarui'
-        };
-
-    } catch (error) {
-        // console.log(error)
-        logger.error('error catch updateProductAction')
-        return {
-            data: null,
-            success: false,
-            message: 'Something went wrong updateProduct'
-        }
-    }
-
-}
-
-export async function getTodayVsYesterdaySales() {
-    const now = new Date();
-
-    const startOfToday = new Date(now.setHours(0, 0, 0, 0));
-    const startOfTomorrow = new Date(now.setHours(24, 0, 0, 0));
-
-    const startOfYesterday = new Date(startOfToday);
-    startOfYesterday.setDate(startOfYesterday.getDate() - 1);
-    const endOfYesterday = new Date(startOfToday);
-
-    const today = await prisma.sale.aggregate({
-
-        _sum: { total: true },
-        where: { date: { gte: startOfToday, lt: startOfTomorrow } },
-    });
-
-    const yesterday = await prisma.sale.aggregate({
-
-        _sum: { total: true },
-        where: { date: { gte: startOfYesterday, lt: endOfYesterday } },
-    });
-
-    const todayTotal = today._sum.total ?? 0;
-    const yesterdayTotal = yesterday._sum.total ?? 0;
-
-    const percentChange = yesterdayTotal === 0
-        ? 100
-        : ((todayTotal - yesterdayTotal) / yesterdayTotal) * 100;
-    const data = { todayTotal, percentChange }
-    logger.info('data : getTodayVsYesterdaySales')
-    return data;
-}
-
 export const getBrands = async () => {
     'use cache'
     const data = await prisma.product.groupBy({ by: 'brand' })
@@ -336,7 +185,7 @@ export const getBrands = async () => {
     return data
 }
 
-export const getProductById = async (id: number): Promise<ActionResponse<ProductPreorder | null>> => {
+export const _getProductById = async (id: number): Promise<ActionResponse<ProductPreorder | null>> => {
 
     try {
         'use cache'
@@ -363,7 +212,7 @@ export const getProductById = async (id: number): Promise<ActionResponse<Product
     }
 }
 
-export const getSaleById = async (id: number): Promise<ActionResponse<SaleCustomers | null>> => {
+export const _getSaleById = async (id: number): Promise<ActionResponse<SaleCustomers | null>> => {
 
     try {
         const response = await fetch(`http://localhost:3000/api/sale/${ id }`, {
@@ -388,26 +237,6 @@ export const getSaleById = async (id: number): Promise<ActionResponse<SaleCustom
     }
 }
 
-export const getExpiredProduct = async (): Promise<PreorderProduct[]> => {
-    const now = new Date();
-    const oneYearAgo = new Date();
-    oneYearAgo.setFullYear(now.getFullYear() - 1);
-
-    const data = await prisma.preOrder.findMany({
-        where: {
-            expired: {
-                not: null,
-                gte: oneYearAgo, // expired date >= 1 year ago
-                lte: now,        // expired date <= today
-            },
-        },
-        include: {
-            product: true, // optional
-        },
-    });
-    logger.info('data : getExpiredProduct')
-    return data
-}
 
 export const getPreorder = async (
     filter: {
@@ -478,12 +307,3 @@ export const getPreorder = async (
     return { data, total }
 }
 
-export const getPreorderPage = async (context: ContextPage): Promise<InventoryPaging> => {
-    return await getPreorder({
-        inventoryName: await getContextPage(context, 'inventoryName'),
-        inventoryStock: await getContextPage(context, 'inventoryStock'),
-        inventoryExpired: await getContextPage(context, 'inventoryExpired'),
-        inventoryLimit: await getContextPage(context, 'inventoryLimit'),
-        inventoryPage: await getContextPage(context, 'inventoryPage'),
-    })
-}

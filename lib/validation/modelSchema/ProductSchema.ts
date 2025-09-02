@@ -1,23 +1,23 @@
 import { z } from 'zod';
-import type {
-    PreOrderOptionalDefaultsWithRelations,
-    PreOrderPartialWithRelations,
-    PreOrderWithRelations
-} from './PreOrderSchema'
 import {
-    PreOrderOptionalDefaultsWithRelationsSchema,
+    PreOrderWithRelationsSchema,
     PreOrderPartialWithRelationsSchema,
-    PreOrderWithRelationsSchema
+    PreOrderOptionalDefaultsWithRelationsSchema
 } from './PreOrderSchema'
 import type {
-    SalesItemOptionalDefaultsWithRelations,
-    SalesItemPartialWithRelations,
-    SalesItemWithRelations
-} from './SalesItemSchema'
+    PreOrderWithRelations,
+    PreOrderPartialWithRelations,
+    PreOrderOptionalDefaultsWithRelations
+} from './PreOrderSchema'
 import {
-    SalesItemOptionalDefaultsWithRelationsSchema,
+    SalesItemWithRelationsSchema,
     SalesItemPartialWithRelationsSchema,
-    SalesItemWithRelationsSchema
+    SalesItemOptionalDefaultsWithRelationsSchema
+} from './SalesItemSchema'
+import type {
+    SalesItemWithRelations,
+    SalesItemPartialWithRelations,
+    SalesItemOptionalDefaultsWithRelations
 } from './SalesItemSchema'
 
 /////////////////////////////////////////
@@ -63,6 +63,7 @@ export type ProductPartial = z.infer<typeof ProductPartialSchema>
 
 export const ProductOptionalDefaultsSchema = ProductSchema.merge(z.object({
   id: z.number().int().optional(),
+    stock: z.number().min(0).optional(),
   minStock: z.number().int().optional(),
   sold: z.number().int().optional(),
   createdAt: z.date().optional(),
