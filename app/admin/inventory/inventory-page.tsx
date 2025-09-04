@@ -26,6 +26,7 @@ import { useRouter } from "next/navigation";
 import React, { useEffect, useState } from "react"
 import { FormProvider, useForm } from "react-hook-form";
 import { toast } from "sonner";
+import { z } from "zod";
 
 export type InventoryPaging = {
     data: PreorderProduct[],
@@ -59,6 +60,7 @@ export function InventoryFilter({ inventory }: { inventory: InventoryPaging, }) 
         const hasAnyFilter = Object.values(filters).some(Boolean);
 
         if (hasAnyFilter) {
+            //@ts-expect-error
             router.push(newParam(filters));
             console.log('Filters applied:', filters);
         }
@@ -425,14 +427,18 @@ export function InventoryPage({ products, lowStockProducts, expiredProduct, preo
     )
 }
 
-export function ReorderModal({ preorderProduct, setOpenAction, isOpen }: {
-    preorderProduct: PreorderProduct
-} & ModalProps) {
+const preOrderForm = PreOrderOptionalDefaultsSchema.merge(z.object({ userId: z.string().uuid().optional() }))
+export type  PreOrderForm = z.infer<typeof preOrderForm>
+
+export function ReorderModal(
+    { preorderProduct, setOpenAction, isOpen }:
+        { preorderProduct: PreorderProduct } & ModalProps
+) {
 
     const [ loading, setLoading ] = useState(false)
 
-    const methods = useForm<PreOrderOptionalDefaults>({
-            resolver: zodResolver(PreOrderOptionalDefaultsSchema),
+    const methods = useForm<PreOrderForm>({
+        resolver: zodResolver(preOrderForm),
             defaultValues: {
                 id: preorderProduct.id,
                 productId: preorderProduct.productId,
@@ -442,7 +448,7 @@ export function ReorderModal({ preorderProduct, setOpenAction, isOpen }: {
                 priceSell: preorderProduct.priceSell,
                 estimatedDate: new Date(preorderProduct?.estimatedDate ?? new Date()),
                 expired: new Date(preorderProduct?.expired ?? new Date()),
-            } satisfies PreOrderOptionalDefaults
+            } satisfies PreOrderForm
         }
     );
 
@@ -499,8 +505,8 @@ export function ReorderStockModal({ isStock, setOpenAction, isOpen }: { isStock:
     // const [ productToAddStock, setProductToAddStock ] = useState<Product | null>(null)
     const [ loading, setLoading ] = useState(false)
 
-    const methods = useForm<PreOrderOptionalDefaults>({
-        resolver: zodResolver(PreOrderOptionalDefaultsSchema
+    const methods = useForm<PreOrderForm>({
+        resolver: zodResolver(preOrderForm
             // .extend({
             //     status: PreOrderOptionalDefaultsSchema.shape.status.refine(
             //         (val) => val !== "-",
@@ -515,8 +521,8 @@ export function ReorderStockModal({ isStock, setOpenAction, isOpen }: { isStock:
                 priceNormal: 0,
                 quantity: 0,
                 estimatedDate: new Date(),
-                expired: new Date()
-            } satisfies PreOrderOptionalDefaults
+                expired: new Date(),
+            } satisfies PreOrderForm
         }
     );
 
@@ -571,22 +577,22 @@ export function AddStockModal({ products }: { products: ProductPaging, }) {
 
     useEffect(() => {
         if (value.trim()) {
+            //@ts-expect-error
             router.push(newParam({ name: value }));
         }
     }, [ value, router ]);
 
-    const methods = useForm<PreOrderOptionalDefaults>({
-            resolver: zodResolver(PreOrderOptionalDefaultsSchema),
+    const methods = useForm<PreOrderForm>({
+        resolver: zodResolver(preOrderForm),
             defaultValues: {
                 status: '-',
                 estimatedDate: new Date(),
-                productId: productData?.id ?? 0,
+                productId: productData?.id ?? '',
                 priceSell: productData?.price ?? 0,
                 quantity: 0,
                 priceNormal: 0,
                 expired: new Date()
-
-            } satisfies PreOrderOptionalDefaults
+            } satisfies PreOrderForm
         }
     );
 
@@ -733,7 +739,7 @@ export function AddStockModal_Old({ products }: { products: ProductPaging, }) {
     const [ productData, setProductData ] = useState<Product | null>(null)
 
     const handleSubmit = () => {
-        const product = products.data.find((p) => p.id === Number(nameProduct))
+        const product = products.data.find((p) => p.name === nameProduct)
         const amount = parseInt(stockAmount)
 
         if (product && !isNaN(amount)) {
@@ -753,6 +759,7 @@ export function AddStockModal_Old({ products }: { products: ProductPaging, }) {
 
     useEffect(() => {
         if (value.trim()) {
+            //@ts-expect-error
             router.push(newParam({ name: value }));
         }
     }, [ value, router ]);

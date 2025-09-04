@@ -2,8 +2,8 @@
 
 import { ProductPaging, ProductPreorder } from "@/action/product-action";
 import { ProductsFilter } from "@/app/admin/products/products-page";
-import { createTransactionUserAction, createTransactionUserPendingAction } from "@/app/user/home/home-action";
 import { ProductPending } from "@/app/user/home/page"
+import { createTransactionUserAction, createTransactionUserPendingAction } from "@/app/user/user-action";
 import { ProductDetailDialogOnly } from "@/components/page/product-detail-dialog-only";
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -52,12 +52,12 @@ export function ProductUserPage(
                 toastResponse({ response: await createTransactionUserPendingAction(cartItems, productPending.data), })
             }
         } else {
-            toastResponse({ response: await createTransactionUserAction(cartItems), })
+            toastResponse({ response: await createTransactionUserAction(cartItems) })
         }
         setLoading(false)
     }
 
-    const getProductStock = (id: number) => {
+    const getProductStock = (id: string) => {
         return products.data.find(product => product.id === id)?.stock || 0;
     };
 
@@ -142,10 +142,10 @@ export function ProductUserPage(
                         <CardContent>
                             <div className="space-y-4 ">
                                 <ProductCart cartItems={ cartItems }
+                                             removeFromCartAction={ removeFromCart }
                                              decrementItemAction={ decrementItem }
                                              incrementItemAction={ incrementItem }
                                              getProductStockAction={ getProductStock }
-                                             removeFromCartAction={ removeFromCart }
                                 />
                                 <div className="border-t pt-4">
                                     <div className="flex justify-between items-center font-bold">
@@ -182,10 +182,10 @@ export function ProductCart(
         removeFromCartAction
     }: {
         cartItems: CartItem[],
-        decrementItemAction: (id: number) => void,
-        incrementItemAction: (id: number) => void,
-        getProductStockAction: (id: number) => number,
-        removeFromCartAction: (productId: number) => void
+        decrementItemAction: (id: string) => void,
+        incrementItemAction: (id: string) => void,
+        getProductStockAction: (id: string) => number,
+        removeFromCartAction: (productId: string) => void
     }) {
 
     if (cartItems.length === 0) {

@@ -23,14 +23,14 @@ import { useCartStore } from "@/hooks/use-cart";
 import { formatRupiah } from "@/lib/formatter";
 import { toastResponse } from "@/lib/helper";
 import { CustomerModelNew, CustomerModelType } from "@/lib/schema";
-import { Customer, Payment } from "@/lib/validation";
+import { Customer, PaymentSetting, } from "@/lib/validation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { MinusIcon, Plus, Search, ShoppingCart } from "lucide-react"
 import Link from "next/link";
 import React, { useMemo, useState } from "react"
 import { FormProvider, useForm } from "react-hook-form";
 
-type POSPageProps = { customers: Customer[], products: ProductPaging, payment: Payment };
+type POSPageProps = { customers: Customer[], products: ProductPaging, payment: PaymentSetting };
 
 export default function POSPage({ products, customers, payment }: POSPageProps) {
     const [ searchCustomer, setSearchCustomer ] = useState("")
@@ -132,7 +132,7 @@ function PosPageCheckOut({ customers, payment, products, searchCustomer, setSear
         return cartItems.reduce((total, item) => total + item.price * item.quantity, 0)
     }
 
-    const getProductStock = (id: number) => {
+    const getProductStock = (id: string) => {
         return products.data.find(product => product.id === id)?.stock || 0;
     };
 

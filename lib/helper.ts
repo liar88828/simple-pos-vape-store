@@ -14,28 +14,27 @@ export const toastResponse = (
         onStart = () => {
         },
     }: {
-        onStart?: () => void
+        onStart?: (message: string) => void
         response: ActionResponse,
-        onSuccess?: () => void,
-        onFailure?: () => void
-        onFinish?: () => void
+        onSuccess?: (message: string) => void,
+        onFailure?: (message: string) => void
+        onFinish?: (message: string) => void
     }
 ) => {
     try {
-
-    onStart()
+        onStart('Loading ...')
     if (response.success) {
         toast.success(response.message)
-        onSuccess()
+        onSuccess(response.message)
     } else {
         toast.error(response.message)
-        onFailure()
+        onFailure(response.message)
     }
-    onFinish()
+        onFinish('Finished successfully.')
     } catch (e) {
         toast.error('Something went wrong ... 😭😭😭')
-        onFailure()
-        onFinish()
+        onFailure('Error: Something went wrong')
+        onFinish('Finish failed...')
     }
 }
 

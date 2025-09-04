@@ -59,6 +59,7 @@ export function useDebounceRouter_xxx(
         );
 
         if (hasQuery) {
+            // @ts-expect-error
             router.push(newParam(debouncedValue));
         }
     }, [ debouncedValue, router ]);
@@ -75,6 +76,7 @@ export function usePushQueryObject_(params: Record<string, string | undefined>) 
 
     useEffect(() => {
         if (hasValue) {
+            // @ts-expect-error
             router.push(newParam(params));
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -85,6 +87,7 @@ export function usePushQueryObject(params: Record<string, string | undefined>) {
     const router = useRouter();
 
     useEffect(() => {
+        // @ts-expect-error
         router.push(newParam(params));
         console.log('push query', params);
     }, [ params,router ]); // <== avoids infinite loop

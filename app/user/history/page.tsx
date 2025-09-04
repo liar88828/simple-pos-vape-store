@@ -1,6 +1,6 @@
 import { getSessionUserPage } from '@/action/auth-action';
-import { getHistories } from "@/app/user/history/history-action";
 import { HistoriesPage } from '@/app/user/history/histories-page';
+import { getHistoriesUser } from "@/app/user/user-action";
 import { ContextPage } from '@/interface/actionType';
 import React from 'react';
 
@@ -14,7 +14,7 @@ export default async function Page(context: ContextPage) {
     // }
 
     return (
-        <HistoriesPage histories={ await getHistories(session) }/>
+        <HistoriesPage histories={ await getHistoriesUser(session) }/>
     );
 }
 

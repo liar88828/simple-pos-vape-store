@@ -1,13 +1,13 @@
 'use server'
 
+import { getSessionUserPage } from "@/action/auth-action";
 import { getPreorder, PreorderProduct } from "@/action/product-action";
-import { InventoryPaging } from "@/app/admin/inventory/inventory-page";
+import { InventoryPaging, PreOrderForm } from "@/app/admin/inventory/inventory-page";
 import { ActionResponse, ContextPage } from "@/interface/actionType";
 import { STATUS_PREORDER } from "@/lib/constants";
 import { getContextPage } from "@/lib/context-action";
 import { logger } from "@/lib/logger";
 import { prisma } from "@/lib/prisma";
-import { PreOrderOptionalDefaults } from "@/lib/validation";
 import { revalidatePath } from "next/cache";
 
 export const getExpiredProduct = async (): Promise<PreorderProduct[]> => {
@@ -32,15 +32,17 @@ export const getExpiredProduct = async (): Promise<PreorderProduct[]> => {
 }
 
 export async function preOrderProductAction(
-    preorder: PreOrderOptionalDefaults
+    preorder: PreOrderForm
 ): Promise<ActionResponse> {
     // logger.info(`input data preOrderProductAction`)
 
     try {
+        const session = await getSessionUserPage()
         await prisma.$transaction(async (tx) => {
 
             await tx.preOrder.create({
                 data: {
+                    userId: session.userId,
                     ...preorder,
                     status: preorder.status === '-' ? STATUS_PREORDER.PENDING : preorder.status,
                 },
@@ -69,7 +71,7 @@ export async function preOrderProductAction(
 }
 
 export async function preOrderAction(
-    preorder_new: PreOrderOptionalDefaults,
+    preorder_new: PreOrderForm,
     preorder_old: PreorderProduct
 ): Promise<ActionResponse> {
     // console.log(preorder_new)
@@ -78,6 +80,8 @@ export async function preOrderAction(
     // console.log("preorder_old")
     // console.log(preorder_old)
     try {
+        const session = getSessionUserPage()
+
         await prisma.$transaction(async (tx) => {
 
             const product = await tx.product.findUniqueOrThrow({
@@ -110,7 +114,9 @@ export async function preOrderAction(
                 }
             })
             await tx.preOrder.update({
-                where: { id: preorder_new.id },
+                where: {
+                    id: preorder_new.id,
+                },
                 data: preorder_new
             })
         })
@@ -131,7 +137,7 @@ export async function preOrderAction(
     }
 }
 
-export async function deletePreorderProduct(id: number): Promise<ActionResponse> {
+export async function deletePreorderProduct(id: string): Promise<ActionResponse> {
 
     const dataFind = await prisma.preOrder.findUnique({
         where: { id }

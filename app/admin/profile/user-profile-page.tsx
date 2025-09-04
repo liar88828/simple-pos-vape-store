@@ -6,9 +6,9 @@ import { formatDateIndo, formatRupiah } from "@/lib/formatter";
 import React, { useState } from "react";
 
 export default function UserProfilePage({ customer }: { customer: CustomerComplete }) {
-    const [ expandedSaleIds, setExpandedSaleIds ] = useState<number[]>([]);
+    const [ expandedSaleIds, setExpandedSaleIds ] = useState<string[]>([]);
 
-    const toggleExpand = (id: number) => {
+    const toggleExpand = (id: string) => {
         setExpandedSaleIds((prev) =>
             prev.includes(id) ? prev.filter((saleId) => saleId !== id) : [ ...prev, id ]
         );

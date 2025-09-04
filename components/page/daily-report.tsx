@@ -213,7 +213,7 @@ type CustomerMap = {
 
 export function AnalisisPelanggan({ sales }: ReportsPageProps) {
     // Group customers by status and accumulate totals
-    const customersMap = new Map<number, CustomerMap>();
+    const customersMap = new Map<string, CustomerMap>();
 
     sales.forEach((sale) => {
         const c = sale.customer;

@@ -8,11 +8,9 @@ export async function GET(
     { params }: { params: Promise<{ id: string }> }
 ): Promise<NextResponse<ActionResponse<Product>>> {
     try {
-        const { id } = await params
-        const productId = Number(id)
+        const { id: productId } = await params
         console.log(`is executed GET product ${ productId }`)
-
-        if (isNaN(productId)) {
+        if (productId) {
             return NextResponse.json(
                 {
                     message: "Invalid product ID",

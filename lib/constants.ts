@@ -1,3 +1,9 @@
+export const ROLE = {
+    USER: 'USER',
+    ADMIN: 'ADMIN',
+    EMPLOYEE: 'EMPLOYEE'
+}
+
 export const _lowStockProduct = 4
 
 export const STATUS_TRANSACTION = {

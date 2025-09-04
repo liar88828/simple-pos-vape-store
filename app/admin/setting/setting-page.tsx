@@ -14,10 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger, } from "@/components/ui/tabs"
 import { toastResponse } from "@/lib/helper";
 import {
-    Inventory,
-    InventorySchema,
-    PaymentWithRelations,
-    ShippingWithRelations,
+    InventorySetting, InventorySettingSchema, PaymentSettingWithRelations, ShippingSettingWithRelations,
     Store,
     StoreOptionalDefaults,
     StoreOptionalDefaultsSchema
@@ -31,9 +28,9 @@ export default function SettingPage(
     { store, shipping, inventory, payment }:
     {
         store: Store | null,
-        inventory: Inventory | null,
-        shipping: ShippingWithRelations | null,
-        payment: PaymentWithRelations | null
+        inventory: InventorySetting | null,
+        shipping: ShippingSettingWithRelations | null,
+        payment: PaymentSettingWithRelations | null
     }) {
     return (
         <div className="p-6 w-full mx-auto h-screen">
@@ -163,12 +160,12 @@ export function RenderStoreSection({ data }: { data: Store | null }) {
     );
 }
 
-export function RenderPaymentSection({ data }: { data: PaymentWithRelations | null }) {
+export function RenderPaymentSection({ data }: { data: PaymentSettingWithRelations | null }) {
     const [ isLoading, setIsLoading ] = useState(false)
     const [ isCod, setIsCod ] = useState(data?.isCod ?? false)
     const [ isTax, setIsTax ] = useState(data?.isTax ?? false)
 
-    const methods = useForm<PaymentWithRelations>({
+    const methods = useForm<PaymentSettingWithRelations>({
         // resolver: zodResolver(RelatedPaymentModel),
         defaultValues: {
             id: data?.id ?? '',
@@ -184,7 +181,7 @@ export function RenderPaymentSection({ data }: { data: PaymentWithRelations | nu
                 paymentId: "",
             } ]
             //[ { value: "", fee: 0, id: "", title: "", paymentId: "" } ]
-        } satisfies PaymentWithRelations
+        } satisfies PaymentSettingWithRelations
     });
 
     const { fields, append, remove } = useFieldArray({
@@ -302,10 +299,10 @@ export function RenderPaymentSection({ data }: { data: PaymentWithRelations | nu
     );
 }
 
-export function RenderShippingSection({ data }: { data: ShippingWithRelations | null }) {
+export function RenderShippingSection({ data }: { data: ShippingSettingWithRelations | null }) {
     const [ isLoading, setIsLoading ] = useState(false)
     const [ addInternational, setAddInternational ] = useState(false)
-    const methods = useForm<ShippingWithRelations>({
+    const methods = useForm<ShippingSettingWithRelations>({
         defaultValues: {
             id: data?.id ?? '',
             freeShippingThreshold: data?.freeShippingThreshold ?? 0,
@@ -429,16 +426,16 @@ export function RenderShippingSection({ data }: { data: ShippingWithRelations | 
     )
 }
 
-export function RenderInventorySection({ data }: { data: Inventory | null }) {
-    const methods = useForm<Inventory>({
-        resolver: zodResolver(InventorySchema),
+export function RenderInventorySection({ data }: { data: InventorySetting | null }) {
+    const methods = useForm<InventorySetting>({
+        resolver: zodResolver(InventorySettingSchema),
         defaultValues: {
             id: data?.id ?? '',
             allowBackorders: data?.allowBackorders ?? false,
             autoReorder: data?.autoReorder ?? false,
             lowStockThreshold: data?.lowStockThreshold ?? 0,
             trackInventory: data?.trackInventory ?? false,
-        } satisfies Inventory
+        } satisfies InventorySetting
     });
 
     const onSubmit = methods.handleSubmit(async (dataInventory) => {

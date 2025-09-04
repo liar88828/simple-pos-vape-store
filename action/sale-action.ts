@@ -1,5 +1,5 @@
 'use server'
-import { ProductPreorder, TopSellingProduct } from "@/action/product-action";
+import { ProductPreorder } from "@/action/product-action";
 import { RangeStats, SaleCustomers } from "@/interface/actionType";
 import { logger } from "@/lib/logger";
 import { prisma } from "@/lib/prisma";
@@ -19,7 +19,7 @@ export type DashboardStats = {
 }
 
 export type TopSellingProducts = {
-    productId: number,
+    productId: string,
     totalSold: number,
     totalPrice: number,
     product?: ProductPreorder | null,
@@ -69,33 +69,35 @@ export async function getTopSellingProductsByRangeReport(
     // ]
 
     // Gabungkan data berdasarkan productId
-    const merged = Object.values(
-        grouped.reduce((accumulator, current) => {
-            const productId = current.productId;
-            const quantity = current._sum.quantity ?? 0;
-            const price = current.priceAtBuy ?? 0;
+    type MergedResult = {
+        productId: string
+        totalSold: number
+        totalPrice: number
+    }
 
-            // Jika belum ada data productId ini, buat dulu
-            if (!accumulator[productId]) {
-                accumulator[productId] = {
-                    productId: productId,
-                    totalSold: 0,
-                    totalPrice: 0,
-                };
-            }
+    function mergeByProductId<T extends { productId: string; _sum: { quantity: number | null }; priceAtBuy?: number }>(
+        grouped: T[]
+    ): MergedResult[] {
+        return Object.values(
+            grouped.reduce((acc, curr) => {
+                const productId = String(curr.productId)
 
-            // Tambahkan jumlah terjual dan total harga
-            accumulator[productId].totalSold += quantity;
-            accumulator[productId].totalPrice += quantity * price;
+                if (!acc[productId]) {
+                    acc[productId] = { productId, totalSold: 0, totalPrice: 0 }
+                }
 
-            return accumulator;
-        }, {} as Record<number, {
-            productId: number;
-            totalSold: number;
-            totalPrice: number;
-        }>)
-    );
+                const quantity = curr._sum.quantity ?? 0
+                const price = curr.priceAtBuy ?? 0
 
+                acc[productId].totalSold += quantity
+                acc[productId].totalPrice += quantity * price
+
+                return acc
+            }, {} as Record<string, MergedResult>)
+        )
+    }
+
+    const merged = mergeByProductId(grouped)
     const productIds = merged.map((item) => item.productId);
 
     const products = await prisma.product.findMany({
@@ -141,8 +143,7 @@ export const getTransactionCountToday = async () => {
     })
 }
 
-
-export const getHistoriesById = async (id: number): Promise<SaleCustomers | null> => await prisma.sale.findUnique({
+export const getHistoriesById = async (id: string): Promise<SaleCustomers | null> => await prisma.sale.findUnique({
     where: { id },
     include: {
         customer: true,
@@ -154,161 +155,3 @@ export const getHistoriesById = async (id: number): Promise<SaleCustomers | null
     }
 })
 
-export async function getTotalSoldToday() {
-    const result = await prisma.salesItem.aggregate({
-        _sum: {
-            quantity: true,
-        },
-        where: {
-            sale: {
-                date: {
-                    gte: new Date(new Date().setHours(0, 0, 0, 0)),
-                    lt: new Date(new Date().setHours(24, 0, 0, 0)),
-                },
-            },
-        }
-    })
-
-    return result._sum.quantity ?? 0;
-}
-
-// export async function getMonthlySalesChange(range: RangeStats) {
-//     const now = new Date();
-//     const currentMonth = now.getMonth();
-//     const currentYear = now.getFullYear();
-
-//     const startOfThisMonth = new Date(currentYear, currentMonth, 1);
-//     const startOfNextMonth = new Date(currentYear, currentMonth + 1, 1);
-
-//     const startOfLastMonth = new Date(currentYear, currentMonth - 1, 1);
-//     const startOfThisMonthCopy = new Date(currentYear, currentMonth, 1);
-
-//     const thisMonth = await prisma.salesItem.aggregate({
-//         _sum: { price: true },
-//         where: {
-//             sale: {
-//                 date: {
-//                     gte: startOfThisMonth,
-//                     lt: startOfNextMonth,
-//                 },
-//             },
-//         },
-//     });
-
-//     const lastMonth = await prisma.salesItem.aggregate({
-//         _sum: { price: true },
-//         where: {
-//             sale: {
-//                 date: {
-//                     gte: startOfLastMonth,
-//                     lt: startOfThisMonthCopy,
-//                 },
-//             },
-//         },
-//     });
-
-//     const currentTotal = thisMonth._sum.price ?? 0;
-//     const previousTotal = lastMonth._sum.price ?? 0;
-
-//     const percentageChange =
-//         previousTotal === 0
-//             ? 100
-//             : ((currentTotal - previousTotal) / previousTotal) * 100;
-
-//     const isUp = percentageChange >= 0;
-//     const formattedChange = Math.abs(percentageChange).toFixed(1);
-
-//     return {
-//         changeText: `${isUp ? "Trending up" : "Trending down"} by ${formattedChange}% this month`,
-//         isUp,
-//         value: currentTotal,
-//     };
-// }
-
-
-
-// const datas={
-//     productId: number,// produk id
-//     totalSold: number,// _sum semua
-//     actualPrice: number, // data asli
-//     product: Product ,
-// }
-export async function getTopSellingProductDashboard_(
-    date: Date,
-    limit: number = 10): Promise<TopSellingProduct[]> {
-    const grouped = await prisma.salesItem.groupBy({
-        where: { updatedAt: { gte: date, }, },
-        by: [ "productId", 'priceAtBuy' ],
-        _sum: { quantity: true },
-        orderBy: { _sum: { quantity: 'desc' }, },
-        take: limit,
-    });
-
-    // Gabungkan data berdasarkan productId
-    const merged = Object.values(
-        grouped.reduce((accumulator, current) => {
-            const productId = current.productId;
-            const quantity = current._sum.quantity ?? 0;
-            const price = current.priceAtBuy ?? 0;
-
-            // Jika belum ada data productId ini, buat dulu
-            if (!accumulator[productId]) {
-                accumulator[productId] = {
-                    productId: productId,
-                    totalSold: 0,
-                    totalPrice: 0,
-                };
-            }
-
-            // Tambahkan jumlah terjual dan total harga
-            accumulator[productId].totalSold += quantity;
-            accumulator[productId].totalPrice += quantity * price;
-
-            return accumulator;
-        }, {} as Record<number, {
-            productId: number;
-            totalSold: number;
-            totalPrice: number;
-        }>)
-    );
-
-    const productIds = merged.map(item => item.productId);
-
-    const products = await prisma.product.findMany({
-
-        where: {
-            id: { in: productIds },
-        },
-        include: {
-            SalesItems: {
-                select: {
-                    quantity: true,
-                },
-            },
-        },
-    });
-
-    return merged.map(item => {
-        const product = products.find(p => p.id === item.productId)
-        if (product) {
-            return {
-                type: product.type,
-                minStock: product.minStock,
-                stock: product.stock,
-                price: product.price,
-                flavor: product.flavor,
-                description: product.description,
-                nicotineLevel: product.nicotineLevel,
-                id: product.id,
-                name: product.name,
-                category: product.category,
-                image: product.image,
-                totalSold: item.totalSold,
-                createdAt: product.createdAt,
-                updatedAt: product.updatedAt,
-                sold: product.sold,
-                // expired: product.expired,
-            } satisfies TopSellingProduct
-        }
-    }).filter(item => item !== undefined)
-}

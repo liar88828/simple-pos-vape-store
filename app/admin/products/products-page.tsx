@@ -38,6 +38,7 @@ import React, { useEffect, useState } from "react"
 import { FormProvider, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
+import { v4 as uuidv4 } from 'uuid';
 
 export const productDataSchema = ProductOptionalDefaultsSchema.merge(z.object({
     priceNormal: z.number().min(1).nullish(),
@@ -210,6 +211,7 @@ export function ProductsFilter({ products, customerName }: { customerName?: stri
         const hasAnyFilter = Object.values(filters).some(Boolean);
 
         if (hasAnyFilter) {
+            // @ts-expect-error
             router.push(newParam(filters));
             console.log('Filters applied:', filters);
         }
@@ -397,7 +399,7 @@ export function ModalProductForm({ isOpen, setOpenAction, product }: ModalProps 
     const methods = useForm<ProductData>({
         resolver: zodResolver(productDataSchema),
             defaultValues: product ?? {
-                id: 0,
+                id: uuidv4(),
                 name: "",
                 category: "device",
                 price: 0,

@@ -20,6 +20,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { ChevronLeft, ChevronRight, Edit, Eye, Plus, SearchIcon, XIcon } from "lucide-react"
 import React, { useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
+import { z } from "zod";
 
 export function CustomersPage({ customers, }: {
     customers: CustomerRelational[],
@@ -237,20 +238,25 @@ export function CustomerDetailDialog({ customer }: { customer: CustomerRelationa
     );
 }
 
+const customerFormCreate = CustomerOptionalDefaultsSchema.merge(z.object({
+    userId: z.string().uuid().optional(),
+    id: z.string().optional(),
+}))
+
+type CustomerFormCreate = z.infer<typeof customerFormCreate>
 export function ModalTambahCustomer() {
     const [ open, setOpen ] = useState(false)
     const [ loading, setLoading ] = useState(false)
 
-    const methods = useForm<CustomerOptionalDefaults>({
-        resolver: zodResolver(CustomerOptionalDefaultsSchema),
+    const methods = useForm<CustomerFormCreate>({
+        resolver: zodResolver(customerFormCreate),
         defaultValues: {
-            id: 0,
             name: "",
             age: 0,
             totalPurchase: 0,
             status: "pending",
             lastPurchase: new Date(),
-        } satisfies CustomerOptionalDefaults,
+        } satisfies CustomerFormCreate,
     });
 
     const onSubmit = methods.handleSubmit(async (data) => {

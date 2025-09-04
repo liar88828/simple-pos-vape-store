@@ -1,4 +1,4 @@
-import LoginPage from "@/components/auth/login-page";
+import LoginPage from "@/app/(auth)/login/login-page";
 import { logger } from "@/lib/logger";
 import React from 'react';
 

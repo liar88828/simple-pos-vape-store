@@ -11,7 +11,7 @@ export default async function POS(context: ContextPage) {
     const customerName = await getContextPage(context, 'customerName') ?? '';
 
     return <POSPage
-        payment={ (await prisma.payment.findFirst())! }
+        payment={ (await prisma.paymentSetting.findFirst())! }
         products={ await getProductPage(context) }
         customers={ await getAllCustomers(customerName) }
     />

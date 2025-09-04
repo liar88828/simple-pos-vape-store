@@ -60,7 +60,7 @@ datasource db {
 }
 
 model Product {
-    id             Int         @id @default(autoincrement())
+    id         String  @id @default(uuid())
     category       String /// @zod.string.min(1)
     name           String /// @zod.string.min(1)
     price          Int /// @zod.number.min(1)
@@ -85,45 +85,48 @@ model Product {
 }
 
 model Customer {
-    id            Int      @id @default(autoincrement())
+    id String @id @default(uuid())
     name          String /// @zod.string.min(1)
     age           Int      @default(0) /// @zod.number.max(80)
     totalPurchase Int      @default(0) /// @zod.number.min(0)
     status        String   @default("Pending") /// @zod.string.min(1)
     lastPurchase  DateTime
-
-    Sales Sale[]
     // PreOrders PreOrder[]
 
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt
+
+    Sales  Sale[]
+    User   User   @relation(fields: [userId], references: [id])
+    userId String @unique // as buyer
 }
 
 model PreOrder {
-    id            Int       @id @default(autoincrement())
-    // customer      Customer @relation(fields: [customerId], references: [id])
+    id String @id @default(uuid())
+    // customer      Customer  @relation(fields: [customerId], references: [id])
     // customerId    Int
-    product       Product   @relation(fields: [productId], references: [id])
-    productId     Int
+
     quantity      Int /// @zod.number.min(1)
     priceNormal   Int /// @zod.number.min(1)
     priceSell     Int /// @zod.number.min(1)
     estimatedDate DateTime? //@default(now())
     expired       DateTime?
-    status        String /// @zod.string.min(1)//Pending, Terima
+    status String /// @zod.string.min(1) // Pending, Terima
 
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt
+
+    User      User    @relation(fields: [userId], references: [id])
+    userId    String
+    product   Product @relation(fields: [productId], references: [id])
+    productId String
 }
 
 model Sale {
-    id         Int         @id @default(autoincrement())
-    date       DateTime
-    total      Int /// @zod.number.min(1)
-    items      Int /// @zod.number.min(1)
-    customer   Customer    @relation(fields: [customerId], references: [id])
-    customerId Int
-    SaleItems  SalesItem[]
+    id    String   @id @default(uuid())
+    date  DateTime
+    total Int /// @zod.number.min(1)
+    items Int /// @zod.number.min(1)
 
     /// @zod.string.min(1)
     statusTransaction String //@default("Pending") // Pending , Accept
@@ -132,28 +135,46 @@ model Sale {
     typeTransaction String //@default("Cash") // Cash, Transfer
     createdAt       DateTime @default(now())
     updatedAt       DateTime @updatedAt
+
+    SaleItems        SalesItem[]
+    User             User?       @relation(fields: [seller_userId], references: [id])
+    /// @zod.string.nullable();
+    seller_userId    String? // employee or admin
+    customer         Customer    @relation(fields: [buyer_customerId], references: [id])
+    buyer_customerId String // buyer
 }
 
 model SalesItem {
-    id         Int     @id @default(autoincrement())
-    sale       Sale    @relation(fields: [saleId], references: [id])
-    saleId     Int
-    product    Product @relation(fields: [productId], references: [id])
-    productId  Int
+    id String @id @default(uuid())
     quantity   Int /// @zod.number.min(1)
     priceAtBuy Int /// @zod.number.min(1)
 
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt
+
+    product   Product @relation(fields: [productId], references: [id])
+    productId String
+    sale      Sale    @relation(fields: [saleId], references: [id])
+    saleId    String
 }
 
-model MemberTier {
-    id       Int    @id @default(autoincrement())
-    name     String /// @zod.string.min(1)
-    range    String /// @zod.string.min(1)
-    progress Int /// @zod.number.min(1)
-    count    Int /// @zod.number.min(1)
+// model MemberTier {
+//     id       Int    @id @default(autoincrement())
+//     name     String /// @zod.string.min(1)
+//     range    String /// @zod.string.min(1)
+//     progress Int /// @zod.number.min(1)
+//     count    Int /// @zod.number.min(1)
+//
+//     createdAt DateTime @default(now())
+//     updatedAt DateTime @updatedAt
+// }
 
+model Shop {
+    id       String @id @default(uuid())
+    name     String
+    location String
+    category String
+    open     Boolean
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt
 }
@@ -166,6 +187,10 @@ model User {
     role      String   @default("USER") /// @zod.string.min(1)
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt
+
+    Sale     Sale[]
+    PreOrder PreOrder[]
+    Customer Customer? // as buyer
 }
 
 model Store {
@@ -180,25 +205,25 @@ model Store {
     updatedAt   DateTime @updatedAt
 }
 
-model Payment {
-    id          String        @id @default(uuid())
-    isCod    Boolean @default(false)
-    isTax    Boolean @default(false)
-    valueCod Int     @default(0) /// @zod.number.min(0)
-    valueTax Int     @default(0) /// @zod.number.min(0)
-    PaymentList PaymentList[]
+model PaymentSetting {
+    id          String              @id @default(uuid())
+    isCod       Boolean             @default(false)
+    isTax       Boolean             @default(false)
+    valueCod    Int                 @default(0) /// @zod.number.min(0)
+    valueTax    Int                 @default(0) /// @zod.number.min(0)
+    PaymentList PaymentSettingList[]
 }
 
-model PaymentList {
-    id        String   @id @default(uuid())
+model PaymentSettingList {
+    id      String          @id @default(uuid())
     title     String /// @zod.string.min(1)
     value     String /// @zod.string.min(1)
     fee       Int /// @zod.number.min(0)
-    Payment   Payment? @relation(fields: [paymentId], references: [id])
+    Payment PaymentSetting? @relation(fields: [paymentId], references: [id])
     paymentId String?
 }
 
-model Inventory {
+model InventorySetting {
     id                String  @id @default(uuid())
     trackInventory    Boolean
     lowStockThreshold Int /// @zod.number.min(0)
@@ -206,20 +231,20 @@ model Inventory {
     autoReorder       Boolean
 }
 
-model Shipping {
-    id                    String         @id @default(uuid())
+model ShippingSetting {
+    id           String               @id @default(uuid())
     freeShippingThreshold Int /// @zod.number.min(0)
     handlingFee           Int /// @zod.number.min(0)
     internationalShipping Boolean
     internationalRate     Int /// @zod.number.min(0)
-    ShippingList          ShippingList[]
+    ShippingList ShippingSettingList[]
 }
 
-model ShippingList {
-    id         String    @id @default(uuid())
+model ShippingSettingList {
+    id       String           @id @default(uuid())
     name       String /// @zod.string.min(1)
     price      Int /// @zod.number.min(0)
     rates      Int /// @zod.number.min(0)
-    Shipping   Shipping? @relation(fields: [shippingId], references: [id])
+    Shipping ShippingSetting? @relation(fields: [shippingId], references: [id])
     shippingId String?
 }

@@ -26,6 +26,7 @@ import {
     useSidebar,
 } from "@/components/ui/sidebar"
 import { UserPayload } from "@/interface/actionType";
+import { ROLE } from "@/lib/constants";
 import { NavItems } from "@/lib/link-sidebar";
 import { ChevronsUpDown, LogOutIcon, Settings, } from "lucide-react"
 import Link from "next/link"
@@ -105,7 +106,9 @@ export function AppSidebar(
                                     <SidebarMenuButton asChild isActive={ isActive(asLink + item.path) }
                                                        title={ item.title }>
 
-                                        <Link href={ asLink + item.path }>
+                                        <Link
+                                            // @ts-expect-error
+                                            href={ asLink + item.path }>
                                             <item.icon/>
                                             <span>  { item.title }</span>
                                         </Link>
@@ -141,8 +144,8 @@ export function AppSidebar(
                                         <AvatarFallback>AD</AvatarFallback>
                                     </Avatar>
                                     <div className="grid flex-1 text-left text-sm leading-tight">
-                                        <span className="truncate font-medium">{ 'admin@vapestore.com' }</span>
-                                        <span className="truncate text-xs">{ 'admin' }</span>
+                                        <span className="truncate font-medium">{ session.email }</span>
+                                        <span className="truncate text-xs">{ session.name }</span>
                                     </div>
                                     <ChevronsUpDown className="ml-auto size-4"/>
                                 </SidebarMenuButton>
@@ -162,18 +165,22 @@ export function AppSidebar(
                                         </Avatar>
                                         <div className="grid flex-1 text-left text-sm leading-tight">
                                             <span className="truncate font-medium">{ session.email }</span>
+                                            <span className="truncate text-xs">{ session.userId }</span>
                                             <span className="truncate text-xs">{ session.name }</span>
                                         </div>
                                     </div>
                                 </DropdownMenuLabel>
-                                <DropdownMenuGroup>
-                                    <DropdownMenuItem>
-                                        <Link href="/admin/setting" className={ 'flex items-center gap-2' }>
-                                            <Settings/>
-                                            <span>Settings</span>
-                                        </Link>
-                                    </DropdownMenuItem>
-                                </DropdownMenuGroup>
+                                { session.role === ROLE.ADMIN
+                                    ? <DropdownMenuGroup>
+                                        <DropdownMenuItem>
+                                            <Link href="/admin/setting" className={ 'flex items-center gap-2' }>
+                                                <Settings/>
+                                                <span>Settings</span>
+                                            </Link>
+                                        </DropdownMenuItem>
+                                    </DropdownMenuGroup>
+                                    : null
+                                }
                                 <DropdownMenuGroup>
 
                                     <DropdownMenuItem className="text-red-600" onClick={ deleteCookie }>

@@ -56,7 +56,9 @@ export default function HeaderComponent({ lowStockProducts, isLoggedIn }: Header
                                 <BreadcrumbItem>
                                     { !segment.isLast ? (
                                         <BreadcrumbLink asChild>
-                                            <Link className={ "capitalize hidden md:block" } href={ segment.href }>
+                                            <Link className={ "capitalize hidden md:block" }
+                                                /*@ts-ignore*/
+                                                  href={ segment.href }>
                                                 { segment.name }
                                             </Link>
                                         </BreadcrumbLink>

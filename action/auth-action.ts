@@ -3,6 +3,7 @@
 import { signJwt, signRefreshJwt, verifyJwt, verifyRefreshJwt } from "@/action/jwt-token";
 import { ActionResponse } from "@/interface/actionType";
 import { LoginFormData, loginSchema, RegisterFormData, registerSchema } from "@/lib/auth-schema";
+import { ROLE } from "@/lib/constants";
 import { logger } from "@/lib/logger";
 import { prisma } from "@/lib/prisma"; // Adjust this path
 import bcrypt from "bcrypt";
@@ -33,12 +34,18 @@ export async function registerAction(rawData: RegisterFormData): Promise<ActionR
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    await prisma.user.create({
+    const user = await prisma.user.create({
         data: { name, email, password: hashedPassword },
     });
 
     await prisma.customer.create({
-        data: { name, age: 0, lastPurchase: new Date(), status: "Pending", totalPurchase: 0 }
+        data: {
+            userId: user.id,
+            name,
+            age: 0,
+            lastPurchase: new Date(),
+            status: "Pending", totalPurchase: 0
+        }
     })
 
 
@@ -103,11 +110,16 @@ export async function loginAction(rawData: LoginFormData): Promise<ActionRespons
 
     revalidatePath('/')
     logger.info('loginAction')
-    if (user.role === 'ADMIN') {
+
+    if (user.role === ROLE.ADMIN) {
         redirect("/admin/dashboard");
-    } else if (user.role === 'USER') {
-        redirect("/user/home");
-    } else redirect("/register");
+    } else if (user.role === ROLE.USER) {
+        redirect("/user");
+    } else if (user.role === ROLE.EMPLOYEE) {
+        redirect("/employee");
+    } else {
+        redirect("/register");
+    }
 
     // return {
     //     success: true,
@@ -160,7 +172,7 @@ export async function refreshTokenAction() {
         sameSite: "lax",
     });
     logger.info('refreshTokenAction')
-    redirect("/dashboard");
+    redirect("/login");
 }
 
 export async function getUserFromRequest() {
@@ -177,7 +189,7 @@ export async function getUserFromRequest() {
     return payload;
 }
 
-export const deleteCookie = async () => {
+export async function deleteCookie() {
     logger.info('deleteCookie')
 
     const cookieStore = await cookies()

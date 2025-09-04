@@ -1,4 +1,5 @@
 'use client'
+import { ModalTambahCustomer } from "@/app/admin/customers/customers-page";
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -58,18 +59,23 @@ export default function Page() {
         }
     }
     return (
-        <div className="p-6">
+        <div className="p-4 sm:p-6 max-w-7xl mx-auto">
+            <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-6">
+                <h1 className="text-lg sm:text-3xl font-bold">Manajemen Karyawan</h1>
+                {/*<ModalTambahCustomer/>*/ }
+                <Button
+                    onClick={ () => {
+                        setSelectedEmployee(null)
+                        setDialogOpen(true)
+                    } }
+                >
+                    Add Employee
+                </Button>
+            </div>
             <Card>
                 <CardHeader className="flex items-center justify-between">
                     <CardTitle>Employee List</CardTitle>
-                    <Button
-                        onClick={ () => {
-                            setSelectedEmployee(null)
-                            setDialogOpen(true)
-                        } }
-                    >
-                        Add Employee
-                    </Button>
+
                 </CardHeader>
 
                 <CardContent>

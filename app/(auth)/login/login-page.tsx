@@ -32,14 +32,10 @@ export default function LoginPage() {
 
     const onSubmit = handleSubmit(async (data) => {
         console.log("Login data:", data);
-        // your login logic here
-        setErrorAction(null);
-        const response = await loginAction(data)
         toastResponse({
-            response,
-            onFailure: () => {
-                setErrorAction(response.message);
-            }
+            response: await loginAction(data),
+            onStart: () => setErrorAction(null),
+            onFailure: (message) => setErrorAction(message)
         })
 
     });

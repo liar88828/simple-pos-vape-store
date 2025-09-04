@@ -1,46 +1,48 @@
 'use server'
 import { getSessionUserPage } from "@/action/auth-action";
-import { ActionResponse, CartItem, SaleCustomers } from "@/interface/actionType";
+import { ActionResponse, CartItem, SaleCustomers, SessionPayload } from "@/interface/actionType";
 import { ERROR, STATUS_TRANSACTION } from "@/lib/constants";
 import { logger } from "@/lib/logger";
 import { prisma } from "@/lib/prisma";
 import { SalesItemOptionalDefaults } from "@/lib/validation";
 import { Prisma } from "@prisma/client";
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 
 const PrismaClientKnownRequestError = Prisma.PrismaClientKnownRequestError
 
 export async function createTransactionUserAction(product: CartItem[]): Promise<ActionResponse> {
-    // console.log('execute');
+    console.log('execute');
     try {
         let customerId
         const session = await getSessionUserPage()
-        const customer = await prisma.customer.findFirst({ where: { name: session?.name } })
-
+        const customer = await prisma.customer.findUnique({
+            where: { userId: session.userId }
+        })
         if (!customer) {
             const customerDB = await prisma.customer.create({
                 data: {
-                    name: session?.name ?? '',
+                    userId: session.userId,
+                    name: session.name,
                     age: 0,
                     lastPurchase: new Date(),
                     status: "Pending",
                     totalPurchase: 0
                 }
             })
-
-            customerId = customerDB?.id
+            customerId = customerDB.id
         } else {
             customerId = customer.id
         }
 
         const dataTransaction = await prisma.$transaction(async (tx) => {
-
             const saleDB = await tx.sale.create({
                 data: {
+                    seller_userId: null,
+                    buyer_customerId: customerId,
                     items: product.length,
                     total: product.reduce((a, b) => a + (b.price * b.quantity), 0),
                     date: new Date(),
-                    customerId: customerId,
                     statusTransaction: STATUS_TRANSACTION.PENDING,
                     typeTransaction: 'Sistem Dev'//'Cash'
                 }
@@ -110,11 +112,98 @@ export async function createTransactionUserAction(product: CartItem[]): Promise<
     }
 }
 
+export async function deleteSale(saleId: string): Promise<ActionResponse> {
+    try {
+        const session = await getSessionUserPage()
+        const customer = await prisma.customer.findUnique({
+            select: { id: true },
+            where: { userId: session.userId }
+        })
+        if (!customer) {
+            redirect('/login')
+        }
+        const dataTransaction = await prisma.$transaction(async (tx) => {
+            // Find sale
+            const saleDB = await tx.sale.findUnique({
+                where: {
+                    id: saleId,
+                    buyer_customerId: customer.id
+                },
+                include: { SaleItems: true }
+            })
+            if (!saleDB) {
+                throw new Error("Sale not found")
+            }
+
+            // Restore product stock and sold count
+            for (const item of saleDB.SaleItems) {
+                await tx.product.update({
+                    where: { id: item.productId },
+                    data: {
+                        stock: { increment: item.quantity },
+                        sold: { decrement: item.quantity }
+                    },
+                })
+            }
+
+            // Update customer purchase total
+            if (saleDB.buyer_customerId) {
+                const rollbackTotal = saleDB.SaleItems.reduce(
+                    (a, b) => a + b.priceAtBuy * b.quantity,
+                    0
+                )
+                await tx.customer.update({
+                    where: { id: saleDB.buyer_customerId },
+                    data: {
+                        totalPurchase: { decrement: rollbackTotal }
+                    }
+                })
+            }
+
+            // Delete saleItems
+            await tx.salesItem.deleteMany({
+                where: { saleId: saleDB.id }
+            })
+
+            // Delete sale itself
+            await tx.sale.delete({
+                where: { id: saleDB.id }
+            })
+
+            return { saleDB }
+        })
+
+        revalidatePath('/')
+        logger.info('data : deleteSale')
+        return {
+            data: dataTransaction,
+            message: "Success Delete Data",
+            success: true,
+        }
+    } catch (error) {
+        logger.error('error catch deleteSale')
+        if (error instanceof PrismaClientKnownRequestError) {
+            return {
+                success: false,
+                data: null,
+                error: ERROR.DATABASE,
+                message: error.message
+            }
+        }
+
+        return {
+            error: ERROR.SYSTEM,
+            message: "Fail Delete Data",
+            success: false,
+        }
+    }
+}
+
 export async function createTransactionUserPendingAction(
     product: CartItem[],
     salePending: SaleCustomers
 ): Promise<ActionResponse> {
-    // console.log('execute pending');
+    console.log('execute pending is update');
     try {
         const dataTransaction = await prisma.$transaction(async (tx) => {
 
@@ -181,7 +270,7 @@ export async function createTransactionUserPendingAction(
             const totalBuyOld = saleItemListOld.reduce((a, b) => a + b.priceAtBuy * b.quantity, 0);
 
             await tx.customer.update({
-                where: { id: salePending.customerId },
+                where: { id: salePending.buyer_customerId },
                 data: {
                     lastPurchase: new Date(),
                     totalPurchase: { increment: totalBuyNow - totalBuyOld },
@@ -224,3 +313,29 @@ export async function createTransactionUserPendingAction(
     }
 }
 
+export async function getHistoriesUser(session: SessionPayload): Promise<SaleCustomers[]> {
+    const customer = await prisma.customer.findUnique({
+        where: {
+            userId: session.userId
+        }
+    })
+    if (!customer) {
+        redirect('/login')
+    }
+
+    return prisma.sale.findMany({
+        orderBy: { date: "desc" },
+        where: {
+            buyer_customerId: customer.id
+        },
+        include: {
+            customer: true,
+            SaleItems: {
+                include: {
+                    product: true
+                }
+            },
+
+        }
+    })
+}

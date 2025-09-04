@@ -8,11 +8,9 @@ export async function GET(
 ): Promise<NextResponse<ActionResponse<SaleCustomers>>> {
 
     try {
-        const { id } = await params
-        const saleId = Number(id)
+        const { id: saleId } = await params
         console.log(`is executed GET sale ${ saleId }`)
-
-        if (isNaN(saleId)) {
+        if (saleId) {
             return NextResponse.json(
                 {
                     message: "Invalid sale ID",

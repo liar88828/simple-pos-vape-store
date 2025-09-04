@@ -12,7 +12,7 @@ export type CustomerComplete = Customer & {
     })[]
 };
 
-export const getDataCustomer = async (customerId: number): Promise<CustomerComplete | null> => {
+export const getDataCustomer = async (customerId: string): Promise<CustomerComplete | null> => {
     if (!customerId) {
         logger.error("data : getDataCustomer");
         return null

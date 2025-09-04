@@ -5,9 +5,9 @@ import { Product } from "@/lib/validation";
 interface CartState {
     cartItems: CartItem[];
     addToCart: (product: Product) => void;
-    removeFromCart: (productId: number) => void;
-    incrementItem: (id: number) => void;
-    decrementItem: (id: number) => void;
+    removeFromCart: (productId: string) => void;
+    incrementItem: (cartId: string) => void;
+    decrementItem: (cartId: string) => void;
     setCartItems: (items: CartItem[]) => void;
 }
 

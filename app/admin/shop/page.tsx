@@ -2,13 +2,14 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow, } from "@/components/ui/table"
+import { ShopOptionalDefaults } from "@/lib/validation";
 import Link from "next/link";
 import React from "react"
 
-const shops = [
-    { id: 1, name: "Fresh Mart", location: "New York", category: "Grocery", open: true },
-    { id: 2, name: "Tech Hub", location: "San Francisco", category: "Electronics", open: false },
-    { id: 3, name: "Style Corner", location: "Chicago", category: "Fashion", open: true },
+const shops: ShopOptionalDefaults[] = [
+    { id: '13', name: "Fresh Mart", location: "New York", category: "Grocery", open: true },
+    { id: '123', name: "Tech Hub", location: "San Francisco", category: "Electronics", open: false },
+    { id: '3', name: "Style Corner", location: "Chicago", category: "Fashion", open: true },
 ]
 
 function Page() {

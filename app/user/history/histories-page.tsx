@@ -1,6 +1,7 @@
 "use client"
 
 import { _getSaleById, } from "@/action/product-action";
+import { deleteSale } from "@/app/user/user-action";
 import { InvoiceLetter } from "@/components/page/invoice-letter";
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -13,11 +14,12 @@ import {
     DialogFooter,
     DialogHeader,
     DialogTitle,
-    DialogTrigger,
 } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { ModalProps, SaleCustomers } from "@/interface/actionType"
+import { STATUS_TRANSACTION } from "@/lib/constants";
 import { formatDateIndo, formatRupiah } from "@/lib/formatter";
+import { toastResponse } from "@/lib/helper";
 import { useQuery } from "@tanstack/react-query";
 import { Eye, ReceiptText } from "lucide-react"
 import React, { useRef, useState } from "react"
@@ -27,9 +29,19 @@ export function HistoriesPage({ histories, }: { histories: SaleCustomers[] }) {
     // const contentRef = useRef<HTMLDivElement>(null)
     const [ isSale, setIsSale ] = useState<SaleCustomers | null>(null)
     const [ isSaleOpen, setIsSaleOpen ] = useState(false)
+    const [ saleData, setSaleData ] = useState<SaleCustomers | null>(null)
+    const [ isSaleData, setIsSaleData ] = useState(false)
     return (
         <div className="p-6 max-w-7xl mx-auto">
             <ModalInvoice sale={ isSale } isOpen={ isSaleOpen } setOpenAction={ setIsSaleOpen }/>
+
+            { saleData
+                ? <ModalSalesDetail
+                    sale={ saleData }
+                    isOpen={ isSaleData }
+                    setOpenAction={ setIsSaleData }
+                /> : null
+            }
 
             <div className="flex justify-between items-center mb-6">
                 <h1 className="text-3xl font-bold">History Pembelian</h1>
@@ -39,8 +51,7 @@ export function HistoriesPage({ histories, }: { histories: SaleCustomers[] }) {
             </div>
 
 
-
-            {/* Detailed Sales */}
+            {/* Detailed Sales */ }
             <Card className="mb-6">
                 <CardHeader>
                     <CardTitle>Detail Pembelian</CardTitle>
@@ -50,42 +61,50 @@ export function HistoriesPage({ histories, }: { histories: SaleCustomers[] }) {
                         <TableHeader>
                             <TableRow>
                                 <TableHead>Tanggal</TableHead>
-                                <TableHead>Pelanggan</TableHead>
+                                {/*<TableHead>Pelanggan</TableHead>*/ }
                                 <TableHead>Items</TableHead>
                                 <TableHead>Total</TableHead>
-                                {/* <TableHead>Metode Bayar</TableHead> */}
+                                {/* <TableHead>Metode Bayar</TableHead> */ }
                                 <TableHead>Status</TableHead>
                                 <TableHead>Aksi</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {histories.map((sale, index) => (
-                                <TableRow key={index}>
+                            { histories.map((sale, index) => (
+                                <TableRow key={ index }>
                                     <TableCell>
-                                        {formatDateIndo(sale.date)}
+                                        { formatDateIndo(sale.date) }
                                     </TableCell>
-                                    <TableCell>{sale.customer.name}</TableCell>
-                                    <TableCell>{sale.items}</TableCell>
-                                    <TableCell>{formatRupiah(sale.total)}</TableCell>
-                                    {/* <TableCell>Cash</TableCell> */}
+                                    {/*<TableCell>{ sale.customer.name }</TableCell>*/ }
+                                    <TableCell>{ sale.items }</TableCell>
+                                    <TableCell>{ formatRupiah(sale.total) }</TableCell>
+                                    {/* <TableCell>Cash</TableCell> */ }
                                     <TableCell>
-                                        <Badge variant="default">{sale.statusTransaction}</Badge>
+                                        <Badge variant="default">{ sale.statusTransaction }</Badge>
                                     </TableCell>
-                                    <TableCell className={'space-x-2'}>
-                                        <ModalSalesDetail sale={sale} />
-
-                                        <Button size="sm" variant="outline"
-                                                onClick={ () => {
-                                                    setIsSaleOpen(true)
-                                                    setIsSale(sale)
-                                                } }
+                                    <TableCell className={ 'space-x-2' }>
+                                        <Button
+                                            size="sm" variant="outline"
+                                            onClick={ () => {
+                                                setIsSaleData(true)
+                                                setSaleData(sale)
+                                            } }>
+                                            <Eye className="h-3 w-3"/>
+                                        </Button>
+                                        <Button
+                                            disabled={ sale.statusTransaction === STATUS_TRANSACTION.PENDING }
+                                            size="sm" variant="outline"
+                                            onClick={ () => {
+                                                setIsSaleOpen(true)
+                                                setIsSale(sale)
+                                            } }
                                         >
                                             <ReceiptText className="h-3 w-3"/>
                                         </Button>
                                     </TableCell>
 
                                 </TableRow>
-                            ))}
+                            )) }
                         </TableBody>
                     </Table>
                 </CardContent>
@@ -96,45 +115,78 @@ export function HistoriesPage({ histories, }: { histories: SaleCustomers[] }) {
     )
 }
 
-export function ModalSalesDetail({ sale }: { sale: SaleCustomers }) {
+export function useLoading() {
+    const [ loading, setLoading ] = useState(false)
+    return { loading, setLoading }
+}
+
+export function ModalSalesDetail(
+    { sale, isOpen, setOpenAction }: {
+        sale: SaleCustomers,
+        isOpen: boolean
+        setOpenAction: (open: boolean) => void
+    }) {
+    const { loading, setLoading } = useLoading()
+    const handleDelete = async () => {
+        toastResponse({
+            onFinish: () => setLoading(false),
+            onStart: () => setLoading(true),
+            response: await deleteSale(sale.id)
+        })
+    }
+
     return (
-        <Dialog>
-            <DialogTrigger asChild>
-                <Button size="sm" variant="outline">
-                    <Eye className="h-3 w-3" />
-                </Button>
-            </DialogTrigger>
+        <Dialog
+            open={ isOpen }
+            onOpenChange={ setOpenAction }
+        >
+            {/*<DialogTrigger asChild>*/ }
+            {/*    <Button size="sm" variant="outline">*/ }
+            {/*        <Eye className="h-3 w-3"/>*/ }
+            {/*    </Button>*/ }
+            {/*</DialogTrigger>*/ }
             <DialogContent>
                 <DialogHeader>
                     <DialogTitle>Detail Transaksi</DialogTitle>
                     <DialogDescription>
-                        Transaksi oleh {sale.customer.name} pada {formatDateIndo(sale.date)}
+                        Transaksi oleh { sale.customer.name } pada { formatDateIndo(sale.date) }
                     </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-2 text-sm">
-                    <p><strong>Nama Pelanggan:</strong> {sale.customer.name}</p>
-                    <p><strong>Tanggal:</strong> {formatDateIndo(sale.date)}</p>
-                    <p><strong>Total Pembelian:</strong> {formatRupiah(sale.total)}</p>
-                    <p><strong>Jumlah Barang:</strong> {sale.items} item</p>
+                    <p><strong>Nama Pelanggan:</strong> { sale.customer.name }</p>
+                    <p><strong>Tanggal:</strong> { formatDateIndo(sale.date) }</p>
+                    <p><strong>Total Pembelian:</strong> { formatRupiah(sale.total) }</p>
+                    <p><strong>Jumlah Barang:</strong> { sale.items } item</p>
                 </div>
                 <div className="mt-4 space-y-2 text-sm">
                     <p><strong>Daftar Produk:</strong></p>
                     <ul className="space-y-1">
-                        {sale.SaleItems.map((item) => (
-                            <li key={item.id} className="flex justify-between">
+                        { sale.SaleItems.map((item) => (
+                            <li key={ item.id } className="flex justify-between">
                                 <span>{ item.product.name } : { item.quantity } × { formatRupiah(item.priceAtBuy) }</span>
                                 <span>{ formatRupiah(item.priceAtBuy * item.quantity) }</span>
                             </li>
-                        ))}
+                        )) }
                     </ul>
                     <div className="flex justify-between font-semibold pt-2 border-t">
                         <span>Total</span>
-                        <span>{formatRupiah(sale.total)}</span>
+                        <span>{ formatRupiah(sale.total) }</span>
                     </div>
                 </div>
-                <DialogClose asChild>
-                    <Button variant="outline">Tutup</Button>
-                </DialogClose>
+                <DialogFooter>
+
+                    <DialogClose asChild>
+                        <Button variant="outline">Tutup</Button>
+                    </DialogClose>
+                    {
+                        sale.statusTransaction === STATUS_TRANSACTION.PENDING
+                            ? <DialogClose asChild>
+                                <Button disabled={ loading } onClick={ handleDelete }>Batal</Button>
+                            </DialogClose>
+                            : null
+                    }
+                </DialogFooter>
+
             </DialogContent>
         </Dialog>
     );
@@ -179,17 +231,17 @@ export function ModalInvoice({ sale, isOpen, setOpenAction }: { sale: SaleCustom
                 <DialogHeader>
                     <DialogTitle>Invoice</DialogTitle>
                     <p className="text-sm text-muted-foreground">
-                        Transaksi pada {formatDateIndo(sale.date)} oleh {sale.customer.name}
+                        Transaksi pada { formatDateIndo(sale.date) } oleh { sale.customer.name }
                     </p>
                 </DialogHeader>
 
-                <div ref={contentRef}>
+                <div ref={ contentRef }>
                     <InvoiceLetter invoiceData={ sale }/>
                 </div>
 
                 <DialogFooter>
                     <DialogClose asChild>
-                        <Button onClick={reactToPrintFn}>Print</Button>
+                        <Button onClick={ reactToPrintFn }>Print</Button>
                     </DialogClose>
                     <DialogClose asChild>
                         <Button variant="outline">Tutup</Button>

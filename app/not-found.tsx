@@ -23,7 +23,9 @@ export default function NotFound({ role }: { role?: string }) {
                     <CardContent>
                         <CardAction>
                             <Button>
-                                <Link href={homeLink}>Return Home</Link>
+                                <Link
+                                    //@ts-expect-error
+                                    href={ homeLink }>Return Home</Link>
                             </Button>
                         </CardAction>
                     </CardContent>

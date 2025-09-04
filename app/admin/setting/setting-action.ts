@@ -3,11 +3,11 @@
 import { ActionResponse } from "@/interface/actionType";
 import { prisma } from "@/lib/prisma";
 import {
-    Inventory,
-    PaymentList,
-    PaymentWithRelations,
-    ShippingList,
-    ShippingWithRelations,
+    InventorySetting,
+    PaymentSettingList,
+    PaymentSettingWithRelations,
+    ShippingSettingList,
+    ShippingSettingWithRelations,
     StoreOptionalDefaults
 } from "@/lib/validation";
 import { writeFile } from 'fs/promises'
@@ -52,24 +52,24 @@ export async function saveSettingPayment(
         PaymentList,
         id: paymentID,
         ...data
-    }: PaymentWithRelations): Promise<ActionResponse> {
+    }: PaymentSettingWithRelations): Promise<ActionResponse> {
 
     const shippingResponse = await prisma.$transaction(async (tx) => {
-        const shippingDB = await tx.payment.findFirst()
+        const shippingDB = await tx.paymentSetting.findFirst()
 
         if (!shippingDB) {
-            const createdPayment = await tx.payment.create({ data })
+            const createdPayment = await tx.paymentSetting.create({ data })
             paymentID = createdPayment.id
 
         } else {
-            const updatedPayment = await tx.payment.update({ where: { id: shippingDB.id }, data })
+            const updatedPayment = await tx.paymentSetting.update({ where: { id: shippingDB.id }, data })
             paymentID = updatedPayment.id
         }
 
-        if (await tx.paymentList.count() > 0) {
-            await tx.paymentList.deleteMany({ where: { paymentId: paymentID } })
+        if (await tx.paymentSettingList.count() > 0) {
+            await tx.paymentSettingList.deleteMany({ where: { paymentId: paymentID } })
         }
-        const datas: Omit<PaymentList, 'id'>[] = PaymentList.map(item => ({
+        const datas: Omit<PaymentSettingList, 'id'>[] = PaymentList.map(item => ({
             title: item.title,
             fee: item.fee,
             value: item.value,
@@ -77,7 +77,7 @@ export async function saveSettingPayment(
         }))
         // console.log(datas)
 
-        await tx.paymentList.createMany({ data: datas })
+        await tx.paymentSettingList.createMany({ data: datas })
 
     })
     revalidatePath('/')
@@ -89,39 +89,45 @@ export async function saveSettingPayment(
 }
 
 export async function getSettingPayment() {
-    return prisma.payment.findFirst({ include: { PaymentList: true } })
+    return prisma.paymentSetting.findFirst({ include: { PaymentList: true } })
 }
+
+export async function getSettingPaymentFirst() {
+    return prisma.paymentSetting.findFirst()
+}
+
+
 
 export async function saveSettingShipping(
     {
         ShippingList,
         id: shippingID,
         ...data
-    }: ShippingWithRelations): Promise<ActionResponse> {
+    }: ShippingSettingWithRelations): Promise<ActionResponse> {
 
     const shippingResponse = await prisma.$transaction(async (tx) => {
-        const shippingDB = await tx.shipping.findFirst()
+        const shippingDB = await tx.shippingSetting.findFirst()
 
         if (!shippingDB) {
-            const createdShipping = await tx.shipping.create({ data })
+            const createdShipping = await tx.shippingSetting.create({ data })
             shippingID = createdShipping.id
 
         } else {
-            const updatedShipping = await tx.shipping.update({ where: { id: shippingDB.id }, data })
+            const updatedShipping = await tx.shippingSetting.update({ where: { id: shippingDB.id }, data })
             shippingID = updatedShipping.id
         }
 
-        if (await tx.shippingList.count() > 0) {
-            await tx.shippingList.deleteMany({ where: { shippingId: shippingID } })
+        if (await tx.shippingSettingList.count() > 0) {
+            await tx.shippingSettingList.deleteMany({ where: { shippingId: shippingID } })
         }
         // console.log(shippingID)
-        const datas: Omit<ShippingList, 'id'>[] = ShippingList.map(item => ({
+        const datas: Omit<ShippingSettingList, 'id'>[] = ShippingList.map(item => ({
             name: item.name,
             price: item.price,
             rates: item.rates,
             shippingId: shippingID,
         }))
-        await tx.shippingList.createMany({ data: datas })
+        await tx.shippingSettingList.createMany({ data: datas })
 
     })
     revalidatePath('/')
@@ -134,13 +140,13 @@ export async function saveSettingShipping(
 }
 
 export async function getSettingShipping() {
-    return prisma.shipping.findFirst({ include: { ShippingList: true } })
+    return prisma.shippingSetting.findFirst({ include: { ShippingList: true } })
 }
 
-export async function saveSettingInventory(data: Inventory): Promise<ActionResponse> {
-    const inventoryDB = await prisma.inventory.findFirst()
-    if (!inventoryDB) await prisma.inventory.create({ data })
-    else await prisma.inventory.update({ data, where: { id: inventoryDB.id } })
+export async function saveSettingInventory(data: InventorySetting): Promise<ActionResponse> {
+    const inventoryDB = await prisma.inventorySetting.findFirst()
+    if (!inventoryDB) await prisma.inventorySetting.create({ data })
+    else await prisma.inventorySetting.update({ data, where: { id: inventoryDB.id } })
 
     revalidatePath('/')
 
@@ -151,5 +157,5 @@ export async function saveSettingInventory(data: Inventory): Promise<ActionRespo
 }
 
 export async function getSettingInventory() {
-    return prisma.inventory.findFirst()
+    return prisma.inventorySetting.findFirst()
 }

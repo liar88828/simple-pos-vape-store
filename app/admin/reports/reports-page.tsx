@@ -62,7 +62,7 @@ export function ReportsPage({ range, sales, stats, topSellers, }: ReportsPagePro
         topSellingProducts: TopSellingProducts[]
     ): void {
         const rows: Record<string, any>[] = [];
-        let prevSaleId: number | null = null;
+        let prevSaleId: string | null = null;
 
         allSales.forEach((sale) => {
             sale.SaleItems.forEach((item, index) => {

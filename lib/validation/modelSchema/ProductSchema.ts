@@ -25,7 +25,7 @@ import type {
 /////////////////////////////////////////
 
 export const ProductSchema = z.object({
-  id: z.number().int(),
+    id: z.string().uuid(),
   category: z.string().min(1),
   name: z.string().min(1),
   price: z.number().min(1),
@@ -62,7 +62,7 @@ export type ProductPartial = z.infer<typeof ProductPartialSchema>
 /////////////////////////////////////////
 
 export const ProductOptionalDefaultsSchema = ProductSchema.merge(z.object({
-  id: z.number().int().optional(),
+    id: z.string().uuid().optional(),
     stock: z.number().min(0).optional(),
   minStock: z.number().int().optional(),
   sold: z.number().int().optional(),

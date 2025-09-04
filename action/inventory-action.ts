@@ -27,7 +27,7 @@ export async function oldpreOrderProduct(
     }
 }
 
-export async function validPreorderProduct(id: number): Promise<ActionResponse> {
+export async function validPreorderProduct(id: string): Promise<ActionResponse> {
     const dataFind = await prisma.preOrder.findUnique({
         where: { id }
     })

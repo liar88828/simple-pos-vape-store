@@ -1,4 +1,5 @@
 'use server'
+import { getSessionUserPage } from "@/action/auth-action";
 import { ProductData } from "@/app/admin/products/products-page";
 import { ActionResponse } from "@/interface/actionType";
 import { STATUS_PREORDER } from "@/lib/constants";
@@ -6,7 +7,8 @@ import { logger } from "@/lib/logger";
 import { prisma } from "@/lib/prisma";
 import {
     PreOrderOptionalDefaults,
-    PreOrderOptionalDefaultsSchema, ProductOptionalDefaults,
+    PreOrderOptionalDefaultsSchema,
+    ProductOptionalDefaults,
     ProductOptionalDefaultsSchema
 } from "@/lib/validation";
 import { revalidatePath } from "next/cache";
@@ -20,6 +22,8 @@ export async function addProductAction({ priceNormal, expired, ...formData }: Pr
     logger.info('action addProductAction')
 
     try {
+
+        const session = await getSessionUserPage()
         const valid = ProductOptionalDefaultsSchema.safeParse(formData)
         if (!valid.success) {
             const errorValidation = valid.error.flatten().fieldErrors
@@ -40,6 +44,7 @@ export async function addProductAction({ priceNormal, expired, ...formData }: Pr
 
             await tx.preOrder.create({
                 data: PreOrderOptionalDefaultsSchema.parse({
+                    userId: session.userId,
                     productId: productDB.id,
                     quantity: productDB.stock,
                     status: STATUS_PREORDER.SUCCESS,

@@ -1,4 +1,30 @@
 import { z } from 'zod';
+import {
+    SaleWithRelationsSchema,
+    SalePartialWithRelationsSchema,
+    SaleOptionalDefaultsWithRelationsSchema
+} from './SaleSchema'
+import type { SaleWithRelations, SalePartialWithRelations, SaleOptionalDefaultsWithRelations } from './SaleSchema'
+import {
+    PreOrderWithRelationsSchema,
+    PreOrderPartialWithRelationsSchema,
+    PreOrderOptionalDefaultsWithRelationsSchema
+} from './PreOrderSchema'
+import type {
+    PreOrderWithRelations,
+    PreOrderPartialWithRelations,
+    PreOrderOptionalDefaultsWithRelations
+} from './PreOrderSchema'
+import {
+    CustomerWithRelationsSchema,
+    CustomerPartialWithRelationsSchema,
+    CustomerOptionalDefaultsWithRelationsSchema
+} from './CustomerSchema'
+import type {
+    CustomerWithRelations,
+    CustomerPartialWithRelations,
+    CustomerOptionalDefaultsWithRelations
+} from './CustomerSchema'
 
 /////////////////////////////////////////
 // USER SCHEMA
@@ -36,5 +62,77 @@ export const UserOptionalDefaultsSchema = UserSchema.merge(z.object({
 }))
 
 export type UserOptionalDefaults = z.infer<typeof UserOptionalDefaultsSchema>
+
+/////////////////////////////////////////
+// USER RELATION SCHEMA
+/////////////////////////////////////////
+
+export type UserRelations = {
+    Sale: SaleWithRelations[];
+    PreOrder: PreOrderWithRelations[];
+    Customer?: CustomerWithRelations | null;
+};
+
+export type UserWithRelations = z.infer<typeof UserSchema> & UserRelations
+
+export const UserWithRelationsSchema: z.ZodType<UserWithRelations> = UserSchema.merge(z.object({
+    Sale: z.lazy(() => SaleWithRelationsSchema).array(),
+    PreOrder: z.lazy(() => PreOrderWithRelationsSchema).array(),
+    Customer: z.lazy(() => CustomerWithRelationsSchema).nullish(),
+}))
+
+/////////////////////////////////////////
+// USER OPTIONAL DEFAULTS RELATION SCHEMA
+/////////////////////////////////////////
+
+export type UserOptionalDefaultsRelations = {
+    Sale: SaleOptionalDefaultsWithRelations[];
+    PreOrder: PreOrderOptionalDefaultsWithRelations[];
+    Customer?: CustomerOptionalDefaultsWithRelations | null;
+};
+
+export type UserOptionalDefaultsWithRelations =
+    z.infer<typeof UserOptionalDefaultsSchema>
+    & UserOptionalDefaultsRelations
+
+export const UserOptionalDefaultsWithRelationsSchema: z.ZodType<UserOptionalDefaultsWithRelations> = UserOptionalDefaultsSchema.merge(z.object({
+    Sale: z.lazy(() => SaleOptionalDefaultsWithRelationsSchema).array(),
+    PreOrder: z.lazy(() => PreOrderOptionalDefaultsWithRelationsSchema).array(),
+    Customer: z.lazy(() => CustomerOptionalDefaultsWithRelationsSchema).nullish(),
+}))
+
+/////////////////////////////////////////
+// USER PARTIAL RELATION SCHEMA
+/////////////////////////////////////////
+
+export type UserPartialRelations = {
+    Sale?: SalePartialWithRelations[];
+    PreOrder?: PreOrderPartialWithRelations[];
+    Customer?: CustomerPartialWithRelations | null;
+};
+
+export type UserPartialWithRelations = z.infer<typeof UserPartialSchema> & UserPartialRelations
+
+export const UserPartialWithRelationsSchema: z.ZodType<UserPartialWithRelations> = UserPartialSchema.merge(z.object({
+    Sale: z.lazy(() => SalePartialWithRelationsSchema).array(),
+    PreOrder: z.lazy(() => PreOrderPartialWithRelationsSchema).array(),
+    Customer: z.lazy(() => CustomerPartialWithRelationsSchema).nullish(),
+})).partial()
+
+export type UserOptionalDefaultsWithPartialRelations = z.infer<typeof UserOptionalDefaultsSchema> & UserPartialRelations
+
+export const UserOptionalDefaultsWithPartialRelationsSchema: z.ZodType<UserOptionalDefaultsWithPartialRelations> = UserOptionalDefaultsSchema.merge(z.object({
+    Sale: z.lazy(() => SalePartialWithRelationsSchema).array(),
+    PreOrder: z.lazy(() => PreOrderPartialWithRelationsSchema).array(),
+    Customer: z.lazy(() => CustomerPartialWithRelationsSchema).nullish(),
+}).partial())
+
+export type UserWithPartialRelations = z.infer<typeof UserSchema> & UserPartialRelations
+
+export const UserWithPartialRelationsSchema: z.ZodType<UserWithPartialRelations> = UserSchema.merge(z.object({
+    Sale: z.lazy(() => SalePartialWithRelationsSchema).array(),
+    PreOrder: z.lazy(() => PreOrderPartialWithRelationsSchema).array(),
+    Customer: z.lazy(() => CustomerPartialWithRelationsSchema).nullish(),
+}).partial())
 
 export default UserSchema;
