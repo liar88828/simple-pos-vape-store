@@ -27,6 +27,7 @@ export default async function Layout({ children }: { children: React.ReactNode }
                     <HeaderComponent
                         lowStockProducts={ lowStockProducts }
                         isLoggedIn={ Boolean(session) }/>
+                    {/*<div className={'p-6'}></div>*/ }
                     { children }
                 </main>
             </SidebarInset>

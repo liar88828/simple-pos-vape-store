@@ -2,12 +2,15 @@
 import {
     Archive,
     BarChart3,
+    Briefcase,
     FlaskConical,
     History,
     Home,
     LucideIcon,
-    Package, SettingsIcon,
+    Package,
+    SettingsIcon,
     ShoppingCart,
+    Store,
     Users,
 } from "lucide-react"
 
@@ -26,6 +29,7 @@ export const adminNavItems: NavItems[] = [
         path: "/dashboard",
         description: "Overview & Analytics",
     },
+
     {
         title: "POS Kasir",
         icon: ShoppingCart,
@@ -40,6 +44,7 @@ export const adminNavItems: NavItems[] = [
         path: "/products",
         description: "Katalog & Inventory",
     },
+
     {
         title: "Inventori",
         icon: Archive,
@@ -48,12 +53,6 @@ export const adminNavItems: NavItems[] = [
         // badge: lowStockProducts.length > 0 ? lowStockProducts.length.toString() : null,
         // badgeVariant: "destructive" as const,
     },
-    {
-        title: "Pelanggan",
-        icon: Users,
-        path: "/customers",
-        description: "Customer Management",
-    },
 
     {
         title: "Laporan",
@@ -61,6 +60,36 @@ export const adminNavItems: NavItems[] = [
         path: "/reports",
         description: "Sales & Analytics",
     },
+
+    //
+    // {
+    //     title: "Customers",
+    //     icon: Users,
+    //     path: "/customers",
+    //     description: "Customers",
+    // },
+
+    {
+        title: "Shop",
+        icon: Store,
+        path: "/shop",
+        description: "Shop",
+    },
+
+    {
+        title: "Employee",
+        icon: Briefcase,
+        path: "/employee",
+        description: "Employee",
+    },
+
+    {
+        title: "Customer",
+        icon: Users,
+        path: "/customers",
+        description: "Customer Management",
+    },
+
 
     {
         title: "Setting",

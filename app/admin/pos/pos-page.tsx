@@ -2,10 +2,10 @@
 
 import { type  ProductPaging, type ProductPreorder } from "@/action/product-action";
 import { createCustomerNew, createTransactionAction } from "@/app/admin/pos/pos-action";
+import { ProductsFilter } from "@/app/admin/products/products-page";
+import { ProductCart } from "@/app/user/home/product-user-page";
 import { InputForm } from "@/components/mini/form-hook";
 import { ProductDetailDialogOnly } from "@/components/page/product-detail-dialog-only";
-import { ProductCart } from "@/app/user/home/product-user-page";
-import { ProductsFilter } from "@/app/admin/products/products-page";
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
@@ -21,18 +21,18 @@ import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useCartStore } from "@/hooks/use-cart";
 import { formatRupiah } from "@/lib/formatter";
-import { newParam, toastResponse } from "@/lib/helper";
+import { toastResponse } from "@/lib/helper";
 import { CustomerModelNew, CustomerModelType } from "@/lib/schema";
 import { Customer, Payment } from "@/lib/validation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { MinusIcon, Plus, Search, ShoppingCart } from "lucide-react"
-import { useRouter } from "next/navigation";
-import { FormProvider, useForm } from "react-hook-form";
+import Link from "next/link";
 import React, { useMemo, useState } from "react"
+import { FormProvider, useForm } from "react-hook-form";
 
 type POSPageProps = { customers: Customer[], products: ProductPaging, payment: Payment };
 
-export function POSPage({ products, customers, payment }: POSPageProps) {
+export default function POSPage({ products, customers, payment }: POSPageProps) {
     const [ searchCustomer, setSearchCustomer ] = useState("")
     const [ isProduct, setIsProduct ] = useState<ProductPreorder | null>(null)
     const [ isOpen, setIsOpen ] = useState(false)
@@ -332,7 +332,6 @@ export function SelectCustomerDialogButton(
     const [ open, setOpen ] = useState(false);
     const [ search, setSearch ] = useState(customerName);
     const [ loading, setLoading ] = useState(false)
-    const router = useRouter()
 
     // const { value, isLoading } = useDebounceLoad(search, 1000);
     // usePushQueryObject({ customerName: value })
@@ -403,11 +402,23 @@ export function SelectCustomerDialogButton(
                                     setCustomerNameAction(e.target.value)
                                 } }
                             />
-                            <Button
-                                onClick={ () => router.push(newParam({ name: search })) }
-                                type="button">
+
+
+                            {/*<Button*/ }
+                            {/*    onClick={ () => {*/ }
+                            {/*        // router.push<Object>(newParam({ name: search }))*/ }
+                            {/*        router.push<Object>({})*/ }
+                            {/*    } }*/ }
+                            {/*    type="button">*/ }
+                            {/*    <Search/>*/ }
+                            {/*</Button>*/ }
+
+                            <Link href={ {
+                                pathname: '/admin/pos',
+                                query: { name: search }
+                            } }>
                                 <Search/>
-                            </Button>
+                            </Link>
                         </div>
 
                         <div className="space-y-2 max-h-[300px] overflow-y-auto">

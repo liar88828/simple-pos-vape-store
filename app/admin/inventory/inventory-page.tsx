@@ -234,39 +234,38 @@ export function InventoryPage({ products, lowStockProducts, expiredProduct, preo
                                 <TableRow key={ item.id }>
                                     <TableCell>
                                         <div className="flex items-center space-x-3">
-                                            <picture>
+                                            <picture className={ 'w-10' }>
                                                 <img
                                                     src={ item.product.image || "/placeholder.svg" }
                                                     alt={ item.product.name }
-                                                    className="w-8 h-8 rounded object-cover"
+                                                    className="w-10 h-10 rounded object-cover"
                                                 />
                                             </picture>
                                             <div className="flex flex-col">
                                                 <span
-                                                    className="font-bold w-auto text-wrap">{ item.product.name }</span>
+                                                    className="font-bold truncate w-80">{ item.product.name }</span>
                                                 <div className="flex gap-2">
                                                     <span
                                                         className="font-light">Normal: { formatRupiah(item.priceNormal) }</span>
-                                                    -
-                                                    <span
-                                                        className="font-light">Sell: { formatRupiah(item.product.price) }</span>
-                                                    =
-                                                    <span
-                                                        className="font-light">Profit: { formatRupiah(item.priceSell - item.priceNormal) }</span>
+                                                    {/*-*/ }
+                                                    {/*<span*/ }
+                                                    {/*    className="font-light">Sell: { formatRupiah(item.product.price) }</span>*/ }
+                                                    {/*=*/ }
+                                                    {/*<span*/ }
+                                                    {/*    className="font-light">Profit: { formatRupiah(item.priceSell - item.priceNormal) }</span>*/ }
                                                 </div>
 
-                                                <span className="font-light">Total Stock: { item.product.stock }</span>
+                                                <span className="font-light">
+                                                    {/*Total Stock: { item.product.stock }*/ }
+                                                    {/*<Badge variant={ 'default' }>Order : { item.quantity }</Badge>*/ }
+                                                </span>
                                             </div>
                                         </div>
                                     </TableCell>
 
                                     <TableCell>
                                         <div className="flex flex-col gap-2">
-                                            <Badge variant={ 'default' }>
-                                                Order : { item.quantity }
-                                            </Badge>
-
-
+                                            <Badge variant={ 'default' }>Order : { item.quantity }</Badge>
                                         </div>
                                     </TableCell>
                                     <TableCell>{ formatDateIndo(item?.expired) }</TableCell>
@@ -449,16 +448,13 @@ export function ReorderModal({ preorderProduct, setOpenAction, isOpen }: {
 
     const onSubmit = methods.handleSubmit(async (data) => {
         toastResponse({
-            onStart: () => {
-                setLoading(true)
-            },
             response: await preOrderAction(data, preorderProduct),
+            onStart: () => setLoading(true),
             onFinish: () => setLoading(false),
-            onSuccess: () => {
-                setOpenAction(false)
-            }
+            onSuccess: () => setOpenAction(false)
         })
     })
+
     console.log(methods.formState.errors)
     return (
         <ResponsiveModalOnly title={ 'Ubah Preorder Produk' }

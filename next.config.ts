@@ -1,10 +1,9 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-
+    typedRoutes: true,
     experimental: {
         useCache: true,
-
         // clientInstrumentationHook: true,
         // typedRoutes: true,
         viewTransition: true,
