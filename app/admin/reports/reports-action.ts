@@ -139,7 +139,7 @@ export async function getSaleCustomers(range: RangeStats): Promise<SaleCustomers
             },
         },
         include: {
-            customer: true,
+            Customer: true,
             SaleItems: {
                 include: {
                     product: true,

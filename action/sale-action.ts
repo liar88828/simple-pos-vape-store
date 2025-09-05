@@ -146,7 +146,7 @@ export const getTransactionCountToday = async () => {
 export const getHistoriesById = async (id: string): Promise<SaleCustomers | null> => await prisma.sale.findUnique({
     where: { id },
     include: {
-        customer: true,
+        Customer: true,
         SaleItems: {
             include: {
                 product: true

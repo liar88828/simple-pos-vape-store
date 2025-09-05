@@ -166,7 +166,7 @@ export function DailySalesReport_x5_english(props: ReportsPageProps) {
                                 }) })
                                 </td>
                                 <td className="px-4 py-2 capitalize">
-                                    { sale.customer.name } ({ sale.customer.status }, Age: { sale.customer.age })
+                                    { sale.Customer.name } ({ sale.Customer.status }, Age: { sale.Customer.age })
                                 </td>
                                 <td className="px-4 py-2">{ sale.total.toLocaleString() }</td>
                                 <td className="px-4 py-2">{ sale.items }</td>
@@ -328,7 +328,7 @@ export function DailySalesReport_x4({ data }: { data: any }) {
                                     }) })
                                     </td>
                                     <td className="px-4 py-2 capitalize">
-                                        { sale.customer.name } ({ sale.customer.status }, Age: { sale.customer.age })
+                                        { sale.Customer.name } ({ sale.Customer.status }, Age: { sale.Customer.age })
                                     </td>
                                     <td className="px-4 py-2">{ sale.total.toLocaleString() }</td>
                                     <td className="px-4 py-2">{ sale.items }</td>

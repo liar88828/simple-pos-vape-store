@@ -69,8 +69,8 @@ export function ReportsPage({ range, sales, stats, topSellers, }: ReportsPagePro
                 rows.push({
                     SaleID: sale.id === prevSaleId ? '' : sale.id, // add '' if same sale id
                     Date: sale.id === prevSaleId ? '' : formatDateIndo(sale.date),
-                    "Customer Name": sale.id === prevSaleId ? '' : sale.customer.name,
-                    "Customer Status": sale.id === prevSaleId ? '' : sale.customer.status,
+                    "Customer Name": sale.id === prevSaleId ? '' : sale.Customer.name,
+                    "Customer Status": sale.id === prevSaleId ? '' : sale.Customer.status,
                     "Product Name": item.product.name,
                     Category: item.product.category,
                     Quantity: item.quantity,
@@ -261,7 +261,7 @@ export function ReportsPage({ range, sales, stats, topSellers, }: ReportsPagePro
                                         sale.date,
                                         range === 'today' ? 'time' : 'long') }
                                     </TableCell>
-                                    <TableCell>{ sale.customer.name }</TableCell>
+                                    <TableCell>{ sale.Customer.name }</TableCell>
                                     <TableCell>{ sale.items }</TableCell>
                                     <TableCell>{ formatRupiah(sale.total) }</TableCell>
                                     {/* <TableCell>Cash</TableCell> */ }
@@ -382,7 +382,7 @@ export function ModalSalesDetailOld({ sale, isOpen, setOpenAction }: { sale: Sal
                     <DialogTitle>Detail Transaksi : { sale.id }
                     </DialogTitle>
                     <DialogDescription>
-                        Transaksi oleh { sale.customer.name } pada { formatDateIndo(sale.date) }
+                        Transaksi oleh { sale.Customer.name } pada { formatDateIndo(sale.date) }
                     </DialogDescription>
 
                     <Select value={ selectStatus } onValueChange={ setSelectStatus }>
@@ -398,7 +398,7 @@ export function ModalSalesDetailOld({ sale, isOpen, setOpenAction }: { sale: Sal
 
                 </DialogHeader>
                 <div className="space-y-2 text-sm">
-                    <p><strong>Nama Pelanggan:</strong> { sale.customer.name }</p>
+                    <p><strong>Nama Pelanggan:</strong> { sale.Customer.name }</p>
                     <p><strong>Tanggal:</strong> { formatDateIndo(sale.date) }</p>
                     <p><strong>Total Pembelian:</strong> { formatRupiah(sale.total) }</p>
                     <p><strong>Jumlah Barang:</strong> { sale.items } item</p>
@@ -466,7 +466,7 @@ export function ModalSalesDetail({ sale, isOpen, setOpenAction }: { sale: SaleCu
             isOpen={ isOpen }
             setOpenAction={ setOpenAction }
             title={ `Detail Transaksi : ${ sale.id }` }
-            description={ `Transaksi oleh ${ sale.customer.name } pada ${ formatDateIndo(sale.date) }` }
+            description={ `Transaksi oleh ${ sale.Customer.name } pada ${ formatDateIndo(sale.date) }` }
             footer={
                 <>
                     <Select value={ selectStatus } onValueChange={ setSelectStatus }
@@ -496,7 +496,7 @@ export function ModalSalesDetail({ sale, isOpen, setOpenAction }: { sale: SaleCu
 
 
             <div className="space-y-2 text-sm">
-                <p><strong>Nama Pelanggan:</strong> { sale.customer.name }</p>
+                <p><strong>Nama Pelanggan:</strong> { sale.Customer.name }</p>
                 <p><strong>Tanggal:</strong> { formatDateIndo(sale.date) }</p>
                 <p><strong>Total Pembelian:</strong> { formatRupiah(sale.total) }</p>
                 <p><strong>Jumlah Barang:</strong> { sale.items } item</p>
@@ -543,7 +543,7 @@ export function ModalInvoice({ sale }: { sale: SaleCustomers }) {
                 <DialogHeader>
                     <DialogTitle>Invoice</DialogTitle>
                     <p className="text-sm text-muted-foreground">
-                        Transaksi pada { formatDateIndo(sale.date) } oleh { sale.customer.name }
+                        Transaksi pada { formatDateIndo(sale.date) } oleh { sale.Customer.name }
                     </p>
                 </DialogHeader>
                 <div ref={ contentRef }>

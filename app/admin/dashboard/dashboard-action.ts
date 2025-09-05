@@ -1,6 +1,6 @@
 'use server'
 import { SaleCustomers } from "@/interface/actionType";
-import { STATUS_TRANSACTION } from "@/lib/constants";
+import { STATUS_PREORDER } from "@/lib/constants";
 import { logger } from "@/lib/logger";
 import { prisma } from "@/lib/prisma";
 
@@ -9,10 +9,10 @@ export async function lastBuyerPending(): Promise<SaleCustomers[]> {
         take: 10,
         orderBy: { date: "desc" },
         where: {
-            statusTransaction: STATUS_TRANSACTION.PENDING
+            statusTransaction: STATUS_PREORDER.PENDING
         },
         include: {
-            customer: true,
+            Customer: true,
             SaleItems: {
                 include: {
                     product: true,

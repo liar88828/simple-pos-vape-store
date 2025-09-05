@@ -26,9 +26,10 @@ import {
     useSidebar,
 } from "@/components/ui/sidebar"
 import { UserPayload } from "@/interface/actionType";
-import { ROLE } from "@/lib/constants";
+import { ROLE_USER } from "@/lib/constants";
 import { NavItems } from "@/lib/link-sidebar";
 import { ChevronsUpDown, LogOutIcon, Settings, } from "lucide-react"
+import { Route } from "next";
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import React from "react";
@@ -38,12 +39,10 @@ export function AppSidebar(
     {
         lowStockProducts,
         navItems,
-        asLink,
         session
     }: {
         lowStockProducts: { stock: number }[],
-        navItems: NavItems[],
-        asLink: string,
+        navItems: NavItems<Route>[],
         session: UserPayload
     }) {
     const pathname = usePathname()
@@ -102,13 +101,12 @@ export function AppSidebar(
                     <SidebarGroupContent>
                         <SidebarMenu>
                             { navItems.map((item) => (
-                                <SidebarMenuItem key={ item.path }>
-                                    <SidebarMenuButton asChild isActive={ isActive(asLink + item.path) }
+                                <SidebarMenuItem key={ item.href }>
+                                    <SidebarMenuButton asChild isActive={ isActive(item.href) }
                                                        title={ item.title }>
 
                                         <Link
-                                            // @ts-expect-error
-                                            href={ asLink + item.path }>
+                                            href={ item.href }>
                                             <item.icon/>
                                             <span>  { item.title }</span>
                                         </Link>
@@ -170,7 +168,7 @@ export function AppSidebar(
                                         </div>
                                     </div>
                                 </DropdownMenuLabel>
-                                { session.role === ROLE.ADMIN
+                                { session.role === ROLE_USER.ADMIN
                                     ? <DropdownMenuGroup>
                                         <DropdownMenuItem>
                                             <Link href="/admin/setting" className={ 'flex items-center gap-2' }>

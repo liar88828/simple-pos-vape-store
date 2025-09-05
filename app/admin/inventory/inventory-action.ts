@@ -1,13 +1,14 @@
 'use server'
 
-import { getSessionUserPage } from "@/action/auth-action";
+import { getSessionEmployeePage } from "@/action/auth-action";
 import { getPreorder, PreorderProduct } from "@/action/product-action";
-import { InventoryPaging, PreOrderForm } from "@/app/admin/inventory/inventory-page";
+import { InventoryPaging } from "@/app/admin/inventory/inventory-page";
 import { ActionResponse, ContextPage } from "@/interface/actionType";
 import { STATUS_PREORDER } from "@/lib/constants";
 import { getContextPage } from "@/lib/context-action";
 import { logger } from "@/lib/logger";
 import { prisma } from "@/lib/prisma";
+import { PreOrderOptionalDefaults } from "@/lib/validation";
 import { revalidatePath } from "next/cache";
 
 export const getExpiredProduct = async (): Promise<PreorderProduct[]> => {
@@ -24,7 +25,7 @@ export const getExpiredProduct = async (): Promise<PreorderProduct[]> => {
             },
         },
         include: {
-            product: true, // optional
+            Product: true, // optional
         },
     });
     logger.info('data : getExpiredProduct')
@@ -32,25 +33,26 @@ export const getExpiredProduct = async (): Promise<PreorderProduct[]> => {
 }
 
 export async function preOrderProductAction(
-    preorder: PreOrderForm
+    preorder: PreOrderOptionalDefaults
 ): Promise<ActionResponse> {
     // logger.info(`input data preOrderProductAction`)
 
     try {
-        const session = await getSessionUserPage()
+        const session = await getSessionEmployeePage()
         await prisma.$transaction(async (tx) => {
-
-            await tx.preOrder.create({
+            const preOrderDB = await tx.preOrder.create({
                 data: {
-                    userId: session.userId,
                     ...preorder,
+                    sellIn_shopId: session.shopId,
+                    userId: session.userId,
                     status: preorder.status === '-' ? STATUS_PREORDER.PENDING : preorder.status,
                 },
             })
-            await tx.product.update({
+            const productDB = await tx.product.update({
                 where: { id: preorder.productId },
                 data: { stock: { increment: preorder.quantity } }
             })
+            return { preOrderDB, productDB }
         })
 
         revalidatePath('/')
@@ -71,7 +73,7 @@ export async function preOrderProductAction(
 }
 
 export async function preOrderAction(
-    preorder_new: PreOrderForm,
+    preorder_new: PreOrderOptionalDefaults,
     preorder_old: PreorderProduct
 ): Promise<ActionResponse> {
     // console.log(preorder_new)
@@ -80,7 +82,7 @@ export async function preOrderAction(
     // console.log("preorder_old")
     // console.log(preorder_old)
     try {
-        const session = getSessionUserPage()
+        const session = getSessionEmployeePage()
 
         await prisma.$transaction(async (tx) => {
 
@@ -108,15 +110,11 @@ export async function preOrderAction(
                 data: {
                     // stock: adjustedStock
                     // stock: { increment: (preorder_old.quantity ?? 0) - preorder_new.quantity }
-                    stock: {
-                        decrement: diff, // subtract diff
-                    }
+                    stock: { decrement: diff, /* subtract diff */ }
                 }
             })
             await tx.preOrder.update({
-                where: {
-                    id: preorder_new.id,
-                },
+                where: { id: preorder_new.id },
                 data: preorder_new
             })
         })

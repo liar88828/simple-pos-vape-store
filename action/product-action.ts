@@ -23,16 +23,18 @@ export type ProductPaging = {
 };
 
 export type PreorderProductCustomer = PreOrder & {
-    customer: Customer
-    product: Product
+    Customer: Customer
+    Product: Product
 };
 
 export type PreorderProduct = PreOrder & {
-    product: Product
+    Product: Product
 };
 
 export const getProduct = async (
-    filter: {
+    filter:
+    {
+        shopId: string | null,
         productBrand: string | undefined,
         productCategory: string | undefined,
         productTypeDevice: string | undefined,
@@ -51,6 +53,7 @@ export const getProduct = async (
     const page = Number(filter.productPage ?? 0);
 
     const where: Prisma.ProductWhereInput = {
+
         name: filter.productName && filter.productName !== '-'
             ? { contains: filter.productName, }
             : undefined,
@@ -90,6 +93,10 @@ export const getProduct = async (
         fluidLevel: filter.productFluid && filter.productFluid !== '-'
             ? { contains: filter.productFluid, }
             : undefined,
+
+        PreOrders: filter.shopId
+            ? { every: { sellIn_shopId: filter.shopId } }
+            : undefined
     }
     // console.log(where)
     const data = await prisma.product.findMany({
@@ -114,8 +121,12 @@ export const getProduct = async (
     }
 }
 
-export const getProductPage = async (context: ContextPage): Promise<ProductPaging> => {
+export const getProductPage = async (
+    context: ContextPage,
+    shopId: string | null,
+): Promise<ProductPaging> => {
     return getProduct({
+        shopId,
         productName: await getContextPage(context, 'productName'),
         productBrand: await getContextPage(context, 'productBrand'),
         productCategory: await getContextPage(context, 'productCategory'),
@@ -253,7 +264,7 @@ export const getPreorder = async (
     // console.log(filter.inventoryStock)//'low'/"high"/'-'
     // console.log(filter.inventoryExpired)//'low'/"high"/'-'
     const where: Prisma.PreOrderWhereInput = {
-        product: filter.inventoryName && filter.inventoryName !== '-'
+        Product: filter.inventoryName && filter.inventoryName !== '-'
             ? { name: { contains: filter.inventoryName } }
             : undefined,
 
@@ -298,7 +309,7 @@ export const getPreorder = async (
         orderBy,
         where,
         include: {
-            product: true, // optional
+            Product: true, // optional
         },
     });
     const total = await prisma.preOrder.count({ where })

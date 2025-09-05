@@ -68,9 +68,9 @@ export function PreOrderDialog({ orderData }: { orderData: PreorderProductCustom
 
 export function PreOrderInvoice({ orderData }: { orderData: PreorderProductCustomer }) {
 
-    const product = orderData.product
+    const product = orderData.Product
     const calculateTotal = () => {
-        return orderData.quantity * orderData.product.price;
+        return orderData.quantity * orderData.Product.price;
     };
 
     const getStatusColor = (status: string) => {
@@ -137,25 +137,25 @@ export function PreOrderInvoice({ orderData }: { orderData: PreorderProductCusto
                         </h3>
                         <div className={ cn("bg-gray-50 p-4 rounded-lg", "dark:bg-gray-800") }>
                             <p className={ cn("font-medium text-lg", "text-gray-800", "dark:text-white") }>
-                                { orderData.customer.name }
+                                { orderData.Customer.name }
                             </p>
                             <p className={ cn("text-gray-600", "dark:text-gray-300") }>Customer
-                                ID: { orderData.customer.id }</p>
-                            { orderData.customer.age > 0 && (
-                                <p className={ cn("text-gray-600", "dark:text-gray-300") }>Age: { orderData.customer.age }</p>
+                                ID: { orderData.Customer.id }</p>
+                            { orderData.Customer.age > 0 && (
+                                <p className={ cn("text-gray-600", "dark:text-gray-300") }>Age: { orderData.Customer.age }</p>
                             ) }
                             <p className={ cn("text-gray-600", "dark:text-gray-300") }>
-                                Total Purchases: { formatRupiah(orderData.customer.totalPurchase) }
+                                Total Purchases: { formatRupiah(orderData.Customer.totalPurchase) }
                             </p>
                             <p className={ cn("text-gray-600", "dark:text-gray-300") }>
-                                Last Purchase: { formatDateIndo(orderData.customer.lastPurchase) }
+                                Last Purchase: { formatDateIndo(orderData.Customer.lastPurchase) }
                             </p>
                             <div className="mt-2">
                                     <span className={ cn(
                                         "px-2 py-1 rounded-full text-xs font-medium",
-                                        getStatusColor(orderData.customer.status)
+                                        getStatusColor(orderData.Customer.status)
                                     ) }>
-                                        { orderData.customer.status.toUpperCase() }
+                                        { orderData.Customer.status.toUpperCase() }
                                     </span>
                             </div>
                         </div>
@@ -181,7 +181,7 @@ export function PreOrderInvoice({ orderData }: { orderData: PreorderProductCusto
                             </div>
                             <div className="flex justify-between">
                                 <span className={ cn("text-gray-600", "dark:text-gray-300") }>Available Stock:</span>
-                                <span className="font-medium underline">{ orderData.product.stock } units</span>
+                                <span className="font-medium underline">{ orderData.Product.stock } units</span>
                             </div>
                         </div>
                     </div>
@@ -209,11 +209,11 @@ export function PreOrderInvoice({ orderData }: { orderData: PreorderProductCusto
 
                                 <div className="flex justify-between">
                                     <strong>Product:</strong>
-                                    <span>{ orderData.product.name }</span>
+                                    <span>{ orderData.Product.name }</span>
                                 </div>
                                 <div className="flex justify-between">
                                     <strong>Unit Price:</strong>
-                                    <span>{ formatRupiah(orderData.product.price) }</span>
+                                    <span>{ formatRupiah(orderData.Product.price) }</span>
                                 </div>
                                 <div className="flex justify-between">
                                     <strong className="">Quantity:</strong>
@@ -309,7 +309,7 @@ export function PreOrderInvoice({ orderData }: { orderData: PreorderProductCusto
 }
 
 export function InvoicePreorderTable({ orderData }: { orderData: PreorderProductCustomer }) {
-    const product = orderData.product
+    const product = orderData.Product
     return (
         <Table>
             <TableHeader>
@@ -365,7 +365,7 @@ export function InvoicePreorderTable({ orderData }: { orderData: PreorderProduct
 }
 
 export function InvoicePreorder1({ orderData }: { orderData: PreorderProductCustomer }) {
-    const product = orderData.product
+    const product = orderData.Product
     return (
         <Card className="overflow-hidden hover:shadow-lg transition-shadow duration-300 p-0">
             <CardContent className="p-0">
@@ -429,8 +429,8 @@ export function invoicePreorder({ orderData }: { orderData: PreorderProductCusto
             <div className="md:flex">
                 <div className="  md:flex-shrink-0">
                     <img
-                        src={ orderData.product.image }
-                        alt={ orderData.product.name }
+                        src={ orderData.Product.image }
+                        alt={ orderData.Product.name }
                         className="size-56  object-cover"
                     />
                 </div>
@@ -438,27 +438,27 @@ export function invoicePreorder({ orderData }: { orderData: PreorderProductCusto
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <h4 className={ cn("text-xl font-bold mb-2", "text-gray-800", "dark:text-white") }>
-                                { orderData.product.name }
+                                { orderData.Product.name }
                             </h4>
-                            <p className={ cn("mb-2", "text-gray-600", "dark:text-gray-300") }>{ orderData.product.description }</p>
+                            <p className={ cn("mb-2", "text-gray-600", "dark:text-gray-300") }>{ orderData.Product.description }</p>
                             <div className={ cn("space-y-1 text-sm", "text-gray-600", "dark:text-gray-300") }>
-                                <p><span className="font-medium">Category:</span> { orderData.product.category }</p>
-                                <p><span className="font-medium">Type:</span> { orderData.product.type }</p>
-                                <p><span className="font-medium">Flavor:</span> { orderData.product.flavor }</p>
+                                <p><span className="font-medium">Category:</span> { orderData.Product.category }</p>
+                                <p><span className="font-medium">Type:</span> { orderData.Product.type }</p>
+                                <p><span className="font-medium">Flavor:</span> { orderData.Product.flavor }</p>
                                 <p><span
-                                    className="font-medium">Nicotine Level:</span> { orderData.product.nicotineLevel }
+                                    className="font-medium">Nicotine Level:</span> { orderData.Product.nicotineLevel }
                                 </p>
                             </div>
                         </div>
                         <div className="text-right">
                             <div className={ cn("text-2xl font-bold mb-2", "print:text-black") }>
-                                { formatRupiah(orderData.product.price) }
+                                { formatRupiah(orderData.Product.price) }
                             </div>
                             <div className={ cn("text-sm", "text-gray-600", "dark:text-gray-300") }>per unit</div>
                             <div className="mt-4">
                                 <div className="text-lg font-semibold">Quantity: { orderData.quantity }</div>
                                 <div className={ cn("text-sm", "text-gray-600", "dark:text-gray-300") }>
-                                    Min Stock: { orderData.product.minStock }
+                                    Min Stock: { orderData.Product.minStock }
                                 </div>
                             </div>
                         </div>

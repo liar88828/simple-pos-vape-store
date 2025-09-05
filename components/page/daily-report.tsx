@@ -82,8 +82,8 @@ export function DailySalesReport_x5_indonesia(props: ReportsPageProps) {
                                     <p>{ formatDateIndo(sale.date) }</p>
                                 </td>
                                 <td className="px-2 py-2 capitalize">
-                                    <h1>{ sale.customer.name }</h1>
-                                    <p>({ sale.customer.status }, Umur: { sale.customer.age })</p>
+                                    <h1>{ sale.Customer.name }</h1>
+                                    <p>({ sale.Customer.status }, Umur: { sale.Customer.age })</p>
                                 </td>
                                 {/*<td className="px-2 py-2">{ sale.items }</td>*/ }
                                 <td className="px-2 py-2">
@@ -216,7 +216,7 @@ export function AnalisisPelanggan({ sales }: ReportsPageProps) {
     const customersMap = new Map<string, CustomerMap>();
 
     sales.forEach((sale) => {
-        const c = sale.customer;
+        const c = sale.Customer;
         if (!customersMap.has(c.id)) {
             customersMap.set(c.id, {
                 name: c.name,
@@ -256,7 +256,7 @@ export function AnalisisPelanggan({ sales }: ReportsPageProps) {
     const activeCustomersToday = new Set(
         sales
         .filter((s) => s.date.toDateString().startsWith(today))
-        .map((s) => s.customer.id)
+        .map((s) => s.Customer.id)
     ).size;
 
     return (

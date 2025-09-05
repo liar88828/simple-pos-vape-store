@@ -2,17 +2,13 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow, } from "@/components/ui/table"
+import { prisma } from "@/lib/prisma";
 import { ShopOptionalDefaults } from "@/lib/validation";
 import Link from "next/link";
 import React from "react"
 
-const shops: ShopOptionalDefaults[] = [
-    { id: '13', name: "Fresh Mart", location: "New York", category: "Grocery", open: true },
-    { id: '123', name: "Tech Hub", location: "San Francisco", category: "Electronics", open: false },
-    { id: '3', name: "Style Corner", location: "Chicago", category: "Fashion", open: true },
-]
-
-function Page() {
+export default async function Page() {
+    const shops = await prisma.shop.findMany()
     return (
         <div className="p-6">
             <Card>
@@ -24,7 +20,7 @@ function Page() {
                         <TableCaption>A list of all registered shops.</TableCaption>
                         <TableHeader>
                             <TableRow>
-                                <TableHead className="w-[50px]">ID</TableHead>
+                                <TableHead className="w-[50px]">No</TableHead>
                                 <TableHead>Name</TableHead>
                                 <TableHead>Location</TableHead>
                                 {/*<TableHead>Category</TableHead>*/ }
@@ -33,9 +29,9 @@ function Page() {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            { shops.map((shop) => (
+                            { shops.map((shop, i) => (
                                 <TableRow key={ shop.id }>
-                                    <TableCell className="font-medium">{ shop.id }</TableCell>
+                                    <TableCell className="font-medium">{ i + 1 }</TableCell>
                                     <TableCell>{ shop.name }</TableCell>
                                     <TableCell>{ shop.location }</TableCell>
                                     {/*<TableCell>{shop.category}</TableCell>*/ }
@@ -63,5 +59,3 @@ function Page() {
         </div>
     )
 }
-
-export default Page

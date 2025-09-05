@@ -6,34 +6,37 @@ import {
     FlaskConical,
     History,
     Home,
+    InboxIcon,
     LucideIcon,
     Package,
     SettingsIcon,
     ShoppingCart,
     Store,
+    UserIcon,
     Users,
 } from "lucide-react"
+import { Route } from "next";
 
-export type NavItems = {
+export type NavItems<T> = {
     title: string;
     icon: LucideIcon
-    path: string;
+    href: T;
     description: string;
     badge?: string,
     badgeVariant?: string
 }
-export const adminNavItems: NavItems[] = [
+export const adminNavItems: NavItems<Route>[] = [
     {
         title: "Dashboard",
         icon: Home,
-        path: "/dashboard",
+        href: "/admin/dashboard",
         description: "Overview & Analytics",
     },
 
     {
         title: "POS Kasir",
         icon: ShoppingCart,
-        path: "/pos",
+        href: "/admin/pos",
         description: "Point of Sale",
         badge: "Live",
     },
@@ -41,14 +44,14 @@ export const adminNavItems: NavItems[] = [
     {
         title: "Produk",
         icon: Package,
-        path: "/products",
+        href: "/admin/products",
         description: "Katalog & Inventory",
     },
 
     {
         title: "Inventori",
         icon: Archive,
-        path: "/inventory",
+        href: "/admin/inventory",
         description: "Stock Management",
         // badge: lowStockProducts.length > 0 ? lowStockProducts.length.toString() : null,
         // badgeVariant: "destructive" as const,
@@ -57,7 +60,7 @@ export const adminNavItems: NavItems[] = [
     {
         title: "Laporan",
         icon: BarChart3,
-        path: "/reports",
+        href: "/admin/reports",
         description: "Sales & Analytics",
     },
 
@@ -72,21 +75,21 @@ export const adminNavItems: NavItems[] = [
     {
         title: "Shop",
         icon: Store,
-        path: "/shop",
+        href: "/admin/shop",
         description: "Shop",
     },
 
     {
         title: "Employee",
         icon: Briefcase,
-        path: "/employee",
+        href: "/admin/employee",
         description: "Employee",
     },
 
     {
         title: "Customer",
         icon: Users,
-        path: "/customers",
+        href: "/admin/customers",
         description: "Customer Management",
     },
 
@@ -94,25 +97,58 @@ export const adminNavItems: NavItems[] = [
     {
         title: "Setting",
         icon: SettingsIcon,
-        path: "/setting",
+        href: "/admin/setting",
         description: "Setting App",
     },
     {
         title: "Test",
         icon: FlaskConical,
-        path: "/test",
+        href: "/admin/test",
         description: "For Test App",
     },
 
 ]
 
+export const employeeNavItems: NavItems<Route>[] = [
 
-export const userNavItems: NavItems[] = [
+    {
+        title: "Profile",
+        icon: UserIcon,
+        href: "/employee",
+        description: "User Profile",
+    },
+
+    {
+        title: "Inventory",
+        icon: Archive,
+        href: "/employee/inventory",
+        description: "Inventory",
+        // badge: "Live",
+    },
+
+    {
+        title: "POS",
+        icon: ShoppingCart,
+        href: "/employee/pos",
+        description: "Point of Sale",
+    },
+
+    {
+        title: "Inbox",
+        icon: InboxIcon,
+        href: "/employee/inbox",
+        description: "Inbox",
+        // badge: "Live",
+    },
+
+]
+
+export const userNavItems: NavItems<Route>[] = [
 
     {
         title: "Home",
         icon: Home,
-        path: "/home",
+        href: "/user/home",
         description: "Point of Sale",
         badge: "Live",
     },
@@ -121,7 +157,7 @@ export const userNavItems: NavItems[] = [
     {
         title: "History",
         icon: History,
-        path: "/history",
+        href: "/user/history",
         description: "Point of Sale",
     },
 

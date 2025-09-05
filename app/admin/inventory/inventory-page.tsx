@@ -1,6 +1,7 @@
 "use client"
 
 import { PreorderProduct, ProductPaging } from "@/action/product-action";
+import { getShopAllApi } from "@/app/admin/employee/employee-action";
 import { deletePreorderProduct, preOrderAction, preOrderProductAction } from "@/app/admin/inventory/inventory-action";
 import { ProductsFilter } from "@/app/admin/products/products-page";
 import { FilterInput, FilterSelect } from "@/components/mini/filter-input";
@@ -9,9 +10,6 @@ import { ResponsiveModal, ResponsiveModalOnly } from "@/components/mini/modal-co
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { useDebounce, useDebounceLoad } from "@/hooks/use-debounce";
@@ -19,14 +17,13 @@ import { ModalProps } from "@/interface/actionType";
 import { pageSizeOptions, statusPreordersOptions } from "@/lib/constants";
 import { formatDateIndo, formatRupiah } from "@/lib/formatter";
 import { newParam, toastResponse } from "@/lib/helper";
-import { PreOrderOptionalDefaults, PreOrderOptionalDefaultsSchema, Product } from "@/lib/validation";
+import { PreOrderOptionalDefaults, PreOrderOptionalDefaultsSchema, Product, Shop } from "@/lib/validation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { AlertTriangle, ChevronLeft, ChevronRight, Plus, XIcon } from "lucide-react"
 import { useRouter } from "next/navigation";
 import React, { useEffect, useState } from "react"
 import { FormProvider, useForm } from "react-hook-form";
 import { toast } from "sonner";
-import { z } from "zod";
 
 export type InventoryPaging = {
     data: PreorderProduct[],
@@ -238,27 +235,27 @@ export function InventoryPage({ products, lowStockProducts, expiredProduct, preo
                                         <div className="flex items-center space-x-3">
                                             <picture className={ 'w-10' }>
                                                 <img
-                                                    src={ item.product.image || "/placeholder.svg" }
-                                                    alt={ item.product.name }
+                                                    src={ item.Product.image || "/placeholder.svg" }
+                                                    alt={ item.Product.name }
                                                     className="w-10 h-10 rounded object-cover"
                                                 />
                                             </picture>
                                             <div className="flex flex-col">
                                                 <span
-                                                    className="font-bold truncate w-80">{ item.product.name }</span>
+                                                    className="font-bold truncate w-80">{ item.Product.name }</span>
                                                 <div className="flex gap-2">
                                                     <span
                                                         className="font-light">Normal: { formatRupiah(item.priceNormal) }</span>
                                                     {/*-*/ }
                                                     {/*<span*/ }
-                                                    {/*    className="font-light">Sell: { formatRupiah(item.product.price) }</span>*/ }
+                                                    {/*    className="font-light">Sell: { formatRupiah(item.Product.price) }</span>*/ }
                                                     {/*=*/ }
                                                     {/*<span*/ }
                                                     {/*    className="font-light">Profit: { formatRupiah(item.priceSell - item.priceNormal) }</span>*/ }
                                                 </div>
 
                                                 <span className="font-light">
-                                                    {/*Total Stock: { item.product.stock }*/ }
+                                                    {/*Total Stock: { item.Product.stock }*/ }
                                                     {/*<Badge variant={ 'default' }>Order : { item.quantity }</Badge>*/ }
                                                 </span>
                                             </div>
@@ -286,7 +283,7 @@ export function InventoryPage({ products, lowStockProducts, expiredProduct, preo
                                                 size="sm" variant={ 'destructive' }
 
                                                 onClick={ async () => {
-                                                        if (confirm(`Apakah Anda Yakin Untuk Hapus Data ini ${ item.product.name } ?`)) {
+                                                    if (confirm(`Apakah Anda Yakin Untuk Hapus Data ini ${ item.Product.name } ?`)) {
                                                             console.log('delete')
                                                             toastResponse({
                                                                 onStart: () => setIsLoadingHistoryPreorder(true),
@@ -392,12 +389,12 @@ export function InventoryPage({ products, lowStockProducts, expiredProduct, preo
                                         <div className="flex items-center space-x-3">
                                             <picture>
                                                 <img
-                                                    src={ item.product.image || "/placeholder.svg" }
-                                                    alt={ item.product.name }
+                                                    src={ item.Product.image || "/placeholder.svg" }
+                                                    alt={ item.Product.name }
                                                     className="w-8 h-8 rounded object-cover"
                                                 />
                                             </picture>
-                                            <span className="font-medium">{ item.product.name }</span>
+                                            <span className="font-medium">{ item.Product.name }</span>
                                         </div>
                                     </TableCell>
                                     <TableCell><Badge variant="destructive">{ item.quantity }</Badge></TableCell>
@@ -427,8 +424,8 @@ export function InventoryPage({ products, lowStockProducts, expiredProduct, preo
     )
 }
 
-const preOrderForm = PreOrderOptionalDefaultsSchema.merge(z.object({ userId: z.string().uuid().optional() }))
-export type  PreOrderForm = z.infer<typeof preOrderForm>
+// const preOrderForm = PreOrderOptionalDefaultsSchema.merge(z.object({ userId: z.string().uuid().optional() }))
+// export type  PreOrderForm = z.infer<typeof preOrderForm>
 
 export function ReorderModal(
     { preorderProduct, setOpenAction, isOpen }:
@@ -437,9 +434,11 @@ export function ReorderModal(
 
     const [ loading, setLoading ] = useState(false)
 
-    const methods = useForm<PreOrderForm>({
-        resolver: zodResolver(preOrderForm),
+    const methods = useForm<PreOrderOptionalDefaults>({
+        resolver: zodResolver(PreOrderOptionalDefaultsSchema),
             defaultValues: {
+                sellIn_shopId: '',
+                userId: '',
                 id: preorderProduct.id,
                 productId: preorderProduct.productId,
                 quantity: preorderProduct.quantity,
@@ -448,7 +447,7 @@ export function ReorderModal(
                 priceSell: preorderProduct.priceSell,
                 estimatedDate: new Date(preorderProduct?.estimatedDate ?? new Date()),
                 expired: new Date(preorderProduct?.expired ?? new Date()),
-            } satisfies PreOrderForm
+            } satisfies PreOrderOptionalDefaults
         }
     );
 
@@ -505,8 +504,8 @@ export function ReorderStockModal({ isStock, setOpenAction, isOpen }: { isStock:
     // const [ productToAddStock, setProductToAddStock ] = useState<Product | null>(null)
     const [ loading, setLoading ] = useState(false)
 
-    const methods = useForm<PreOrderForm>({
-        resolver: zodResolver(preOrderForm
+    const methods = useForm<PreOrderOptionalDefaults>({
+        resolver: zodResolver(PreOrderOptionalDefaultsSchema
             // .extend({
             //     status: PreOrderOptionalDefaultsSchema.shape.status.refine(
             //         (val) => val !== "-",
@@ -515,6 +514,8 @@ export function ReorderStockModal({ isStock, setOpenAction, isOpen }: { isStock:
             // })
         ),
             defaultValues: {
+                sellIn_shopId: "",
+                userId: '',
                 status: '-',
                 productId: isStock.id,
                 priceSell: isStock.price,
@@ -522,7 +523,7 @@ export function ReorderStockModal({ isStock, setOpenAction, isOpen }: { isStock:
                 quantity: 0,
                 estimatedDate: new Date(),
                 expired: new Date(),
-            } satisfies PreOrderForm
+            } satisfies PreOrderOptionalDefaults
         }
     );
 
@@ -574,6 +575,7 @@ export function AddStockModal({ products }: { products: ProductPaging, }) {
     const [ nameProduct, setNameProduct ] = useState<string>('')
     const [ productData, setProductData ] = useState<Product | null>(null)
     const { value, isLoading } = useDebounceLoad(nameProduct, 1000);
+    const [ shop, setShop ] = useState<Shop[]>([])
 
     useEffect(() => {
         if (value.trim()) {
@@ -582,8 +584,8 @@ export function AddStockModal({ products }: { products: ProductPaging, }) {
         }
     }, [ value, router ]);
 
-    const methods = useForm<PreOrderForm>({
-        resolver: zodResolver(preOrderForm),
+    const methods = useForm<PreOrderOptionalDefaults>({
+        resolver: zodResolver(PreOrderOptionalDefaultsSchema),
             defaultValues: {
                 status: '-',
                 estimatedDate: new Date(),
@@ -591,11 +593,13 @@ export function AddStockModal({ products }: { products: ProductPaging, }) {
                 priceSell: productData?.price ?? 0,
                 quantity: 0,
                 priceNormal: 0,
-                expired: new Date()
-            } satisfies PreOrderForm
+                expired: new Date(),
+                userId: '',
+                sellIn_shopId: ""
+            } satisfies PreOrderOptionalDefaults
         }
     );
-
+    console.log(methods.formState.errors)
     useEffect(() => {
         if (productData) {
             methods.reset({
@@ -606,15 +610,26 @@ export function AddStockModal({ products }: { products: ProductPaging, }) {
         }
     }, [ methods, productData ]);
 
+    useEffect(() => {
+        getShopAllApi().then(data => {
+            setShop(data.data)
+        })
+        console.log('render')
+    }, []);
+
+
     const onSubmit = methods.handleSubmit(async (data) => {
             if (productData) {
                 const product = products.data.find((p) => p.id === productData.id)
                 // && alert(`Stok ${ product.name } ditambah ${ data.quantity }`)
                 if (product) {
                     toastResponse({
-                        response: await preOrderProductAction(data)
+                        response: await preOrderProductAction(data),
+                        onFinish: () => {
+                            setNameProduct('')
+
+                        }
                     })
-                    setNameProduct('')
                 }
             } else {
                 toast.error('Please add product')
@@ -643,6 +658,17 @@ export function AddStockModal({ products }: { products: ProductPaging, }) {
                                 placeholder="Pilih status"
                                 options={ statusPreordersOptions }
                             />
+                            <SelectForm
+                                name="sellIn_shopId"
+                                label="Shop"
+                                placeholder="Select a shop"
+                                options={ shop.map((s) => ({
+                                    label: s.name,
+                                    value: s.id,
+                                })) }
+                            />
+
+
                             <InputNumForm name={ 'priceNormal' } title={ 'Harga Beli' }/>
                             <InputNumForm name={ 'priceSell' } title={ 'Harga Jual' }/>
                             <InputDateForm name={ 'estimatedDate' }
@@ -731,140 +757,3 @@ export function AddStockModal({ products }: { products: ProductPaging, }) {
     )
 }
 
-// atas
-export function AddStockModal_Old({ products }: { products: ProductPaging, }) {
-    const [ isModalOpen, setIsModalOpen ] = useState(false)
-    const [ stockAmount, setStockAmount ] = useState("")
-    const [ nameProduct, setNameProduct ] = useState<string>('')
-    const [ productData, setProductData ] = useState<Product | null>(null)
-
-    const handleSubmit = () => {
-        const product = products.data.find((p) => p.name === nameProduct)
-        const amount = parseInt(stockAmount)
-
-        if (product && !isNaN(amount)) {
-            product.stock += amount
-            alert(`Stok ${ product.name } ditambah ${ amount }`)
-            setIsModalOpen(false)
-            setStockAmount("")
-            setNameProduct('')
-        }
-    }
-    const handleAddStock = (product: Product | null) => {
-        setProductData(product)
-    }
-    const router = useRouter()
-
-    const { value, isLoading } = useDebounceLoad(nameProduct, 1000);
-
-    useEffect(() => {
-        if (value.trim()) {
-            //@ts-expect-error
-            router.push(newParam({ name: value }));
-        }
-    }, [ value, router ]);
-
-    return (
-        <Dialog open={ isModalOpen } onOpenChange={ setIsModalOpen }>
-            <DialogTrigger asChild>
-                <Button>
-                    <Plus className="h-4 w-4 mr-2"/>
-                    Tambah Stok
-                </Button>
-            </DialogTrigger>
-
-            <DialogContent>
-                <DialogHeader>
-                    <DialogTitle>Tambah Stok Produk</DialogTitle>
-                </DialogHeader>
-
-                <div className="space-y-4">
-                    <ProductsFilter products={ products }/>
-
-                    <div>
-                        <Label htmlFor="stock">Tambah Stok</Label>
-                        <Input
-                            id="stock"
-                            type="number"
-                            value={ stockAmount }
-                            onChange={ (e) => setStockAmount(e.target.value) }
-                        />
-                    </div>
-                </div>
-
-                { productData ?
-                    <Card className="flex items-center gap-4 p-4 flex-row border-green-800 border-2">
-                        <picture>
-                            <img
-                                src={ productData.image }
-                                alt={ productData.name }
-                                className="size-10  rounded-md object-cover"
-                            />
-                        </picture>
-
-                        <div className="flex-1">
-                            <p className="text-sm font-semibold">{ productData.name }</p>
-                            <p className="text-xs text-muted-foreground">
-                                Stok: { productData.stock } | { formatRupiah(productData.price) }
-                            </p>
-                        </div>
-
-                        <Button
-                            size="sm"
-                            variant="secondary"
-                            onClick={ () => handleAddStock(null) }
-                        >
-                            Hapus
-                        </Button>
-                    </Card>
-                    :
-                    <div className="space-y-3 overflow-y-auto h-96">
-                        {
-                            isLoading
-                                ? <Card className="flex items-center gap-4 p-4 ">Loading...</Card>
-                                : products.data.length === 0
-                                    ? <Card className="flex items-center gap-4 p-4">Product Is Not Found</Card>
-                                    : products.data
-                                    .filter((p) => p.name.toLowerCase().includes(nameProduct.toLowerCase()))
-                                    .map((product) => (
-                                        <Card key={ product.id }
-                                              className="flex items-center gap-4 p-4 flex-row hover:border-primary">
-                                            <picture>
-                                                <img
-                                                    src={ product.image }
-                                                    alt={ product.name }
-                                                    className="size-10  rounded-md object-cover"
-                                                />
-                                            </picture>
-
-                                            <div className="flex-1">
-                                                <p className="text-sm font-semibold">{ product.name }</p>
-                                                <p className="text-xs text-muted-foreground">
-                                                    Stok: { product.stock } | { formatRupiah(product.price) }
-                                                </p>
-                                            </div>
-
-                                            <Button
-                                                size="sm"
-                                                variant="secondary"
-                                                onClick={ () => handleAddStock(product) }
-                                            >
-                                                Tambah
-                                            </Button>
-                                        </Card>
-                                    )) }
-                    </div>
-                }
-
-                <DialogFooter className="pt-4">
-                    <Button
-                        onClick={ handleSubmit }
-                        disabled={ !nameProduct || !stockAmount }
-                    >
-                        Simpan
-                    </Button>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
-    )
-}

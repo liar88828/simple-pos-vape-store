@@ -149,7 +149,7 @@ function PosPageCheckOut({ customers, payment, products, searchCustomer, setSear
     async function onTransaction() {
         setLoading(true)
         toastResponse({
-            response: await createTransactionAction(cartItems, selectedCustomer),
+            response: await createTransactionAction(cartItems, selectedCustomer, ''),
             onSuccess: () => {
                 setSearchCustomer('')
                 setPaymentMethod('')

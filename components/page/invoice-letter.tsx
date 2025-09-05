@@ -37,18 +37,18 @@ export function InvoiceLetter({ invoiceData }: { invoiceData: SaleCustomers }) {
                     <div>
                         <h1 className="text-2xl font-bold">Bill To:</h1>
                         <div className="space-y-1 text-sm">
-                            <p className="font-medium">{invoiceData.customer.name}</p>
-                            <p className="text-muted-foreground">Customer ID: {invoiceData.customer.id}</p>
-                            <p className="text-muted-foreground">Age: {invoiceData.customer.age}</p>
+                            <p className="font-medium">{ invoiceData.Customer.name }</p>
+                            <p className="text-muted-foreground">Customer ID: { invoiceData.Customer.id }</p>
+                            <p className="text-muted-foreground">Age: { invoiceData.Customer.age }</p>
                             <p>
                                 Status:
                                 <span
-                                    className={`ml-1 px-2 py-1 rounded-full text-xs font-medium ${invoiceData.customer.status === 'pending'
+                                    className={ `ml-1 px-2 py-1 rounded-full text-xs font-medium ${ invoiceData.Customer.status === 'pending'
                                         ? 'bg-yellow-100 text-yellow-800'
                                         : 'bg-green-100 text-green-800'
                                         }`}
                                 >
-                                    {invoiceData.customer.status.toUpperCase()}
+                                    { invoiceData.Customer.status.toUpperCase() }
                                 </span>
                             </p>
                         </div>
@@ -67,7 +67,7 @@ export function InvoiceLetter({ invoiceData }: { invoiceData: SaleCustomers }) {
                             </div>
                             {/*<div className="flex justify-between">*/ }
                             {/*    <span className="text-muted-foreground">Customer Total Purchases:</span>*/ }
-                            {/*    <span>{formatRupiah(invoiceData.customer.totalPurchase)}</span>*/ }
+                            {/*    <span>{formatRupiah(invoiceData.Customer.totalPurchase)}</span>*/ }
                             {/*</div>*/ }
                         </div>
                     </div>

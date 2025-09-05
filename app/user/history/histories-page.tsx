@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { ModalProps, SaleCustomers } from "@/interface/actionType"
-import { STATUS_TRANSACTION } from "@/lib/constants";
+import { STATUS_PREORDER } from "@/lib/constants";
 import { formatDateIndo, formatRupiah } from "@/lib/formatter";
 import { toastResponse } from "@/lib/helper";
 import { useQuery } from "@tanstack/react-query";
@@ -25,7 +25,14 @@ import { Eye, ReceiptText } from "lucide-react"
 import React, { useRef, useState } from "react"
 import { useReactToPrint } from "react-to-print";
 
-export function HistoriesPage({ histories, }: { histories: SaleCustomers[] }) {
+export function HistoriesPage(
+    {
+        title,
+        histories,
+    }: {
+        title: string
+        histories: SaleCustomers[]
+    }) {
     // const contentRef = useRef<HTMLDivElement>(null)
     const [ isSale, setIsSale ] = useState<SaleCustomers | null>(null)
     const [ isSaleOpen, setIsSaleOpen ] = useState(false)
@@ -44,7 +51,7 @@ export function HistoriesPage({ histories, }: { histories: SaleCustomers[] }) {
             }
 
             <div className="flex justify-between items-center mb-6">
-                <h1 className="text-3xl font-bold">History Pembelian</h1>
+                <h1 className="text-3xl font-bold">{ title }</h1>
                 <div className="flex space-x-2">
 
                 </div>
@@ -75,7 +82,7 @@ export function HistoriesPage({ histories, }: { histories: SaleCustomers[] }) {
                                     <TableCell>
                                         { formatDateIndo(sale.date) }
                                     </TableCell>
-                                    {/*<TableCell>{ sale.customer.name }</TableCell>*/ }
+                                    {/*<TableCell>{ sale.Customer.name }</TableCell>*/ }
                                     <TableCell>{ sale.items }</TableCell>
                                     <TableCell>{ formatRupiah(sale.total) }</TableCell>
                                     {/* <TableCell>Cash</TableCell> */ }
@@ -92,7 +99,7 @@ export function HistoriesPage({ histories, }: { histories: SaleCustomers[] }) {
                                             <Eye className="h-3 w-3"/>
                                         </Button>
                                         <Button
-                                            disabled={ sale.statusTransaction === STATUS_TRANSACTION.PENDING }
+                                            disabled={ sale.statusTransaction === STATUS_PREORDER.PENDING }
                                             size="sm" variant="outline"
                                             onClick={ () => {
                                                 setIsSaleOpen(true)
@@ -149,11 +156,11 @@ export function ModalSalesDetail(
                 <DialogHeader>
                     <DialogTitle>Detail Transaksi</DialogTitle>
                     <DialogDescription>
-                        Transaksi oleh { sale.customer.name } pada { formatDateIndo(sale.date) }
+                        Transaksi oleh { sale.Customer.name } pada { formatDateIndo(sale.date) }
                     </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-2 text-sm">
-                    <p><strong>Nama Pelanggan:</strong> { sale.customer.name }</p>
+                    <p><strong>Nama Pelanggan:</strong> { sale.Customer.name }</p>
                     <p><strong>Tanggal:</strong> { formatDateIndo(sale.date) }</p>
                     <p><strong>Total Pembelian:</strong> { formatRupiah(sale.total) }</p>
                     <p><strong>Jumlah Barang:</strong> { sale.items } item</p>
@@ -179,7 +186,7 @@ export function ModalSalesDetail(
                         <Button variant="outline">Tutup</Button>
                     </DialogClose>
                     {
-                        sale.statusTransaction === STATUS_TRANSACTION.PENDING
+                        sale.statusTransaction === STATUS_PREORDER.PENDING
                             ? <DialogClose asChild>
                                 <Button disabled={ loading } onClick={ handleDelete }>Batal</Button>
                             </DialogClose>
@@ -231,7 +238,7 @@ export function ModalInvoice({ sale, isOpen, setOpenAction }: { sale: SaleCustom
                 <DialogHeader>
                     <DialogTitle>Invoice</DialogTitle>
                     <p className="text-sm text-muted-foreground">
-                        Transaksi pada { formatDateIndo(sale.date) } oleh { sale.customer.name }
+                        Transaksi pada { formatDateIndo(sale.date) } oleh { sale.Customer.name }
                     </p>
                 </DialogHeader>
 
@@ -296,7 +303,7 @@ export function ModalInvoiceFetch({ saleId, isOpen, setOpenAction }: { saleId: n
                 <DialogHeader>
                     <DialogTitle>Invoice</DialogTitle>
                     <p className="text-sm text-muted-foreground">
-                        Transaksi pada { formatDateIndo(sale.date) } oleh { sale.customer.name }
+                        Transaksi pada { formatDateIndo(sale.date) } oleh { sale.Customer.name }
                     </p>
                 </DialogHeader>
 

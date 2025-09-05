@@ -13,6 +13,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogT
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { STATUS_USER } from "@/lib/constants";
 import { formatDateIndo, formatRupiah } from "@/lib/formatter";
 import { toastResponse } from "@/lib/helper";
 import { Customer, CustomerOptionalDefaults, CustomerOptionalDefaultsSchema, CustomerSchema } from "@/lib/validation";
@@ -251,10 +252,11 @@ export function ModalTambahCustomer() {
     const methods = useForm<CustomerFormCreate>({
         resolver: zodResolver(customerFormCreate),
         defaultValues: {
+            buyer_userId: "",
             name: "",
             age: 0,
             totalPurchase: 0,
-            status: "pending",
+            status: STATUS_USER.PENDING,
             lastPurchase: new Date(),
         } satisfies CustomerFormCreate,
     });

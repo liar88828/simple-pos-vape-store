@@ -1,16 +1,19 @@
 "use client"
 
 import { ProductPaging, ProductPreorder } from "@/action/product-action";
+import { getShopAllApi } from "@/app/admin/employee/employee-action";
 import { ProductsFilter } from "@/app/admin/products/products-page";
 import { ProductPending } from "@/app/user/home/page"
 import { createTransactionUserAction, createTransactionUserPendingAction } from "@/app/user/user-action";
+import { SelectForm } from "@/components/mini/form-hook";
 import { ProductDetailDialogOnly } from "@/components/page/product-detail-dialog-only";
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { useCartStore } from "@/hooks/use-cart";
-import { CartItem, SessionPayload } from "@/interface/actionType";
+import { CartItem, SessionUserPayload } from "@/interface/actionType";
 import { formatRupiah } from "@/lib/formatter";
 import { toastResponse } from "@/lib/helper";
+import { Shop } from "@/lib/validation";
 import { MinusIcon, Plus, PlusIcon, ShoppingCart, Trash2 } from "lucide-react"
 import React, { useEffect, useState } from "react"
 
@@ -22,7 +25,7 @@ export function ProductUserPage(
 
     }: {
         productPending: ProductPending
-        session: SessionPayload
+        session: SessionUserPayload
         products: ProductPaging,
 
     }) {
@@ -30,9 +33,20 @@ export function ProductUserPage(
     const [ isProduct, setIsProduct ] = useState<ProductPreorder | null>(null)
     const [ isOpen, setIsOpen ] = useState(false)
 
+
     // Zustand state/actions
     const { cartItems, incrementItem, decrementItem, removeFromCart, addToCart, setCartItems } =
         useCartStore();
+
+    const [ shops, setShops ] = useState<Shop[]>([])
+    const [ shopId, setShopId ] = useState('')
+
+    useEffect(() => {
+        getShopAllApi().then(data => {
+            setShops(data.data)
+        })
+        console.log('render')
+    }, []);
 
     // ✅ initialize cart items from productPending.current
     useEffect(() => {
@@ -52,7 +66,7 @@ export function ProductUserPage(
                 toastResponse({ response: await createTransactionUserPendingAction(cartItems, productPending.data), })
             }
         } else {
-            toastResponse({ response: await createTransactionUserAction(cartItems) })
+            toastResponse({ response: await createTransactionUserAction(cartItems, shopId) })
         }
         setLoading(false)
     }
@@ -155,9 +169,21 @@ export function ProductUserPage(
                                 </div>
 
 
+                                <SelectForm
+                                    name="workIn_shopId"
+                                    label="Shop"
+                                    placeholder="Select a shop"
+                                    onChangeAction={ (e) => setShopId(e) }
+                                    options={ shops.map((s) => ({
+                                        label: s.name,
+                                        value: s.id,
+                                    })) }
+                                />
+
                                 <Button className="w-full" size="lg"
                                         disabled={ loading }
                                         onClick={ onTransaction }
+
                                 >
                                     <ShoppingCart
                                         className="h-4 w-4 mr-2"/>

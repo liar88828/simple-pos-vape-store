@@ -96,9 +96,9 @@ model Customer {
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt
 
-    Sales  Sale[]
-    User   User   @relation(fields: [userId], references: [id])
-    userId String @unique // as buyer
+    Sales        Sale[]
+    User         User   @relation(fields: [buyer_userId], references: [id])
+    buyer_userId String @unique // as buyer
 }
 
 model PreOrder {
@@ -116,10 +116,13 @@ model PreOrder {
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt
 
-    User      User    @relation(fields: [userId], references: [id])
-    userId    String
-    product   Product @relation(fields: [productId], references: [id])
-    productId String
+    User          User    @relation(fields: [userId], references: [id])
+    userId        String
+    Product       Product @relation(fields: [productId], references: [id])
+    productId     String
+    Shop          Shop    @relation(fields: [sellIn_shopId], references: [id])
+    // @zod.string.nullable()
+    sellIn_shopId String // as sell a product
 }
 
 model Sale {
@@ -138,10 +141,11 @@ model Sale {
 
     SaleItems        SalesItem[]
     User             User?       @relation(fields: [seller_userId], references: [id])
-    /// @zod.string.nullable();
     seller_userId    String? // employee or admin
-    customer         Customer    @relation(fields: [buyer_customerId], references: [id])
+    Customer Customer @relation(fields: [buyer_customerId], references: [id])
     buyer_customerId String // buyer
+    Shop     Shop     @relation(fields: [shopId], references: [id])
+    shopId   String
 }
 
 model SalesItem {
@@ -169,16 +173,6 @@ model SalesItem {
 //     updatedAt DateTime @updatedAt
 // }
 
-model Shop {
-    id       String @id @default(uuid())
-    name     String
-    location String
-    category String
-    open     Boolean
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt
-}
-
 model User {
     id        String   @id @default(uuid())
     name      String /// @zod.string.min(1)
@@ -187,10 +181,31 @@ model User {
     role      String   @default("USER") /// @zod.string.min(1)
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt
+    // employee
+    phone   String?
+    address String?
+    img     String?
+    active  Boolean @default(false)
+    //
 
-    Sale     Sale[]
-    PreOrder PreOrder[]
-    Customer Customer? // as buyer
+    Customer      Customer? // as buyer
+    Sale          Sale[]
+    PreOrder      PreOrder[]
+    Shop          Shop?      @relation(fields: [workIn_shopId], references: [id])
+    workIn_shopId String? // as work when EMPLOYEE
+}
+
+model Shop {
+    id        String     @id @default(uuid())
+    name      String
+    location  String
+    category  String
+    open      Boolean
+    createdAt DateTime   @default(now())
+    updatedAt DateTime   @updatedAt
+    PreOrder  PreOrder[]
+    Employees User[]
+    Sale      Sale[]
 }
 
 model Store {
@@ -206,11 +221,11 @@ model Store {
 }
 
 model PaymentSetting {
-    id          String              @id @default(uuid())
-    isCod       Boolean             @default(false)
-    isTax       Boolean             @default(false)
-    valueCod    Int                 @default(0) /// @zod.number.min(0)
-    valueTax    Int                 @default(0) /// @zod.number.min(0)
+    id       String  @id @default(uuid())
+    isCod    Boolean @default(false)
+    isTax    Boolean @default(false)
+    valueCod Int     @default(0) /// @zod.number.min(0)
+    valueTax Int     @default(0) /// @zod.number.min(0)
     PaymentList PaymentSettingList[]
 }
 

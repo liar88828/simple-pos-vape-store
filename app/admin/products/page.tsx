@@ -7,6 +7,6 @@ export default async function Products(context: ContextPage) {
     logger.info("page : Products");
 
     return <ProductsPage
-        products={ await getProductPage(context) }
+        products={ await getProductPage(context, null) }
     />
 }

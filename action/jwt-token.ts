@@ -1,12 +1,11 @@
 import 'server-only';
-import { SessionPayload, UserPayload } from "@/interface/actionType";
+import { EmployeePayload, SessionEmployeePayload, SessionUserPayload, } from "@/interface/actionType";
 import { JWTPayload, jwtVerify, SignJWT } from 'jose';
 
 const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || "your-secret-key-access");
 const JWT_REFRESH_SECRET = new TextEncoder().encode(process.env.JWT_REFRESH_SECRET || "your-secret-key-secret");
 
-
-export async function signJwt(payload: UserPayload, expiresIn: string = "15m"): Promise<string> {
+export async function signJwt(payload: EmployeePayload, expiresIn: string = "15m"): Promise<string> {
     return new SignJWT(payload)
         .setProtectedHeader({ alg: "HS256" })
         .setIssuedAt()
@@ -23,7 +22,7 @@ export async function signRefreshJwt(payload: { userId: string }, expiresIn: str
         .sign(JWT_REFRESH_SECRET);
 }
 
-export async function verifyJwt(token?: string): Promise<SessionPayload | null>
+export async function verifyJwt(token?: string): Promise<SessionUserPayload | SessionEmployeePayload | null>
 // : Promise<(JWTPayload & { userId: number }) | null>
 {
     try {
@@ -31,7 +30,7 @@ export async function verifyJwt(token?: string): Promise<SessionPayload | null>
         const { payload } = await jwtVerify(token, JWT_SECRET, {
             algorithms: ['HS256'],
         });
-        return payload as SessionPayload
+        return payload as SessionUserPayload
     } catch (error) {
         console.log("Failed to verify JWT:", error);
         return null;

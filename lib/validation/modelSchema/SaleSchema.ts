@@ -25,6 +25,12 @@ import type {
     CustomerPartialWithRelations,
     CustomerOptionalDefaultsWithRelations
 } from './CustomerSchema'
+import {
+    ShopWithRelationsSchema,
+    ShopPartialWithRelationsSchema,
+    ShopOptionalDefaultsWithRelationsSchema
+} from './ShopSchema'
+import type { ShopWithRelations, ShopPartialWithRelations, ShopOptionalDefaultsWithRelations } from './ShopSchema'
 
 /////////////////////////////////////////
 // SALE SCHEMA
@@ -41,6 +47,7 @@ export const SaleSchema = z.object({
   updatedAt: z.date(),
     seller_userId: z.string().nullish(),
     buyer_customerId: z.string(),
+    shopId: z.string(),
 })
 
 export type Sale = z.infer<typeof SaleSchema>
@@ -72,7 +79,8 @@ export type SaleOptionalDefaults = z.infer<typeof SaleOptionalDefaultsSchema>
 export type SaleRelations = {
   SaleItems: SalesItemWithRelations[];
     User?: UserWithRelations | null;
-    customer: CustomerWithRelations;
+    Customer: CustomerWithRelations;
+    Shop: ShopWithRelations;
 };
 
 export type SaleWithRelations = z.infer<typeof SaleSchema> & SaleRelations
@@ -80,7 +88,8 @@ export type SaleWithRelations = z.infer<typeof SaleSchema> & SaleRelations
 export const SaleWithRelationsSchema: z.ZodType<SaleWithRelations> = SaleSchema.merge(z.object({
   SaleItems: z.lazy(() => SalesItemWithRelationsSchema).array(),
     User: z.lazy(() => UserWithRelationsSchema).nullish(),
-    customer: z.lazy(() => CustomerWithRelationsSchema),
+    Customer: z.lazy(() => CustomerWithRelationsSchema),
+    Shop: z.lazy(() => ShopWithRelationsSchema),
 }))
 
 /////////////////////////////////////////
@@ -90,7 +99,8 @@ export const SaleWithRelationsSchema: z.ZodType<SaleWithRelations> = SaleSchema.
 export type SaleOptionalDefaultsRelations = {
   SaleItems: SalesItemOptionalDefaultsWithRelations[];
     User?: UserOptionalDefaultsWithRelations | null;
-    customer: CustomerOptionalDefaultsWithRelations;
+    Customer: CustomerOptionalDefaultsWithRelations;
+    Shop: ShopOptionalDefaultsWithRelations;
 };
 
 export type SaleOptionalDefaultsWithRelations = z.infer<typeof SaleOptionalDefaultsSchema> & SaleOptionalDefaultsRelations
@@ -98,7 +108,8 @@ export type SaleOptionalDefaultsWithRelations = z.infer<typeof SaleOptionalDefau
 export const SaleOptionalDefaultsWithRelationsSchema: z.ZodType<SaleOptionalDefaultsWithRelations> = SaleOptionalDefaultsSchema.merge(z.object({
   SaleItems: z.lazy(() => SalesItemOptionalDefaultsWithRelationsSchema).array(),
     User: z.lazy(() => UserOptionalDefaultsWithRelationsSchema).nullish(),
-    customer: z.lazy(() => CustomerOptionalDefaultsWithRelationsSchema),
+    Customer: z.lazy(() => CustomerOptionalDefaultsWithRelationsSchema),
+    Shop: z.lazy(() => ShopOptionalDefaultsWithRelationsSchema),
 }))
 
 /////////////////////////////////////////
@@ -108,7 +119,8 @@ export const SaleOptionalDefaultsWithRelationsSchema: z.ZodType<SaleOptionalDefa
 export type SalePartialRelations = {
   SaleItems?: SalesItemPartialWithRelations[];
     User?: UserPartialWithRelations | null;
-    customer?: CustomerPartialWithRelations;
+    Customer?: CustomerPartialWithRelations;
+    Shop?: ShopPartialWithRelations;
 };
 
 export type SalePartialWithRelations = z.infer<typeof SalePartialSchema> & SalePartialRelations
@@ -116,7 +128,8 @@ export type SalePartialWithRelations = z.infer<typeof SalePartialSchema> & SaleP
 export const SalePartialWithRelationsSchema: z.ZodType<SalePartialWithRelations> = SalePartialSchema.merge(z.object({
   SaleItems: z.lazy(() => SalesItemPartialWithRelationsSchema).array(),
     User: z.lazy(() => UserPartialWithRelationsSchema).nullish(),
-    customer: z.lazy(() => CustomerPartialWithRelationsSchema),
+    Customer: z.lazy(() => CustomerPartialWithRelationsSchema),
+    Shop: z.lazy(() => ShopPartialWithRelationsSchema),
 })).partial()
 
 export type SaleOptionalDefaultsWithPartialRelations = z.infer<typeof SaleOptionalDefaultsSchema> & SalePartialRelations
@@ -124,7 +137,8 @@ export type SaleOptionalDefaultsWithPartialRelations = z.infer<typeof SaleOption
 export const SaleOptionalDefaultsWithPartialRelationsSchema: z.ZodType<SaleOptionalDefaultsWithPartialRelations> = SaleOptionalDefaultsSchema.merge(z.object({
   SaleItems: z.lazy(() => SalesItemPartialWithRelationsSchema).array(),
     User: z.lazy(() => UserPartialWithRelationsSchema).nullish(),
-    customer: z.lazy(() => CustomerPartialWithRelationsSchema),
+    Customer: z.lazy(() => CustomerPartialWithRelationsSchema),
+    Shop: z.lazy(() => ShopPartialWithRelationsSchema),
 }).partial())
 
 export type SaleWithPartialRelations = z.infer<typeof SaleSchema> & SalePartialRelations
@@ -132,7 +146,8 @@ export type SaleWithPartialRelations = z.infer<typeof SaleSchema> & SalePartialR
 export const SaleWithPartialRelationsSchema: z.ZodType<SaleWithPartialRelations> = SaleSchema.merge(z.object({
   SaleItems: z.lazy(() => SalesItemPartialWithRelationsSchema).array(),
     User: z.lazy(() => UserPartialWithRelationsSchema).nullish(),
-    customer: z.lazy(() => CustomerPartialWithRelationsSchema),
+    Customer: z.lazy(() => CustomerPartialWithRelationsSchema),
+    Shop: z.lazy(() => ShopPartialWithRelationsSchema),
 }).partial())
 
 export default SaleSchema;

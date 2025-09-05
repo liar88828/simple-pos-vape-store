@@ -1,7 +1,11 @@
+import { LoadingComponentSkeleton } from "@/components/mini/loading-component";
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow, } from "@/components/ui/table"
-import React from "react"
+import { formatRupiah } from "@/lib/formatter";
+import { prisma } from "@/lib/prisma";
+import { Shop } from "@/lib/validation";
+import React, { Suspense } from "react"
 
 // Fake shops data
 const shops = [
@@ -49,11 +53,12 @@ const shops = [
     },
 ]
 
-export default function StoreDetailPage({ params }: { params: { id: string } }) {
-    const storeId = Number(params.id)
-    const store = shops.find((s) => s.id === storeId)
+export default async function StoreDetailPage({ params }: { params: { id: string } }) {
+    const shopId = params.id
+    const shops = await prisma.shop.findUnique(
+        { where: { id: shopId } })
 
-    if (!store) {
+    if (!shops) {
         return (
             <Card className={ 'p-6' }>
                 <CardHeader>
@@ -68,16 +73,16 @@ export default function StoreDetailPage({ params }: { params: { id: string } }) 
         <div className={ 'space-y-6 p-6' }>
             <Card>
                 <CardHeader>
-                    <CardTitle>{ store.name }</CardTitle>
-                    <CardDescription>{ store.description }</CardDescription>
+                    <CardTitle>{ shops.name }</CardTitle>
+                    <CardDescription>{ shops.location }</CardDescription>
                 </CardHeader>
 
                 <CardContent className="space-y-2">
-                    <p><span className="font-semibold">Location:</span> { store.location }</p>
-                    <p><span className="font-semibold">Category:</span> { store.category }</p>
+                    <p><span className="font-semibold">Location:</span> { shops.location }</p>
+                    {/*<p><span className="font-semibold">Category:</span> { shops.category }</p>*/ }
                     <p>
                         <span className="font-semibold">Status:</span>{ " " }
-                        { store.open ? (
+                        { shops.open ? (
                             <Badge variant="default" className="bg-green-500 hover:bg-green-600">Open</Badge>
                         ) : (
                             <Badge variant="destructive">Closed</Badge>
@@ -86,66 +91,87 @@ export default function StoreDetailPage({ params }: { params: { id: string } }) 
                 </CardContent>
             </Card>
 
-            {/* Show products & employees only if open */ }
-            {/* Product List */ }
-            {/*{ store.open && (*/ }
-            <Card>
-                <CardHeader>
-                    <CardTitle>Products</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <Table>
-                        <TableCaption>Products available in { store.name }.</TableCaption>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>ID</TableHead>
-                                <TableHead>Name</TableHead>
-                                <TableHead>Price</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            { store.products.map((product) => (
-                                <TableRow key={ product.id }>
-                                    <TableCell>{ product.id }</TableCell>
-                                    <TableCell>{ product.name }</TableCell>
-                                    <TableCell>{ product.price }</TableCell>
-                                </TableRow>
-                            )) }
-                        </TableBody>
-                    </Table>
-                </CardContent>
+            <Suspense fallback={ <LoadingComponentSkeleton count={ 2 }/> }>
+                <ShopProduct shops={ shops }/>
+            </Suspense>
 
-            </Card>
-            {/*) }*/ }
-
-            {/* Employee List */ }
-            <Card>
-                <CardHeader>
-                    <CardTitle>Employees</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <Table>
-                        <TableCaption>Employees working at { store.name }.</TableCaption>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>ID</TableHead>
-                                <TableHead>Name</TableHead>
-                                <TableHead>Role</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            { store.employees.map((emp) => (
-                                <TableRow key={ emp.id }>
-                                    <TableCell>{ emp.id }</TableCell>
-                                    <TableCell>{ emp.name }</TableCell>
-                                    <TableCell>{ emp.role }</TableCell>
-                                </TableRow>
-                            )) }
-                        </TableBody>
-                    </Table>
-                </CardContent>
-
-            </Card>
+            <Suspense fallback={ <LoadingComponentSkeleton count={ 2 }/> }>
+                <ShopEmployees shops={ shops }/>
+            </Suspense>
         </div>
     )
 }
+
+async function ShopProduct({ shops }: { shops: Shop }) {
+    const products = await prisma.product.findMany({
+        where: { PreOrders: { every: { sellIn_shopId: shops.id } } },
+        take: 100,
+    })
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle>Products</CardTitle>
+            </CardHeader>
+            <CardContent>
+                <Table>
+                    <TableCaption>Products available in { shops.name }.</TableCaption>
+                    <TableHeader>
+                        <TableRow>
+                            {/*<TableHead>ID</TableHead>*/ }
+                            <TableHead>No</TableHead>
+                            <TableHead>Name</TableHead>
+                            <TableHead>Price</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        { products.map((product, i) => (
+                            <TableRow key={ product.id }>
+                                <TableCell>{ i + 1 }</TableCell>
+                                <TableCell>{ product.name }</TableCell>
+                                <TableCell>{ formatRupiah(product.price) }</TableCell>
+                            </TableRow>
+                        )) }
+                    </TableBody>
+                </Table>
+            </CardContent>
+        </Card>
+    );
+}
+
+async function ShopEmployees({ shops }: { shops: Shop }) {
+    const employees = await prisma.user.findMany({
+        where: { workIn_shopId: shops.id, }
+    })
+
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle>Employees</CardTitle>
+            </CardHeader>
+            <CardContent>
+                <Table>
+                    <TableCaption>Employees working at { shops.name }.</TableCaption>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead>ID</TableHead>
+                            <TableHead>Name</TableHead>
+                            <TableHead>Role</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        { employees.map((emp) => (
+                            <TableRow key={ emp.id }>
+                                <TableCell>{ emp.id }</TableCell>
+                                <TableCell>{ emp.name }</TableCell>
+                                <TableCell>{ emp.role }</TableCell>
+                            </TableRow>
+                        )) }
+                    </TableBody>
+                </Table>
+            </CardContent>
+
+        </Card>
+
+    );
+}
+

@@ -1,9 +1,10 @@
 'use server'
+import { createCustomer } from "@/action/customer-action";
 import type { ActionResponse } from "@/interface/actionType";
 import { logger } from "@/lib/logger";
 import { prisma } from "@/lib/prisma";
 import { CustomerModelType } from "@/lib/schema";
-import { Customer, CustomerSchema, Product, Sale, SalesItem } from "@/lib/validation";
+import { Customer, CustomerSchema, Sale } from "@/lib/validation";
 import { revalidatePath } from "next/cache";
 
 export type CustomerRelational = Customer & {
@@ -13,7 +14,7 @@ export type CustomerRelational = Customer & {
 
 export async function getAllCustomerRelational(): Promise<CustomerRelational[]> {
     logger.info("data : getAllCustomerRelational");
-    return prisma.customer.findMany({
+    const customer = await prisma.customer.findMany({
         include: {
             Sales: true,
             // PreOrders: {
@@ -23,29 +24,29 @@ export async function getAllCustomerRelational(): Promise<CustomerRelational[]> 
             // },
         }
     })
+
+    return customer
 }
 
 export async function createCustomerAction(formData: CustomerModelType): Promise<ActionResponse> {
     try {
 
-        const valid = CustomerSchema.safeParse(formData);
-        if (!valid.success) {
+        const { data, success, error } = CustomerSchema.safeParse(formData);
+        if (!success) {
             return {
-                data: valid.data,
+                data: data,
                 message: "Pelanggan gagal ditambahkan",
-                error: valid.error.flatten().fieldErrors,
+                error: error.flatten().fieldErrors,
                 success: false,
             };
         }
-        const { id, ...rest } = valid.data
-        await prisma.customer.create({
-            data: rest
-        });
+
+        const createCustomerData = await createCustomer(data.name)
 
         revalidatePath("/"); // Refresh halaman agar data baru tampil
-        logger.info("success createCustomerAction", id);
+        logger.info("success createCustomerAction", data.id);
         return {
-            data: valid.data,
+            data: data,
             success: true,
             message: "Pelanggan berhasil ditambahkan",
         };

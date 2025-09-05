@@ -14,7 +14,9 @@ export default async function Page(context: ContextPage) {
     // }
 
     return (
-        <HistoriesPage histories={ await getHistoriesUser(session) }/>
+        <HistoriesPage
+            title={ 'History Pembelian' }
+            histories={ await getHistoriesUser(session) }/>
     );
 }
 

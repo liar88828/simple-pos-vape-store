@@ -17,7 +17,7 @@ export default async function POS(context: ContextPage) {
 
     return <POSPage
         payment={ payment }
-        products={ await getProductPage(context) }
+        products={ await getProductPage(context, null) }
         customers={ await getAllCustomers(customerName) }
     />
 }

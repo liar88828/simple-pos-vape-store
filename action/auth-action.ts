@@ -1,9 +1,10 @@
 "use server";
 
+import { createCustomer } from "@/action/customer-action";
 import { signJwt, signRefreshJwt, verifyJwt, verifyRefreshJwt } from "@/action/jwt-token";
-import { ActionResponse } from "@/interface/actionType";
+import { ActionResponse, SessionEmployeePayload } from "@/interface/actionType";
 import { LoginFormData, loginSchema, RegisterFormData, registerSchema } from "@/lib/auth-schema";
-import { ROLE } from "@/lib/constants";
+import { ROLE_USER } from "@/lib/constants";
 import { logger } from "@/lib/logger";
 import { prisma } from "@/lib/prisma"; // Adjust this path
 import bcrypt from "bcrypt";
@@ -34,27 +35,14 @@ export async function registerAction(rawData: RegisterFormData): Promise<ActionR
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    const user = await prisma.user.create({
-        data: { name, email, password: hashedPassword },
-    });
 
-    await prisma.customer.create({
-        data: {
-            userId: user.id,
-            name,
-            age: 0,
-            lastPurchase: new Date(),
-            status: "Pending", totalPurchase: 0
-        }
-    })
-
-
-
+    await createCustomer(name, hashedPassword, email,)
 
     redirect("/login"); // or wherever you want
 }
 
 export async function loginAction(rawData: LoginFormData): Promise<ActionResponse> {
+
     logger.info(` input loginAction`)
     const parsed = loginSchema.safeParse(rawData);
 
@@ -82,7 +70,16 @@ export async function loginAction(rawData: LoginFormData): Promise<ActionRespons
     }
 
     // Create access + refresh tokens
-    const accessToken = await signJwt({ userId: user.id, email: user.email, role: user.role, name: user.name });
+    const accessToken = await signJwt({
+        userId: user.id,
+        email: user.email,
+        role: user.role,
+        name: user.name,
+        shopId: user.role === ROLE_USER.USER
+            ? ''
+            : user.workIn_shopId ? user.workIn_shopId
+                : ''
+    });
     const refreshToken = await signRefreshJwt({ userId: user.id });
 
     // Set cookie
@@ -111,11 +108,11 @@ export async function loginAction(rawData: LoginFormData): Promise<ActionRespons
     revalidatePath('/')
     logger.info('loginAction')
 
-    if (user.role === ROLE.ADMIN) {
+    if (user.role === ROLE_USER.ADMIN) {
         redirect("/admin/dashboard");
-    } else if (user.role === ROLE.USER) {
+    } else if (user.role === ROLE_USER.USER) {
         redirect("/user");
-    } else if (user.role === ROLE.EMPLOYEE) {
+    } else if (user.role === ROLE_USER.EMPLOYEE) {
         redirect("/employee");
     } else {
         redirect("/register");
@@ -151,7 +148,8 @@ export async function refreshTokenAction() {
             id: true,
             email: true,
             role: true,
-            name: true
+            name: true,
+            workIn_shopId: true,
         }
     })
     if (!user) {
@@ -160,7 +158,14 @@ export async function refreshTokenAction() {
     }
 
     // Issue new access token
-    const newAccessToken = await signJwt({ userId: user.id, email: user.email, role: user.role, name: user.name });
+    const newAccessToken = await signJwt({
+        userId: user.id, email: user.email, role: user.role, name: user.name,
+        shopId: user.role === ROLE_USER.USER
+            ? ''
+            : user.workIn_shopId ? user.workIn_shopId
+                : ''
+
+    });
 
     cookieStore.set({
         name: "token",
@@ -207,6 +212,23 @@ export async function getSessionUserPage() {
         redirect("/login");
     }
     return session;
+}
+
+export async function getSessionEmployeePage() {
+    // logger.info('load getSessionUserPage')
+
+    const cookieStore = await cookies()
+    const token = cookieStore.get("token")?.value
+    // console.log("token : " + token)
+    const session = await verifyJwt(token)
+    if (!session) {
+        redirect("/login");
+    }
+    if (![ ROLE_USER.ADMIN, ROLE_USER.EMPLOYEE ].includes(session.role)) {
+        redirect("/login");
+    }
+
+    return session as SessionEmployeePayload
 }
 
 

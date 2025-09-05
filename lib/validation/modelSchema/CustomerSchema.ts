@@ -25,7 +25,7 @@ export const CustomerSchema = z.object({
   lastPurchase: z.date(),
   createdAt: z.date(),
   updatedAt: z.date(),
-    userId: z.string(),
+    buyer_userId: z.string(),
 })
 
 export type Customer = z.infer<typeof CustomerSchema>

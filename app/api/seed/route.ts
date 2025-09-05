@@ -1,4 +1,4 @@
-import { ROLE, STATUS_PREORDER } from "@/lib/constants";
+import { ROLE_USER, STATUS_PREORDER } from "@/lib/constants";
 import { prisma } from "@/lib/prisma"
 import bcrypt from "bcrypt";
 
@@ -16,6 +16,13 @@ export async function GET() {
             },
         })
 
+        await tx.shop.createMany({
+            data: [
+                { name: "Fresh Mart", location: "New York", category: "Grocery", open: true },
+                { name: "Tech Hub", location: "San Francisco", category: "Electronics", open: false },
+                { name: "Style Corner", location: "Chicago", category: "Fashion", open: true }, ]
+        })
+        const shop = await tx.shop.findMany()
         // ✅ Create Users
         await tx.user.createMany({
             data: [
@@ -23,25 +30,29 @@ export async function GET() {
                     name: "Admin",
                     email: "admin@example.com",
                     password: await bcrypt.hash('admin@example.com', 10), // hash this in real app
-                    role: ROLE.ADMIN,
+                    role: ROLE_USER.ADMIN,
+                    workIn_shopId: null
                 },
                 {
                     name: "Employee User",
                     email: "employee@example.com",
                     password: await bcrypt.hash('employee@example.com', 10),
-                    role: ROLE.EMPLOYEE,
+                    role: ROLE_USER.EMPLOYEE,
+                    workIn_shopId: shop[1].id
                 },
                 {
                     name: "Regular User 1",
                     email: "user1@example.com",
                     password: await bcrypt.hash('user1@example.com', 10),
-                    role: ROLE.USER,
+                    role: ROLE_USER.USER,
+                    workIn_shopId: null
                 },
                 {
                     name: "Regular User 2",
                     email: "user2@example.com",
                     password: await bcrypt.hash('user2@example.com', 10),
-                    role: ROLE.USER,
+                    role: ROLE_USER.USER,
+                    workIn_shopId: null
                 },
             ],
         })
@@ -56,7 +67,7 @@ export async function GET() {
                     totalPurchase: 0,
                     status: "Pending",
                     lastPurchase: new Date(),
-                    userId: users[2].id
+                    buyer_userId: users[2].id
                 },
                 {
                     name: "Alice Smith",
@@ -64,7 +75,7 @@ export async function GET() {
                     totalPurchase: 500000,
                     status: "Active",
                     lastPurchase: new Date(),
-                    userId: users[3].id
+                    buyer_userId: users[3].id
                 },
             ],
         })
@@ -72,7 +83,6 @@ export async function GET() {
 
         // ✅ Create Products
         await tx.product.createMany({
-
             data: [
                 {
                     category: "Vape",
@@ -172,6 +182,7 @@ export async function GET() {
                 {
                     userId: users[0].id,
                     productId: products[0].id,
+                    sellIn_shopId: shop[0].id,
                     quantity: 2,
                     priceNormal: 500000,
                     priceSell: 450000,
@@ -182,6 +193,7 @@ export async function GET() {
                 {
                     userId: users[1].id,
                     productId: products[1].id,
+                    sellIn_shopId: shop[1].id,
                     quantity: 5,
                     priceNormal: 150000,
                     priceSell: 140000,
@@ -195,6 +207,7 @@ export async function GET() {
         // ✅ Create a Sale (linked to Customer)
         const sale = await tx.sale.create({
             data: {
+                shopId: shop[0].id,
                 seller_userId: users[0].id,
                 buyer_customerId: customers[0].id, // 👈 replace with actual seeded customer ID
                 date: new Date(),
@@ -287,6 +300,7 @@ export async function GET() {
         //         { name: "Gold", range: "5M+", progress: 0, count: 0 },
         //     ],
         // })
+
         return {
             shippingList,
             shipping,

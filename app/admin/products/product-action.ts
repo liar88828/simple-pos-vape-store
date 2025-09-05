@@ -44,6 +44,7 @@ export async function addProductAction({ priceNormal, expired, ...formData }: Pr
 
             await tx.preOrder.create({
                 data: PreOrderOptionalDefaultsSchema.parse({
+                    sellIn_shopId: "",
                     userId: session.userId,
                     productId: productDB.id,
                     quantity: productDB.stock,

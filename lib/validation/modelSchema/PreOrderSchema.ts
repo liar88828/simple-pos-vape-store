@@ -15,6 +15,12 @@ import type {
     ProductPartialWithRelations,
     ProductOptionalDefaultsWithRelations
 } from './ProductSchema'
+import {
+    ShopWithRelationsSchema,
+    ShopPartialWithRelationsSchema,
+    ShopOptionalDefaultsWithRelationsSchema
+} from './ShopSchema'
+import type { ShopWithRelations, ShopPartialWithRelations, ShopOptionalDefaultsWithRelations } from './ShopSchema'
 
 /////////////////////////////////////////
 // PRE ORDER SCHEMA
@@ -35,6 +41,7 @@ export const PreOrderSchema = z.object({
   updatedAt: z.date(),
     userId: z.string(),
     productId: z.string(),
+    sellIn_shopId: z.string(),
 })
 
 export type PreOrder = z.infer<typeof PreOrderSchema>
@@ -65,14 +72,16 @@ export type PreOrderOptionalDefaults = z.infer<typeof PreOrderOptionalDefaultsSc
 
 export type PreOrderRelations = {
     User: UserWithRelations;
-  product: ProductWithRelations;
+    Product: ProductWithRelations;
+    Shop: ShopWithRelations;
 };
 
 export type PreOrderWithRelations = z.infer<typeof PreOrderSchema> & PreOrderRelations
 
 export const PreOrderWithRelationsSchema: z.ZodType<PreOrderWithRelations> = PreOrderSchema.merge(z.object({
     User: z.lazy(() => UserWithRelationsSchema),
-  product: z.lazy(() => ProductWithRelationsSchema),
+    Product: z.lazy(() => ProductWithRelationsSchema),
+    Shop: z.lazy(() => ShopWithRelationsSchema),
 }))
 
 /////////////////////////////////////////
@@ -81,14 +90,16 @@ export const PreOrderWithRelationsSchema: z.ZodType<PreOrderWithRelations> = Pre
 
 export type PreOrderOptionalDefaultsRelations = {
     User: UserOptionalDefaultsWithRelations;
-  product: ProductOptionalDefaultsWithRelations;
+    Product: ProductOptionalDefaultsWithRelations;
+    Shop: ShopOptionalDefaultsWithRelations;
 };
 
 export type PreOrderOptionalDefaultsWithRelations = z.infer<typeof PreOrderOptionalDefaultsSchema> & PreOrderOptionalDefaultsRelations
 
 export const PreOrderOptionalDefaultsWithRelationsSchema: z.ZodType<PreOrderOptionalDefaultsWithRelations> = PreOrderOptionalDefaultsSchema.merge(z.object({
     User: z.lazy(() => UserOptionalDefaultsWithRelationsSchema),
-  product: z.lazy(() => ProductOptionalDefaultsWithRelationsSchema),
+    Product: z.lazy(() => ProductOptionalDefaultsWithRelationsSchema),
+    Shop: z.lazy(() => ShopOptionalDefaultsWithRelationsSchema),
 }))
 
 /////////////////////////////////////////
@@ -97,28 +108,32 @@ export const PreOrderOptionalDefaultsWithRelationsSchema: z.ZodType<PreOrderOpti
 
 export type PreOrderPartialRelations = {
     User?: UserPartialWithRelations;
-  product?: ProductPartialWithRelations;
+    Product?: ProductPartialWithRelations;
+    Shop?: ShopPartialWithRelations;
 };
 
 export type PreOrderPartialWithRelations = z.infer<typeof PreOrderPartialSchema> & PreOrderPartialRelations
 
 export const PreOrderPartialWithRelationsSchema: z.ZodType<PreOrderPartialWithRelations> = PreOrderPartialSchema.merge(z.object({
     User: z.lazy(() => UserPartialWithRelationsSchema),
-  product: z.lazy(() => ProductPartialWithRelationsSchema),
+    Product: z.lazy(() => ProductPartialWithRelationsSchema),
+    Shop: z.lazy(() => ShopPartialWithRelationsSchema),
 })).partial()
 
 export type PreOrderOptionalDefaultsWithPartialRelations = z.infer<typeof PreOrderOptionalDefaultsSchema> & PreOrderPartialRelations
 
 export const PreOrderOptionalDefaultsWithPartialRelationsSchema: z.ZodType<PreOrderOptionalDefaultsWithPartialRelations> = PreOrderOptionalDefaultsSchema.merge(z.object({
     User: z.lazy(() => UserPartialWithRelationsSchema),
-  product: z.lazy(() => ProductPartialWithRelationsSchema),
+    Product: z.lazy(() => ProductPartialWithRelationsSchema),
+    Shop: z.lazy(() => ShopPartialWithRelationsSchema),
 }).partial())
 
 export type PreOrderWithPartialRelations = z.infer<typeof PreOrderSchema> & PreOrderPartialRelations
 
 export const PreOrderWithPartialRelationsSchema: z.ZodType<PreOrderWithPartialRelations> = PreOrderSchema.merge(z.object({
     User: z.lazy(() => UserPartialWithRelationsSchema),
-  product: z.lazy(() => ProductPartialWithRelationsSchema),
+    Product: z.lazy(() => ProductPartialWithRelationsSchema),
+    Shop: z.lazy(() => ShopPartialWithRelationsSchema),
 }).partial())
 
 export default PreOrderSchema;

@@ -2,7 +2,8 @@ import { getSessionUserPage } from '@/action/auth-action';
 import { getProductPage } from '@/action/product-action';
 import { ProductUserPage } from '@/app/user/home/product-user-page';
 import { CartItem, ContextPage, SaleCustomers } from '@/interface/actionType';
-import { STATUS_TRANSACTION } from '@/lib/constants';
+import { STATUS_PREORDER } from '@/lib/constants';
+import { getContextPage } from "@/lib/context-action";
 import { prisma } from '@/lib/prisma';
 import React from 'react';
 
@@ -12,6 +13,7 @@ export type ProductPending = {
     isPending: boolean;
 };
 export default async function Page(context: ContextPage) {
+    const shopId = await getContextPage(context, 'shopId')
     const session = await getSessionUserPage()
     // if (!session) {
     //     redirect('/login')
@@ -20,11 +22,11 @@ export default async function Page(context: ContextPage) {
     const currentProductUser = async () => await prisma.sale.findFirst({
         orderBy: { date: "desc" },
         where: {
-            statusTransaction: STATUS_TRANSACTION.PENDING,
-            customer: { name: session?.name, },
+            statusTransaction: STATUS_PREORDER.PENDING,
+            Customer: { name: session?.name, },
         },
         include: {
-            customer: true,
+            Customer: true,
             SaleItems: {
                 include: {
                     product: true
@@ -50,7 +52,7 @@ export default async function Page(context: ContextPage) {
     return (
         <ProductUserPage
             session={session}
-            products={ await getProductPage(context) }
+            products={ await getProductPage(context, shopId ?? null) }
             productPending={ await currentProductUser() }
         />
     );

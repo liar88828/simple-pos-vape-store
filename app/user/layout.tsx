@@ -18,7 +18,6 @@ export default async function Layout({ children }: { children: React.ReactNode }
         <SidebarProvider defaultOpen={defaultOpen}>
             <AppSidebar
                 session={ session }
-                asLink='/user'
                 navItems={userNavItems}
                 lowStockProducts={await getProductLowStock()}
             // totalTransaction={await getTransactionCountToday()}

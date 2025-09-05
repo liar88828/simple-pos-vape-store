@@ -2,17 +2,21 @@
 
 import { getSessionUserPage } from "@/action/auth-action";
 import { ActionResponse, CartItem, } from "@/interface/actionType";
-import { ERROR, ROLE, STATUS_TRANSACTION } from "@/lib/constants";
+import { ERROR, ROLE_USER, STATUS_PREORDER } from "@/lib/constants";
 import { logger } from "@/lib/logger";
 import { prisma } from "@/lib/prisma";
 import { CustomerModelNew, CustomerModelType } from "@/lib/schema";
-import { Customer, SalesItemOptionalDefaults } from "@/lib/validation";
+import { Customer, SalesItemOptionalDefaults, Shop } from "@/lib/validation";
 import { Prisma } from "@prisma/client";
 import bcrypt from "bcrypt";
 import { revalidatePath } from "next/cache";
 import PrismaClientKnownRequestError = Prisma.PrismaClientKnownRequestError;
 
-export async function createTransactionAction(product: CartItem[], customer: Customer | null): Promise<ActionResponse> {
+export async function createTransactionAction(
+    product: CartItem[],
+    customer: Customer | null,
+    shopId: string,
+): Promise<ActionResponse> {
     // console.log('execute');
 
     try {
@@ -31,12 +35,13 @@ export async function createTransactionAction(product: CartItem[], customer: Cus
 
             const saleDB = await tx.sale.create({
                 data: {
+                    shopId: shopId,
                     seller_userId: user.userId,
                     items: product.length,
                     total: product.reduce((a, b) => a + (b.price * b.quantity), 0),
                     date: new Date(),
                     buyer_customerId: customer.id,
-                    statusTransaction: STATUS_TRANSACTION.PENDING,
+                    statusTransaction: STATUS_PREORDER.PENDING,
                     typeTransaction: 'Sistem Dev'//'Cash'
                 }
             })
@@ -125,14 +130,14 @@ export async function createCustomerNew(formData: CustomerModelType): Promise<Ac
                     name: valid.data.name,
                     email: name,
                     password: await bcrypt.hash(name, 10),
-                    role: ROLE.USER
+                    role: ROLE_USER.USER
 
                 }
             });
 
             const customerDB = await tx.customer.create({
             data: {
-                userId: userDB.id,
+                buyer_userId: userDB.id,
                 status: "pending",
                 age: 0,
                 lastPurchase: new Date(),

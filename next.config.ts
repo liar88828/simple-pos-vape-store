@@ -3,6 +3,7 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
     typedRoutes: true,
     experimental: {
+        typedEnv: true,
         useCache: true,
         // clientInstrumentationHook: true,
         // typedRoutes: true,

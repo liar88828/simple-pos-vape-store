@@ -154,7 +154,6 @@ export function DashboardPage(
                     <div
                         className={ "absolute top-0 right-0 w-20 h-20 bg-chart-3/20 rounded-full -mr-10 -mt-10" }></div>
                 </Card>
-
             </div>
 
             {/* Main Content Grid */ }
@@ -184,7 +183,7 @@ export function DashboardPage(
                                         </div>
                                         <div>
                                             <p className={ "font-medium text-primary" }>
-                                                { sale.customer.name }
+                                                { sale.Customer.name }
                                             </p>
                                             <p className={ "text-sm text-muted-foreground" }>
                                                 { sale.SaleItems.length } items • { formatDateIndo(sale.date) }

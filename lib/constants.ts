@@ -1,15 +1,22 @@
-export const ROLE = {
+export const ROLE_USER = {
     USER: 'USER',
     ADMIN: 'ADMIN',
     EMPLOYEE: 'EMPLOYEE'
 }
+export const ROLE_USER_LIST = [
+    { label: 'Employee', value: 'EMPLOYEE' },
+    { label: 'User', value: 'USER', },
+    { label: 'Admin', value: 'ADMIN', },
+    { label: 'Banned', value: 'BANNED', },
+]
+
+export const STATUS_USER = {
+    PENDING: 'Pending',
+    SUCCESS: 'Active'
+}
 
 export const _lowStockProduct = 4
 
-export const STATUS_TRANSACTION = {
-    PENDING: 'Pending',
-    SUCCESS: 'Success'
-}
 
 export const STATUS_PREORDER = {
     PENDING: 'Pending',

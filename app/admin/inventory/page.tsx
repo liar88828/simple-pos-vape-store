@@ -8,6 +8,6 @@ export default async function page(context: ContextPage) {
         expiredProduct={ await getExpiredProduct() }
         lowStockProducts={ await getProductLowStockComplete() }
         preorders={ await getPreorderPage(context) }
-        products={ await getProductPage(context) }
+        products={ await getProductPage(context, null) }
     />
 }

@@ -33,6 +33,9 @@ export type ProductParam = {
     inventoryExpired: string
     inventoryLimit: string
     inventoryPage: string
+//
+    shopId: string
+
 }
 
 export type ContextPage = {
@@ -48,14 +51,28 @@ export type RangeStats = 'today' | "week" | "month" | "year"
 export type ChartData = { name: string, desktop: number }
 
 export type SaleCustomers = Sale & {
-    customer: Customer
+    Customer: Customer
     SaleItems: (SalesItem & { product: Product })[]
 };
 
 // session
 
-export type UserPayload = { userId: string, email: string, role: string, name: string };
-export type SessionPayload = JWTPayload & UserPayload
+export type UserPayload = {
+    userId: string,
+    email: string,
+    role: string,
+    name: string
+};
+
+export type EmployeePayload = {
+    userId: string,
+    email: string,
+    role: string,
+    name: string,
+    shopId: string,
+};
+export type SessionUserPayload = JWTPayload & UserPayload
+export type SessionEmployeePayload = JWTPayload & EmployeePayload
 
 
 export type ModalProps = {
