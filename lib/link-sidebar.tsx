@@ -1,7 +1,7 @@
 'use client'
 import {
     Archive,
-    BarChart3,
+    BarChart3, Box,
     Briefcase,
     FlaskConical,
     History,
@@ -138,6 +138,13 @@ export const employeeNavItems: NavItems<Route>[] = [
         icon: InboxIcon,
         href: "/employee/inbox",
         description: "Inbox",
+        // badge: "Live",
+    },
+    {
+        title: "stock",
+        icon: Box,
+        href: "/employee/stock",
+        description: "Stock Management",
         // badge: "Live",
     },
 

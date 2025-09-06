@@ -4,13 +4,26 @@ import { PreorderProduct, ProductPaging } from "@/action/product-action";
 import { getShopAllApi } from "@/app/admin/employee/employee-action";
 import { deletePreorderProduct, preOrderAction, preOrderProductAction } from "@/app/admin/inventory/inventory-action";
 import { ProductsFilter } from "@/app/admin/products/products-page";
-import { FilterInput, FilterSelect } from "@/components/mini/filter-input";
+import { FilterInput } from "@/components/mini/filter-input";
 import { InputDateForm, InputForm, InputNumForm, SelectForm } from "@/components/mini/form-hook";
 import { ResponsiveModal, ResponsiveModalOnly } from "@/components/mini/modal-components";
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuPortal,
+    DropdownMenuRadioGroup,
+    DropdownMenuRadioItem,
+    DropdownMenuSeparator,
+    DropdownMenuSub,
+    DropdownMenuSubContent,
+    DropdownMenuSubTrigger,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { useDebounce, useDebounceLoad } from "@/hooks/use-debounce";
 import { ModalProps } from "@/interface/actionType";
@@ -19,7 +32,18 @@ import { formatDateIndo, formatRupiah } from "@/lib/formatter";
 import { newParam, toastResponse } from "@/lib/helper";
 import { PreOrderOptionalDefaults, PreOrderOptionalDefaultsSchema, Product, Shop } from "@/lib/validation";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { AlertTriangle, ChevronLeft, ChevronRight, Plus, XIcon } from "lucide-react"
+import { STATUS_PREORDER } from "@prisma/client";
+import {
+    AlertTriangle,
+    ChevronDown,
+    ChevronLeft,
+    ChevronRight,
+    Edit2Icon,
+    Eye,
+    Plus,
+    StickyNote,
+    Trash
+} from "lucide-react"
 import { useRouter } from "next/navigation";
 import React, { useEffect, useState } from "react"
 import { FormProvider, useForm } from "react-hook-form";
@@ -30,7 +54,124 @@ export type InventoryPaging = {
     total: number,
 };
 
-export function InventoryFilter({ inventory }: { inventory: InventoryPaging, }) {
+export function FilterInventory() {
+    const router = useRouter()
+
+    // Pagination
+    const [ itemsPerPage, setItemsPerPage ] = useState(10);
+    const [ page, setPage ] = useState(0);
+
+    // Filters
+    const [ isLowStock, setIsLowStock ] = useState('-')
+    const [ isLowExpired, setIsLowExpired ] = useState('-')
+    const [ isNameProduct, setIsNameProduct ] = useState('')
+    const productNameDebounce = useDebounce(isNameProduct);
+
+    useEffect(() => {
+        // Convert "-" to undefined so the backend can ignore these filters
+        const filters = {
+            inventoryName: productNameDebounce.trim() || undefined,
+            inventoryStock: isLowStock,
+            inventoryExpired: isLowExpired,
+            inventoryLimit: String(itemsPerPage),
+            inventoryPage: String(page),
+        };
+        // Only push if at least one filter has value
+        const hasAnyFilter = Object.values(filters).some(Boolean);
+
+        if (hasAnyFilter) {
+            //@ts-expect-error
+            router.push(newParam(filters));
+            console.log('Filters applied:', filters);
+        }
+    }, [ productNameDebounce, router, itemsPerPage, page, isLowStock, isLowExpired ]);
+
+    const onReset = () => {
+        // console.log('will execute start')
+        setIsNameProduct("")
+        setIsLowStock("-")
+        setIsLowExpired("-")
+    }
+
+    return (
+        <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+                <Button variant="outline">
+                    Filter
+                    <ChevronDown className="-mr-1 ml-2 size-4"/>
+                </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-56">
+                <DropdownMenuLabel>Filter</DropdownMenuLabel>
+                <DropdownMenuSeparator/>
+
+                {/*-------*/ }
+
+                {/*<DropdownMenuSeparator/>*/ }
+
+                {/*    ------*/ }
+                <DropdownMenuSub>
+                    <DropdownMenuSubTrigger>
+                        <StickyNote className="mr-2 size-4"/>
+                        <span>Pagination</span>
+                    </DropdownMenuSubTrigger>
+                    <DropdownMenuPortal>
+                        <DropdownMenuSubContent>
+
+                            <DropdownMenuRadioGroup
+                                value={ String(itemsPerPage) }
+                                onValueChange={ (value) => {
+                                    setItemsPerPage(Number(value));
+                                    setPage(0); // Reset ke halaman pertama
+                                } }>
+
+                                { pageSizeOptions
+                                .map((item) => {
+                                    return <DropdownMenuRadioItem
+                                        key={ item }
+                                        value={ String(item) }>{ item }</DropdownMenuRadioItem>
+                                }) }
+                            </DropdownMenuRadioGroup>
+
+                        </DropdownMenuSubContent>
+                    </DropdownMenuPortal>
+                </DropdownMenuSub>
+
+                <DropdownMenuSeparator/>
+                {/*----------*/ }
+                <DropdownMenuLabel inset>Pilih Stock</DropdownMenuLabel>
+                <DropdownMenuRadioGroup value={ isLowStock } onValueChange={ setIsLowStock }>
+                    { [
+                        // { label: 'Pilih Stock', value: '-' },
+                        { label: 'Stock Low', value: 'low' },
+                        { label: 'Stock High', value: 'high' }
+                    ].map((item, index) => {
+                        return <DropdownMenuRadioItem key={ item.value }
+                                                      value={ item.value }>{ item.label }</DropdownMenuRadioItem>
+                    }) }
+                </DropdownMenuRadioGroup>
+
+                <DropdownMenuSeparator/>
+                <DropdownMenuLabel inset>Pilih Expired</DropdownMenuLabel>
+                <DropdownMenuRadioGroup value={ isLowExpired } onValueChange={ setIsLowExpired }>
+                    { [
+                        // { label: 'Pilih Expired', value: '-' },
+                        { label: 'Expired Low', value: 'low' },
+                        { label: 'Expired High', value: 'high' }
+                    ].map((item, index) => {
+                        return <DropdownMenuRadioItem key={ item.value }
+                                                      value={ item.value }>{ item.label }</DropdownMenuRadioItem>
+                    }) }
+                </DropdownMenuRadioGroup>
+
+                <DropdownMenuSeparator/>
+                <DropdownMenuItem variant={ 'destructive' } onClick={ onReset }>Reset to Default</DropdownMenuItem>
+            </DropdownMenuContent>
+        </DropdownMenu>
+    );
+}
+
+export function InventoryFilter({ inventory }: { inventory: InventoryPaging }) {
 
     const router = useRouter()
 
@@ -70,7 +211,6 @@ export function InventoryFilter({ inventory }: { inventory: InventoryPaging, }) 
         setIsNameProduct("")
         setIsLowStock("-")
         setIsLowExpired("-")
-
     }
 
     return (
@@ -83,57 +223,58 @@ export function InventoryFilter({ inventory }: { inventory: InventoryPaging, }) 
                     label={ "" }
                     placeholder={ 'Cari Name Produk' }
                 />
-                <div className="flex gap-2">
+                {/*<div className="flex gap-2">*/ }
 
-                    <FilterSelect
-                        label=""
-                        value={ isLowStock }
-                        onChangeAction={ setIsLowStock }
-                        placeholder="Pilih Stock"
-                        options={ [
-                            { label: 'Pilih Stock', value: '-' },
-                            { label: 'Stock Low', value: 'low' },
-                            { label: 'Stock High', value: 'high' }
-                        ] }
-                    />
+                {/*<FilterSelect*/ }
+                {/*    label=""*/ }
+                {/*    value={ isLowStock }*/ }
+                {/*    onChangeAction={ setIsLowStock }*/ }
+                {/*    placeholder="Pilih Stock"*/ }
+                {/*    options={ [*/ }
+                {/*        { label: 'Pilih Stock', value: '-' },*/ }
+                {/*        { label: 'Stock Low', value: 'low' },*/ }
+                {/*        { label: 'Stock High', value: 'high' }*/ }
+                {/*    ] }*/ }
+                {/*/>*/ }
 
-                    <FilterSelect
-                        label=""
-                        value={ isLowExpired }
-                        onChangeAction={ setIsLowExpired }
-                        placeholder="Pilih Expired"
-                        options={ [
-                            { label: 'Pilih Expired', value: '-' },
-                            { label: 'Expired Low', value: 'low' },
-                            { label: 'Expired High', value: 'high' }
-                        ] }
-                    />
-                    <Button onClick={ onReset } variant="destructive"> Reset <XIcon
-                        className="size-4"/>
-                    </Button>
-                </div>
+                {/*<FilterSelect*/ }
+                {/*    label=""*/ }
+                {/*    value={ isLowExpired }*/ }
+                {/*    onChangeAction={ setIsLowExpired }*/ }
+                {/*    placeholder="Pilih Expired"*/ }
+                {/*    options={ [*/ }
+                {/*        { label: 'Pilih Expired', value: '-' },*/ }
+                {/*        { label: 'Expired Low', value: 'low' },*/ }
+                {/*        { label: 'Expired High', value: 'high' }*/ }
+                {/*    ] }*/ }
+                {/*/>*/ }
+                {/*<Button onClick={ onReset } variant="destructive"> Reset <XIcon*/ }
+                {/*    className="size-4"/>*/ }
+                {/*</Button>*/ }
+                {/*</div>*/ }
             </div>
 
-            <div className="flex sm:gap-4 gap-2 flex-col sm:flex-row ">
-                {/*Paging*/ }
-                <div className="flex items-center gap-2 sm:gap-4 ">
-                    <Select
-                        value={ String(itemsPerPage) }
-                        onValueChange={ (value) => {
-                            setItemsPerPage(Number(value));
-                            setPage(0); // Reset ke halaman pertama
-                        } }>
-                        <SelectTrigger>
-                            <SelectValue placeholder="Tampil"/>
-                        </SelectTrigger>
-                        <SelectContent>
-                            { pageSizeOptions.map((value) => (
-                                <SelectItem key={ value } value={ value.toString() }>
-                                    { value }
-                                </SelectItem>
-                            )) }
-                        </SelectContent>
-                    </Select>
+            <div className="flex items-center   justify-between">
+                <FilterInventory/>
+
+                {/*<Select*/ }
+                {/*    value={ String(itemsPerPage) }*/ }
+                {/*    onValueChange={ (value) => {*/ }
+                {/*        setItemsPerPage(Number(value));*/ }
+                {/*        setPage(0); // Reset ke halaman pertama*/ }
+                {/*    } }>*/ }
+                {/*    <SelectTrigger>*/ }
+                {/*        <SelectValue placeholder="Tampil"/>*/ }
+                {/*    </SelectTrigger>*/ }
+                {/*    <SelectContent>*/ }
+                {/*        { pageSizeOptions.map((value) => (*/ }
+                {/*            <SelectItem key={ value } value={ value.toString() }>*/ }
+                {/*                { value }*/ }
+                {/*            </SelectItem>*/ }
+                {/*        )) }*/ }
+                {/*    </SelectContent>*/ }
+                {/*</Select>*/ }
+                <section className="flex items-center gap-2 sm:gap-4 ">
                     <Button
                         variant="outline"
                         onClick={ () => setPage((prev) => Math.max(0, prev - 1)) }
@@ -155,9 +296,9 @@ export function InventoryFilter({ inventory }: { inventory: InventoryPaging, }) 
                         <ChevronRight/>
 
                     </Button>
+                </section>
                 </div>
 
-            </div>
         </div>
     );
 }
@@ -216,6 +357,7 @@ export function InventoryPage({ products, lowStockProducts, expiredProduct, preo
                 <CardHeader>
                     <CardTitle className="flex items-center">Produk Preorder History</CardTitle>
                     <InventoryFilter inventory={ preorders }/>
+                    {/*<FilterInventory inventory={ preorders }/>*/ }
                 </CardHeader>
                 <CardContent>
                     <Table>
@@ -270,29 +412,27 @@ export function InventoryPage({ products, lowStockProducts, expiredProduct, preo
                                     <TableCell>{ formatDateIndo(item?.expired) }</TableCell>
                                     {/*<TableCell>{ product.minStock - product.stock + 10 }</TableCell>*/ }
                                     <TableCell>
+
+
                                         <div className="space-x-2">
-                                            <Button size="sm"
-                                                    onClick={ () => {
-                                                        setIsPreorder(item)
-                                                        setIsModalPreorder(true)
-                                                    } }
-                                            >Ubah</Button>
-
-                                            <Button
-                                                disabled={ isLoadingHistoryPreorder }
-                                                size="sm" variant={ 'destructive' }
-
-                                                onClick={ async () => {
+                                            <ActionDropdown
+                                                idDisabled={ isLoadingHistoryPreorder }
+                                                onEdit={ () => {
+                                                    setIsPreorder(item)
+                                                    setIsModalPreorder(true)
+                                                } }
+                                                onDelete={ async () => {
                                                     if (confirm(`Apakah Anda Yakin Untuk Hapus Data ini ${ item.Product.name } ?`)) {
-                                                            console.log('delete')
-                                                            toastResponse({
-                                                                onStart: () => setIsLoadingHistoryPreorder(true),
-                                                                onFinish: () => setIsLoadingHistoryPreorder(false),
-                                                                response: await deletePreorderProduct(item.id),
-                                                            })
-                                                        }
-                                                    } }
-                                            >Hapus</Button>
+                                                        console.log('delete')
+                                                        toastResponse({
+                                                            onStart: () => setIsLoadingHistoryPreorder(true),
+                                                            onFinish: () => setIsLoadingHistoryPreorder(false),
+                                                            response: await deletePreorderProduct(item.id),
+                                                        })
+                                                    }
+                                                } }
+                                            />
+
                                         </div>
                                     </TableCell>
                                 </TableRow>
@@ -516,7 +656,7 @@ export function ReorderStockModal({ isStock, setOpenAction, isOpen }: { isStock:
             defaultValues: {
                 sellIn_shopId: "",
                 userId: '',
-                status: '-',
+                status: STATUS_PREORDER.Pending,
                 productId: isStock.id,
                 priceSell: isStock.price,
                 priceNormal: 0,
@@ -587,7 +727,7 @@ export function AddStockModal({ products }: { products: ProductPaging, }) {
     const methods = useForm<PreOrderOptionalDefaults>({
         resolver: zodResolver(PreOrderOptionalDefaultsSchema),
             defaultValues: {
-                status: '-',
+                status: STATUS_PREORDER.Pending,
                 estimatedDate: new Date(),
                 productId: productData?.id ?? '',
                 priceSell: productData?.price ?? 0,
@@ -755,5 +895,58 @@ export function AddStockModal({ products }: { products: ProductPaging, }) {
             </div>
         </ResponsiveModal>
     )
+}
+
+export default function ActionDropdown(
+    {
+        idDisabled,
+        onEdit,
+        onDetail,
+        onDelete
+    }: {
+        idDisabled?: boolean;
+        onEdit?: () => void,
+        onDetail?: () => void,
+        onDelete?: () => void;
+    }) {
+    return (
+        <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="text-sm">
+                    Actions
+                </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-40">
+                { onDetail ?
+                    <DropdownMenuItem
+                        disabled={ idDisabled }
+                        onClick={ onDetail }>
+                        <Eye className="stroke-2 size-4"/> Detail
+                    </DropdownMenuItem>
+                    : null }
+                { onEdit ?
+                    <DropdownMenuItem
+                        disabled={ idDisabled }
+                        onClick={ onEdit }>
+                        <Edit2Icon className="stroke-2 size-4"/> Edit
+                    </DropdownMenuItem>
+                    : null }
+                {/*<DropdownMenuItem>*/ }
+                {/*    <Share className="stroke-2 size-4" /> Share*/ }
+                {/*</DropdownMenuItem>*/ }
+                { onDelete ? <>
+                        <DropdownMenuSeparator/>
+                        <DropdownMenuItem
+                            disabled={ idDisabled }
+                            onClick={ onDelete }
+                            variant={ "destructive" }
+                        >
+                            <Trash className="stroke-2 size-4"/> Delete
+                        </DropdownMenuItem>
+                    </>
+                    : null }
+            </DropdownMenuContent>
+        </DropdownMenu>
+    );
 }
 

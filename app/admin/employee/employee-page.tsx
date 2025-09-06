@@ -13,9 +13,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox"
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, } from "@/components/ui/dialog"
 import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow, } from "@/components/ui/table"
-import { ROLE_USER, ROLE_USER_LIST } from "@/lib/constants";
+import { ROLE_USER_LIST } from "@/lib/constants";
 import { Shop } from "@/lib/validation";
+import ROLE_USERSchema from "@/lib/validation/inputTypeSchemas/ROLE_USERSchema";
 import { zodResolver } from "@hookform/resolvers/zod"
+import { ROLE_USER } from "@prisma/client";
 import Link from "next/link";
 import React, { useEffect, useState } from "react"
 import { FormProvider, useForm } from "react-hook-form"
@@ -146,7 +148,7 @@ export default function EmployeePage(
 const employeeSchema = z.object({
     id: z.string().optional(),
     name: z.string().min(1, "Name is required"),
-    role: z.string().min(1, "Role is required"),
+    role: ROLE_USERSchema,
     address: z.string().min(1, "Location is required"),
     workIn_shopId: z.string().min(1, "Shop is required"),
     email: z.string().min(1, "Email is required").email("Invalid email"),
@@ -182,7 +184,7 @@ export function EmployeeDialog(
         defaultValues: {
             id: "",
             name: "",
-            role: "",
+            role: ROLE_USER.USER,
             address: "",
             workIn_shopId: "",
             email: "",
@@ -205,7 +207,7 @@ export function EmployeeDialog(
             methods.reset({
                 id: "",
                 name: "",
-                role: "",
+                role: ROLE_USER.USER,
                 address: "",
                 workIn_shopId: "",
                 email: "",

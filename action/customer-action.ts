@@ -1,7 +1,8 @@
 'use server'
 
-import { ROLE_USER, STATUS_USER } from "@/lib/constants";
+import { STATUS_USER } from "@/lib/constants";
 import { prisma } from "@/lib/prisma";
+import { ROLE_USER } from "@prisma/client";
 import bcrypt from "bcrypt";
 
 export async function createCustomer(

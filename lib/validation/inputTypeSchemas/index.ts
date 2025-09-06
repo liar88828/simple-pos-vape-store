@@ -5,6 +5,7 @@ export { PreOrderScalarFieldEnumSchema } from './PreOrderScalarFieldEnumSchema';
 export { SaleScalarFieldEnumSchema } from './SaleScalarFieldEnumSchema';
 export { SalesItemScalarFieldEnumSchema } from './SalesItemScalarFieldEnumSchema';
 export { UserScalarFieldEnumSchema } from './UserScalarFieldEnumSchema';
+export { AbsentScalarFieldEnumSchema } from './AbsentScalarFieldEnumSchema';
 export { ShopScalarFieldEnumSchema } from './ShopScalarFieldEnumSchema';
 export { StoreScalarFieldEnumSchema } from './StoreScalarFieldEnumSchema';
 export { PaymentSettingScalarFieldEnumSchema } from './PaymentSettingScalarFieldEnumSchema';
@@ -14,3 +15,6 @@ export { ShippingSettingScalarFieldEnumSchema } from './ShippingSettingScalarFie
 export { ShippingSettingListScalarFieldEnumSchema } from './ShippingSettingListScalarFieldEnumSchema';
 export { SortOrderSchema } from './SortOrderSchema';
 export { NullsOrderSchema } from './NullsOrderSchema';
+export { STATUS_PREORDERSchema } from './STATUS_PREORDERSchema';
+export { ROLE_USERSchema } from './ROLE_USERSchema';
+export { STATUS_ABSENTSchema } from './STATUS_ABSENTSchema';

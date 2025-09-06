@@ -2,7 +2,6 @@
 import { getSessionUserPage } from "@/action/auth-action";
 import { ProductData } from "@/app/admin/products/products-page";
 import { ActionResponse } from "@/interface/actionType";
-import { STATUS_PREORDER } from "@/lib/constants";
 import { logger } from "@/lib/logger";
 import { prisma } from "@/lib/prisma";
 import {
@@ -11,6 +10,7 @@ import {
     ProductOptionalDefaults,
     ProductOptionalDefaultsSchema
 } from "@/lib/validation";
+import { STATUS_PREORDER } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 
 export async function upsertProductAction(formData: ProductData): Promise<ActionResponse> {
@@ -48,7 +48,7 @@ export async function addProductAction({ priceNormal, expired, ...formData }: Pr
                     userId: session.userId,
                     productId: productDB.id,
                     quantity: productDB.stock,
-                    status: STATUS_PREORDER.SUCCESS,
+                    status: STATUS_PREORDER.Success,
                     priceSell: productDB.price,
                     priceNormal: priceNormal ?? 0,
                     expired,

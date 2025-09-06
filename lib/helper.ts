@@ -1,4 +1,5 @@
 import { ActionResponse } from "@/interface/actionType";
+import { STATUS_ABSENT } from "@prisma/client";
 import { toast } from "sonner";
 import { match } from "ts-pattern";
 
@@ -77,4 +78,27 @@ export function getStockLabel(stock: number, minStock: number) {
     .with(0, () => "Habis")
     .when((s) => s <= minStock, () => "Stok Rendah")
     .otherwise(() => "Tersedia");
+}
+
+export function statusAbsent(
+    timeForAbsent: string,     // format "HH:MM"
+    timeForPresent: string,    // format "HH:MM"
+): STATUS_ABSENT {
+    // convert "HH:MM" to minutes
+    const toMinutes = (time: string) => {
+        const [ h, m ] = time.split(":").map(Number)
+        return h * 60 + m
+    }
+
+    const currentDate = new Date()
+    const nowMinutes = currentDate.getHours() * 60 + currentDate.getMinutes()
+    const absentMinutes = toMinutes(timeForAbsent)
+    const presentMinutes = toMinutes(timeForPresent)
+
+    // determine status
+    if (nowMinutes < absentMinutes) {
+        return STATUS_ABSENT.Absent
+    } else if (nowMinutes < presentMinutes) {
+        return STATUS_ABSENT.Present
+    } else return STATUS_ABSENT.Late
 }

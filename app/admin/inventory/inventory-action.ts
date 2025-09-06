@@ -4,11 +4,11 @@ import { getSessionEmployeePage } from "@/action/auth-action";
 import { getPreorder, PreorderProduct } from "@/action/product-action";
 import { InventoryPaging } from "@/app/admin/inventory/inventory-page";
 import { ActionResponse, ContextPage } from "@/interface/actionType";
-import { STATUS_PREORDER } from "@/lib/constants";
 import { getContextPage } from "@/lib/context-action";
 import { logger } from "@/lib/logger";
 import { prisma } from "@/lib/prisma";
 import { PreOrderOptionalDefaults } from "@/lib/validation";
+import { STATUS_PREORDER } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 
 export const getExpiredProduct = async (): Promise<PreorderProduct[]> => {
@@ -45,7 +45,7 @@ export async function preOrderProductAction(
                     ...preorder,
                     sellIn_shopId: session.shopId,
                     userId: session.userId,
-                    status: preorder.status === '-' ? STATUS_PREORDER.PENDING : preorder.status,
+                    status: STATUS_PREORDER.Pending,
                 },
             })
             const productDB = await tx.product.update({

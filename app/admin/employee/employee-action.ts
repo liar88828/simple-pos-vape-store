@@ -1,9 +1,11 @@
 'use server'
+import { getSessionEmployeePage } from "@/action/auth-action";
 import { EmployeeFormData } from "@/app/admin/employee/employee-page";
 import { Prettify } from "@/interface/generic";
-import { ROLE_USER } from "@/lib/constants";
+import { statusAbsent } from "@/lib/helper";
 import { prisma } from "@/lib/prisma";
 import { Shop, User } from "@/lib/validation";
+import { ROLE_USER } from "@prisma/client";
 import bcrypt from "bcrypt";
 import { revalidatePath } from "next/cache";
 
@@ -84,13 +86,14 @@ export async function updateEmployee(
     const employee = await prisma.user.update({
         where: { id },
         data: {
+            workIn_shopId: employeeForm.workIn_shopId,
             ...(employeeForm.name && { name: employeeForm.name }),
             ...(employeeForm.email && { email: employeeForm.email }),
             ...(employeeForm.role && { role: employeeForm.role }),
             ...(employeeForm.phone && { phone: employeeForm.phone }),
             ...(employeeForm.address && { address: employeeForm.address }),
             ...(employeeForm.img && { img: employeeForm.img }),
-            ...(employeeForm.workIn_shopId && { workIn_shopId: employeeForm.workIn_shopId }),
+
         },
     })
     revalidatePath('/')
@@ -133,4 +136,60 @@ export const getShopAllApi = async () => {
 }
 export const getShopAll = async (): Promise<Shop[]> => {
     return prisma.shop.findMany()
+}
+
+export const handlerAbsent = async () => {
+    try {
+
+        const session = await getSessionEmployeePage()
+        const currentDate = new Date()
+
+        // Get today's start and end time (00:00:00 - 23:59:59)
+        const startOfDay = new Date(currentDate)
+        startOfDay.setHours(0, 0, 0, 0)
+
+        const endOfDay = new Date(currentDate)
+        endOfDay.setHours(23, 59, 59, 999)
+
+        // Check if user already has absent today
+        const existingAbsent = await prisma.absent.findFirst({
+            where: {
+                userId: session.userId,
+                datetime: {
+                    gte: startOfDay,
+                    lte: endOfDay,
+                },
+            },
+        })
+
+        if (existingAbsent) {
+            throw new Error("You have already submitted absent today.")
+        }
+
+        // Example: shift is 2 for now, adjust if dynamic
+        const shift2 = "2"
+        const statusAbsentData = shift2
+            ? statusAbsent("09:00", "10:00")
+            : statusAbsent("15:00", "21:00")
+
+        const absent = await prisma.absent.create({
+            data: {
+                sold: 0,
+                datetime: currentDate,
+                revenue: 0,
+                userId: session.userId,
+                status_absent: statusAbsentData,
+            },
+        })
+
+        revalidatePath("/")
+        return absent
+
+    } catch (error: unknown) {
+        if (error instanceof Error) {
+            throw error.message
+        }
+        throw 'Something went wrong'
+    }
+
 }

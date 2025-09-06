@@ -2,12 +2,12 @@
 
 import { getSessionUserPage } from "@/action/auth-action";
 import { ActionResponse, CartItem, } from "@/interface/actionType";
-import { ERROR, ROLE_USER, STATUS_PREORDER } from "@/lib/constants";
+import { ERROR } from "@/lib/constants";
 import { logger } from "@/lib/logger";
 import { prisma } from "@/lib/prisma";
 import { CustomerModelNew, CustomerModelType } from "@/lib/schema";
-import { Customer, SalesItemOptionalDefaults, Shop } from "@/lib/validation";
-import { Prisma } from "@prisma/client";
+import { Customer, SalesItemOptionalDefaults } from "@/lib/validation";
+import { Prisma, ROLE_USER, STATUS_PREORDER } from "@prisma/client";
 import bcrypt from "bcrypt";
 import { revalidatePath } from "next/cache";
 import PrismaClientKnownRequestError = Prisma.PrismaClientKnownRequestError;
@@ -41,7 +41,7 @@ export async function createTransactionAction(
                     total: product.reduce((a, b) => a + (b.price * b.quantity), 0),
                     date: new Date(),
                     buyer_customerId: customer.id,
-                    statusTransaction: STATUS_PREORDER.PENDING,
+                    statusTransaction: STATUS_PREORDER.Pending,
                     typeTransaction: 'Sistem Dev'//'Cash'
                 }
             })

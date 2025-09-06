@@ -1,16 +1,27 @@
 'use client'
-import { GetEmployee } from "@/app/admin/employee/employee-action";
+import { GetEmployee, handlerAbsent } from "@/app/admin/employee/employee-action";
 import { EmployeeDialog } from "@/app/admin/employee/employee-page";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import {
+    Dialog,
+    DialogClose,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger
+} from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow, } from "@/components/ui/table"
-import { formatRupiah } from "@/lib/formatter";
-import { Product } from "@/lib/validation";
+import { formatDateIndo, formatRupiah } from "@/lib/formatter";
+import { Absent, Product } from "@/lib/validation";
+import { STATUS_ABSENT } from "@prisma/client";
 import { Calendar, CheckCircle, DollarSign, Mail, MapPin, Package, Phone, ShoppingBag, XCircle } from "lucide-react"
-import React, { useState } from "react"
+import React, { useState, useTransition } from "react"
+import { toast } from "sonner";
 
 // Interfaces for type clarity
 
@@ -42,7 +53,7 @@ const months = [
     { value: "12", label: "December" },
 ]
 
-const attendanceList: AttendanceRecord[] = [
+const _attendanceList: AttendanceRecord[] = [
     // === 2024 ===
     {
         datetime: "2024-08-15 08:10:00",
@@ -201,7 +212,9 @@ interface AttendanceRecord {
 }
 
 export default function EmployeeDetail(
-    { employee, products, }: {
+    { employee, products, absent }: {
+        todayAbsent: number
+        absent: Absent[]
         employee: GetEmployee,
         products: Product[],
     }) {
@@ -210,17 +223,15 @@ export default function EmployeeDetail(
     return (
         <div className="flex p-6 gap-6 flex-col">
             <EmployeeDetailCard employee={ employee }/>
-            <EmployeeTableRecord
-                // setSelectedRecord={ setSelectedRecord }
-            />
+            <EmployeeTableRecord absent={ absent }/>
             <SoldProductsCard products={ products }/>
         </div>
     )
 }
 
 export function EmployeeDetailCard({ employee, }: { employee: GetEmployee, }) {
-
     const [ isOpen, setIsOpen ] = useState(false);
+
     return (
         <>
             <EmployeeDialog
@@ -239,10 +250,10 @@ export function EmployeeDetailCard({ employee, }: { employee: GetEmployee, }) {
                             <AvatarFallback>EM</AvatarFallback>
                         </Avatar>
                         <Button
-                            onClick={ () => {
-                                setIsOpen(true)
-                            } }
-                            className="mt-2 w-full">Edit Profile</Button>
+                            onClick={ () => setIsOpen(true) }
+                            className="mt-2 w-full">Edit Profile
+                        </Button>
+
                     </div>
 
                     {/* Info Section */ }
@@ -250,6 +261,7 @@ export function EmployeeDetailCard({ employee, }: { employee: GetEmployee, }) {
                         <CardHeader className="p-0 mb-4">
                             <CardTitle>{ employee.name }</CardTitle>
                             <CardDescription>{ employee.role }</CardDescription>
+
                             {/*<p className="text-gray-500 text-sm">{employee.phone}</p>*/ }
                             {/*<p className="text-gray-500 text-sm">{employee.email}</p>*/ }
                         </CardHeader>
@@ -274,7 +286,7 @@ export function EmployeeDetailCard({ employee, }: { employee: GetEmployee, }) {
                     { employee.Shop ?
                         <div className="flex-1">
                             <CardHeader className="p-0 mb-4">
-                                <CardTitle>{ employee.Shop.name }</CardTitle>
+                                <CardTitle>Market: { employee.Shop.name }</CardTitle>
                                 <CardDescription>{ employee.Shop.open
                                     ? <Badge variant={ 'default' }>Open</Badge>
                                     : <Badge variant={ 'destructive' }>Close</Badge>
@@ -292,6 +304,7 @@ export function EmployeeDetailCard({ employee, }: { employee: GetEmployee, }) {
                                     <MapPin className="h-4 w-4 text-gray-500"/>
                                     <span>{ employee.Shop.location }</span>
                                 </div>
+
                             </CardContent>
                         </div> : null }
                 </div>
@@ -302,20 +315,20 @@ export function EmployeeDetailCard({ employee, }: { employee: GetEmployee, }) {
 }
 
 export function EmployeeTableRecord(
-    // { setSelectedRecord }: { setSelectedRecord: (products: Product[]) => void }
+    { absent }: { absent: Absent[] }
 ) {
-
+    const [ isOpen, setIsOpen ] = useState(false);
+    const [ isPending, startTransition ] = useTransition()
     const [ selectedMonth, setSelectedMonth ] = useState<string>("09")
     const [ selectedYear, setSelectedYear ] = useState<string>("2025")
 
+    // Extract years from datetime (works even if datetime is Date type)
     const years = Array.from(
-        new Set(attendanceList.map((r) => r.datetime.split("-")[0]))
+        new Set(absent.map((r) => new Date(r.datetime).getFullYear().toString()))
     ).sort()
 
-    // State for filters
-
     // Apply filters
-    const filteredList = attendanceList.filter((record) => {
+    const filteredList = absent.filter((record) => {
         const date = new Date(record.datetime)
         const month = String(date.getMonth() + 1).padStart(2, "0")
         const year = String(date.getFullYear())
@@ -327,14 +340,61 @@ export function EmployeeTableRecord(
     const totalSold = filteredList.reduce((sum, r) => sum + r.sold, 0)
     const totalRevenue = filteredList.reduce((sum, r) => sum + r.revenue, 0)
 
+    const isAbsent: boolean = absent.some((item) => {
+        const itemDate = new Date(item.datetime)
+        const today = new Date()
+
+        // compare only year, month, and day
+        return (
+            itemDate.getFullYear() === today.getFullYear() &&
+            itemDate.getMonth() === today.getMonth() &&
+            itemDate.getDate() === today.getDate()
+        )
+    })
     return (
         <Card className="w-full  shadow-lg rounded-2xl">
             <CardHeader>
                 <CardTitle className="flex items-center justify-between">
-            <span className="flex items-center gap-2">
-              <Calendar className="h-5 w-5 text-gray-600"/>
-              Attendance, Sales & Revenue
-            </span>
+                    <div className=" flex  gap-2">
+
+                        <span className="flex items-center gap-2">
+                          <Calendar className="h-5 w-5 text-gray-600"/>
+                          Attendance, Sales & Revenue
+                        </span>
+                        <Dialog open={ isOpen } onOpenChange={ setIsOpen }>
+                            <DialogTrigger asChild>
+                                <Button size="sm" disabled={ isAbsent }>
+                                    Absent
+                                </Button>
+                            </DialogTrigger>
+
+                            <DialogContent className="sm:max-w-[400px]">
+                                <DialogHeader>
+                                    <DialogTitle>Confirm Absent</DialogTitle>
+                                    <DialogDescription>
+                                        Are you sure you want to mark yourself as absent for today?
+                                    </DialogDescription>
+                                </DialogHeader>
+
+                                <div className="flex justify-end gap-2 mt-4">
+                                    <DialogClose asChild>
+                                        <Button variant="outline">Cancel</Button>
+                                    </DialogClose>
+                                    <Button onClick={ () => startTransition(async () => {
+                                        toast.promise(handlerAbsent, {
+                                                success: () => 'Success Absent',
+                                                error: () => "Error Absent",
+                                                finally: () => setIsOpen(false)
+                                            }
+                                        )
+                                    }) }
+                                            disabled={ isPending }>
+                                        { isPending ? "Submitting..." : "Confirm" }
+                                    </Button>
+                                </div>
+                            </DialogContent>
+                        </Dialog>
+                    </div>
 
                     {/* Filters */ }
                     <div className="flex gap-2">
@@ -385,17 +445,14 @@ export function EmployeeTableRecord(
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        { filteredList.map((record, i) => (
+                        { absent.map((record, i) => (
                             <TableRow
                                 key={ i }
                                 className="cursor-pointer "
                             >
-
-                                <TableCell
-
-                                >{ record.datetime }</TableCell>
+                                <TableCell>{ formatDateIndo(record.datetime) }</TableCell>
                                 <TableCell>
-                                    { record.status === "present" ? (
+                                    { record.status_absent === STATUS_ABSENT.Present ? (
                                         <span className="flex items-center text-green-600 font-medium">
                                             <CheckCircle className="h-4 w-4 mr-1"/> Present
                                         </span>

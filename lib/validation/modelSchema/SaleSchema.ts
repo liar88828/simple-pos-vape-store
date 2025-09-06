@@ -31,6 +31,16 @@ import {
     ShopOptionalDefaultsWithRelationsSchema
 } from './ShopSchema'
 import type { ShopWithRelations, ShopPartialWithRelations, ShopOptionalDefaultsWithRelations } from './ShopSchema'
+import {
+    AbsentWithRelationsSchema,
+    AbsentPartialWithRelationsSchema,
+    AbsentOptionalDefaultsWithRelationsSchema
+} from './AbsentSchema'
+import type {
+    AbsentWithRelations,
+    AbsentPartialWithRelations,
+    AbsentOptionalDefaultsWithRelations
+} from './AbsentSchema'
 
 /////////////////////////////////////////
 // SALE SCHEMA
@@ -48,6 +58,7 @@ export const SaleSchema = z.object({
     seller_userId: z.string().nullish(),
     buyer_customerId: z.string(),
     shopId: z.string(),
+    employee_absentId: z.number().int().nullish(),
 })
 
 export type Sale = z.infer<typeof SaleSchema>
@@ -81,6 +92,7 @@ export type SaleRelations = {
     User?: UserWithRelations | null;
     Customer: CustomerWithRelations;
     Shop: ShopWithRelations;
+    Absent?: AbsentWithRelations | null;
 };
 
 export type SaleWithRelations = z.infer<typeof SaleSchema> & SaleRelations
@@ -90,6 +102,7 @@ export const SaleWithRelationsSchema: z.ZodType<SaleWithRelations> = SaleSchema.
     User: z.lazy(() => UserWithRelationsSchema).nullish(),
     Customer: z.lazy(() => CustomerWithRelationsSchema),
     Shop: z.lazy(() => ShopWithRelationsSchema),
+    Absent: z.lazy(() => AbsentWithRelationsSchema).nullish(),
 }))
 
 /////////////////////////////////////////
@@ -101,6 +114,7 @@ export type SaleOptionalDefaultsRelations = {
     User?: UserOptionalDefaultsWithRelations | null;
     Customer: CustomerOptionalDefaultsWithRelations;
     Shop: ShopOptionalDefaultsWithRelations;
+    Absent?: AbsentOptionalDefaultsWithRelations | null;
 };
 
 export type SaleOptionalDefaultsWithRelations = z.infer<typeof SaleOptionalDefaultsSchema> & SaleOptionalDefaultsRelations
@@ -110,6 +124,7 @@ export const SaleOptionalDefaultsWithRelationsSchema: z.ZodType<SaleOptionalDefa
     User: z.lazy(() => UserOptionalDefaultsWithRelationsSchema).nullish(),
     Customer: z.lazy(() => CustomerOptionalDefaultsWithRelationsSchema),
     Shop: z.lazy(() => ShopOptionalDefaultsWithRelationsSchema),
+    Absent: z.lazy(() => AbsentOptionalDefaultsWithRelationsSchema).nullish(),
 }))
 
 /////////////////////////////////////////
@@ -121,6 +136,7 @@ export type SalePartialRelations = {
     User?: UserPartialWithRelations | null;
     Customer?: CustomerPartialWithRelations;
     Shop?: ShopPartialWithRelations;
+    Absent?: AbsentPartialWithRelations | null;
 };
 
 export type SalePartialWithRelations = z.infer<typeof SalePartialSchema> & SalePartialRelations
@@ -130,6 +146,7 @@ export const SalePartialWithRelationsSchema: z.ZodType<SalePartialWithRelations>
     User: z.lazy(() => UserPartialWithRelationsSchema).nullish(),
     Customer: z.lazy(() => CustomerPartialWithRelationsSchema),
     Shop: z.lazy(() => ShopPartialWithRelationsSchema),
+    Absent: z.lazy(() => AbsentPartialWithRelationsSchema).nullish(),
 })).partial()
 
 export type SaleOptionalDefaultsWithPartialRelations = z.infer<typeof SaleOptionalDefaultsSchema> & SalePartialRelations
@@ -139,6 +156,7 @@ export const SaleOptionalDefaultsWithPartialRelationsSchema: z.ZodType<SaleOptio
     User: z.lazy(() => UserPartialWithRelationsSchema).nullish(),
     Customer: z.lazy(() => CustomerPartialWithRelationsSchema),
     Shop: z.lazy(() => ShopPartialWithRelationsSchema),
+    Absent: z.lazy(() => AbsentPartialWithRelationsSchema).nullish(),
 }).partial())
 
 export type SaleWithPartialRelations = z.infer<typeof SaleSchema> & SalePartialRelations
@@ -148,6 +166,7 @@ export const SaleWithPartialRelationsSchema: z.ZodType<SaleWithPartialRelations>
     User: z.lazy(() => UserPartialWithRelationsSchema).nullish(),
     Customer: z.lazy(() => CustomerPartialWithRelationsSchema),
     Shop: z.lazy(() => ShopPartialWithRelationsSchema),
+    Absent: z.lazy(() => AbsentPartialWithRelationsSchema).nullish(),
 }).partial())
 
 export default SaleSchema;

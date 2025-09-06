@@ -1,15 +1,15 @@
 'use server'
 import { SaleCustomers } from "@/interface/actionType";
-import { STATUS_PREORDER } from "@/lib/constants";
 import { logger } from "@/lib/logger";
 import { prisma } from "@/lib/prisma";
+import { STATUS_PREORDER } from "@prisma/client";
 
 export async function lastBuyerPending(): Promise<SaleCustomers[]> {
     const data = prisma.sale.findMany({
         take: 10,
         orderBy: { date: "desc" },
         where: {
-            statusTransaction: STATUS_PREORDER.PENDING
+            statusTransaction: STATUS_PREORDER.Pending
         },
         include: {
             Customer: true,

@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { STATUS_PREORDERSchema } from '../inputTypeSchemas/STATUS_PREORDERSchema'
 import {
     UserWithRelationsSchema,
     UserPartialWithRelationsSchema,
@@ -27,16 +28,13 @@ import type { ShopWithRelations, ShopPartialWithRelations, ShopOptionalDefaultsW
 /////////////////////////////////////////
 
 export const PreOrderSchema = z.object({
+    status: STATUS_PREORDERSchema,
     id: z.string().uuid(),
   quantity: z.number().min(1),
     priceNormal: z.number().min(1),
     priceSell: z.number().min(1),
     estimatedDate: z.date().nullish(),
     expired: z.date().nullish(),
-    /**
-     * // Pending, Terima
-     */
-  status: z.string().min(1),
   createdAt: z.date(),
   updatedAt: z.date(),
     userId: z.string(),

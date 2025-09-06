@@ -1,5 +1,5 @@
-import { ROLE_USER, STATUS_PREORDER } from "@/lib/constants";
 import { prisma } from "@/lib/prisma"
+import { ROLE_USER, STATUS_PREORDER } from "@prisma/client";
 import bcrypt from "bcrypt";
 
 export async function GET() {
@@ -31,11 +31,13 @@ export async function GET() {
                     email: "admin@example.com",
                     password: await bcrypt.hash('admin@example.com', 10), // hash this in real app
                     role: ROLE_USER.ADMIN,
+                    img: "https://randomuser.me/api/portraits/women/1.jpg",
                     workIn_shopId: null
                 },
                 {
                     name: "Employee User",
                     email: "employee@example.com",
+                    img: "https://randomuser.me/api/portraits/women/69.jpg",
                     password: await bcrypt.hash('employee@example.com', 10),
                     role: ROLE_USER.EMPLOYEE,
                     workIn_shopId: shop[1].id
@@ -43,6 +45,7 @@ export async function GET() {
                 {
                     name: "Regular User 1",
                     email: "user1@example.com",
+                    img: "https://randomuser.me/api/portraits/women/87.jpg",
                     password: await bcrypt.hash('user1@example.com', 10),
                     role: ROLE_USER.USER,
                     workIn_shopId: null
@@ -50,8 +53,9 @@ export async function GET() {
                 {
                     name: "Regular User 2",
                     email: "user2@example.com",
+                    img: "https://randomuser.me/api/portraits/women/23.jpg",
                     password: await bcrypt.hash('user2@example.com', 10),
-                    role: ROLE_USER.USER,
+                    role: ROLE_USER.EMPLOYEE,
                     workIn_shopId: null
                 },
             ],
@@ -90,7 +94,7 @@ export async function GET() {
                     price: 500000,
                     stock: 50,
                     minStock: 5,
-                    image: "/images/starter-kit.jpg",
+                    image: 'https://picsum.photos/200/300',
                     brand: "VapeMaster",
                     type: "Device",
                     description: "Compact starter kit with rechargeable battery",
@@ -101,7 +105,7 @@ export async function GET() {
                     price: 150000,
                     stock: 200,
                     minStock: 20,
-                    image: "/images/mango-blast.jpg",
+                    image: 'https://picsum.photos/200/301',
                     brand: "CloudJuice",
                     type: "E-liquid",
                     description: "Sweet mango flavored liquid",
@@ -115,7 +119,7 @@ export async function GET() {
                     price: 160000,
                     stock: 180,
                     minStock: 20,
-                    image: "/images/cool-mint.jpg",
+                    image: 'https://picsum.photos/200/320',
                     brand: "FreshCloud",
                     type: "E-liquid",
                     description: "Refreshing mint with icy finish",
@@ -129,7 +133,7 @@ export async function GET() {
                     price: 50000,
                     stock: 100,
                     minStock: 10,
-                    image: "/images/mesh-coil.jpg",
+                    image: 'https://picsum.photos/200/307',
                     brand: "VapeCoil",
                     type: "Coil",
                     description: "High-performance mesh coil for dense vapor",
@@ -142,7 +146,7 @@ export async function GET() {
                     price: 30000,
                     stock: 250,
                     minStock: 30,
-                    image: "/images/organic-cotton.jpg",
+                    image: 'https://picsum.photos/200/309',
                     brand: "CloudCotton",
                     type: "Cotton",
                     description: "100% organic Japanese cotton",
@@ -154,7 +158,7 @@ export async function GET() {
                     price: 120000,
                     stock: 80,
                     minStock: 10,
-                    image: "/images/18650-battery.jpg",
+                    image: 'https://picsum.photos/200/389',
                     brand: "PowerCell",
                     type: "Battery",
                     description: "High capacity 3000mAh rechargeable battery",
@@ -166,7 +170,7 @@ export async function GET() {
                     price: 350000,
                     stock: 60,
                     minStock: 5,
-                    image: "/images/pod-lite.jpg",
+                    image: 'https://picsum.photos/200/376',
                     brand: "Podify",
                     type: "Device",
                     description: "Lightweight pod system with refillable cartridge",
@@ -188,7 +192,7 @@ export async function GET() {
                     priceSell: 450000,
                     estimatedDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
                     expired: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
-                    status: STATUS_PREORDER.PENDING,
+                    status: STATUS_PREORDER.Pending,
                 },
                 {
                     userId: users[1].id,
@@ -199,7 +203,7 @@ export async function GET() {
                     priceSell: 140000,
                     estimatedDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
                     expired: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000),
-                    status: STATUS_PREORDER.SUCCESS,
+                    status: STATUS_PREORDER.Success,
                 },
             ],
         })

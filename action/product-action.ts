@@ -5,7 +5,7 @@ import { ActionResponse, ContextPage, SaleCustomers } from "@/interface/actionTy
 import { getContextPage } from "@/lib/context-action";
 import { logger } from "@/lib/logger";
 import { prisma } from "@/lib/prisma";
-import { Customer, PreOrder, Product, } from "@/lib/validation";
+import { Customer, PreOrder, Product, Shop, } from "@/lib/validation";
 import { Prisma, } from "@prisma/client";
 import { revalidatePath } from 'next/cache'
 
@@ -15,6 +15,11 @@ export type TopSellingProduct = Product & {
 export type BrandsProps = { brand: string | null }[];
 
 export type ProductPreorder = Product & { PreOrders: PreOrder[] }
+export type ProductPreorderShop = Product & {
+    PreOrders: (PreOrder & {
+        Shop: Shop
+    })[]
+};
 
 export type ProductPaging = {
     data: ProductPreorder[],

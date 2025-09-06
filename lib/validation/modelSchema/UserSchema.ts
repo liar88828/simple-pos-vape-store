@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { ROLE_USERSchema } from '../inputTypeSchemas/ROLE_USERSchema'
 import {
     CustomerWithRelationsSchema,
     CustomerPartialWithRelationsSchema,
@@ -26,6 +27,16 @@ import type {
     PreOrderOptionalDefaultsWithRelations
 } from './PreOrderSchema'
 import {
+    AbsentWithRelationsSchema,
+    AbsentPartialWithRelationsSchema,
+    AbsentOptionalDefaultsWithRelationsSchema
+} from './AbsentSchema'
+import type {
+    AbsentWithRelations,
+    AbsentPartialWithRelations,
+    AbsentOptionalDefaultsWithRelations
+} from './AbsentSchema'
+import {
     ShopWithRelationsSchema,
     ShopPartialWithRelationsSchema,
     ShopOptionalDefaultsWithRelationsSchema
@@ -37,11 +48,11 @@ import type { ShopWithRelations, ShopPartialWithRelations, ShopOptionalDefaultsW
 /////////////////////////////////////////
 
 export const UserSchema = z.object({
+    role: ROLE_USERSchema,
   id: z.string().uuid(),
   name: z.string().min(1),
   email: z.string(),
   password: z.string().min(1),
-  role: z.string().min(1),
   createdAt: z.date(),
   updatedAt: z.date(),
     phone: z.string().nullish(),
@@ -67,7 +78,6 @@ export type UserPartial = z.infer<typeof UserPartialSchema>
 
 export const UserOptionalDefaultsSchema = UserSchema.merge(z.object({
   id: z.string().uuid().optional(),
-  role: z.string().min(1).optional(),
   createdAt: z.date().optional(),
   updatedAt: z.date().optional(),
     active: z.boolean().optional(),
@@ -83,6 +93,7 @@ export type UserRelations = {
     Customer?: CustomerWithRelations | null;
     Sale: SaleWithRelations[];
     PreOrder: PreOrderWithRelations[];
+    Absent: AbsentWithRelations[];
     Shop?: ShopWithRelations | null;
 };
 
@@ -92,6 +103,7 @@ export const UserWithRelationsSchema: z.ZodType<UserWithRelations> = UserSchema.
     Customer: z.lazy(() => CustomerWithRelationsSchema).nullish(),
     Sale: z.lazy(() => SaleWithRelationsSchema).array(),
     PreOrder: z.lazy(() => PreOrderWithRelationsSchema).array(),
+    Absent: z.lazy(() => AbsentWithRelationsSchema).array(),
     Shop: z.lazy(() => ShopWithRelationsSchema).nullish(),
 }))
 
@@ -103,6 +115,7 @@ export type UserOptionalDefaultsRelations = {
     Customer?: CustomerOptionalDefaultsWithRelations | null;
     Sale: SaleOptionalDefaultsWithRelations[];
     PreOrder: PreOrderOptionalDefaultsWithRelations[];
+    Absent: AbsentOptionalDefaultsWithRelations[];
     Shop?: ShopOptionalDefaultsWithRelations | null;
 };
 
@@ -114,6 +127,7 @@ export const UserOptionalDefaultsWithRelationsSchema: z.ZodType<UserOptionalDefa
     Customer: z.lazy(() => CustomerOptionalDefaultsWithRelationsSchema).nullish(),
     Sale: z.lazy(() => SaleOptionalDefaultsWithRelationsSchema).array(),
     PreOrder: z.lazy(() => PreOrderOptionalDefaultsWithRelationsSchema).array(),
+    Absent: z.lazy(() => AbsentOptionalDefaultsWithRelationsSchema).array(),
     Shop: z.lazy(() => ShopOptionalDefaultsWithRelationsSchema).nullish(),
 }))
 
@@ -125,6 +139,7 @@ export type UserPartialRelations = {
     Customer?: CustomerPartialWithRelations | null;
     Sale?: SalePartialWithRelations[];
     PreOrder?: PreOrderPartialWithRelations[];
+    Absent?: AbsentPartialWithRelations[];
     Shop?: ShopPartialWithRelations | null;
 };
 
@@ -134,6 +149,7 @@ export const UserPartialWithRelationsSchema: z.ZodType<UserPartialWithRelations>
     Customer: z.lazy(() => CustomerPartialWithRelationsSchema).nullish(),
     Sale: z.lazy(() => SalePartialWithRelationsSchema).array(),
     PreOrder: z.lazy(() => PreOrderPartialWithRelationsSchema).array(),
+    Absent: z.lazy(() => AbsentPartialWithRelationsSchema).array(),
     Shop: z.lazy(() => ShopPartialWithRelationsSchema).nullish(),
 })).partial()
 
@@ -143,6 +159,7 @@ export const UserOptionalDefaultsWithPartialRelationsSchema: z.ZodType<UserOptio
     Customer: z.lazy(() => CustomerPartialWithRelationsSchema).nullish(),
     Sale: z.lazy(() => SalePartialWithRelationsSchema).array(),
     PreOrder: z.lazy(() => PreOrderPartialWithRelationsSchema).array(),
+    Absent: z.lazy(() => AbsentPartialWithRelationsSchema).array(),
     Shop: z.lazy(() => ShopPartialWithRelationsSchema).nullish(),
 }).partial())
 
@@ -152,6 +169,7 @@ export const UserWithPartialRelationsSchema: z.ZodType<UserWithPartialRelations>
     Customer: z.lazy(() => CustomerPartialWithRelationsSchema).nullish(),
     Sale: z.lazy(() => SalePartialWithRelationsSchema).array(),
     PreOrder: z.lazy(() => PreOrderPartialWithRelationsSchema).array(),
+    Absent: z.lazy(() => AbsentPartialWithRelationsSchema).array(),
     Shop: z.lazy(() => ShopPartialWithRelationsSchema).nullish(),
 }).partial())
 

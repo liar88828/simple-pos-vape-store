@@ -1,7 +1,7 @@
 import { getSessionEmployeePage } from "@/action/auth-action";
 import { getEmployee } from "@/app/admin/employee/employee-action";
 import EmployeeDetail from "@/app/admin/employee/employee-detail";
-import { prisma } from "@/lib/prisma";
+import { absent, getTodayAbsent, products } from "@/app/employee/employee-action";
 import { redirect } from "next/navigation";
 import React from 'react';
 
@@ -11,14 +11,11 @@ export default async function Page() {
     if (!employee || !employee.workIn_shopId) {
         redirect('/admin/employee')
     }
-    console.log("employee", employee)
 
-    const products = await prisma.product.findMany({
-        take: 100,
-        where: { PreOrders: { every: { sellIn_shopId: employee.workIn_shopId } } }
-    })
-
-    return <EmployeeDetail employee={ employee }
-                           products={ products }/>
+    return <EmployeeDetail
+        todayAbsent={ (await getTodayAbsent(session.userId)).length }
+        absent={ await absent(session.userId) }
+        employee={ employee }
+        products={ await products(employee.workIn_shopId) }/>
 }
 

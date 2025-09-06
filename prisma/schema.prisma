@@ -101,6 +101,11 @@ model Customer {
     buyer_userId String @unique // as buyer
 }
 
+enum STATUS_PREORDER {
+    Pending
+    Success
+}
+
 model PreOrder {
     id String @id @default(uuid())
     // customer      Customer  @relation(fields: [customerId], references: [id])
@@ -111,7 +116,7 @@ model PreOrder {
     priceSell     Int /// @zod.number.min(1)
     estimatedDate DateTime? //@default(now())
     expired       DateTime?
-    status String /// @zod.string.min(1) // Pending, Terima
+    status STATUS_PREORDER // @zod.string.min(1) // Pending, Terima
 
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt
@@ -139,13 +144,15 @@ model Sale {
     createdAt       DateTime @default(now())
     updatedAt       DateTime @updatedAt
 
-    SaleItems        SalesItem[]
-    User             User?       @relation(fields: [seller_userId], references: [id])
-    seller_userId    String? // employee or admin
-    Customer Customer @relation(fields: [buyer_customerId], references: [id])
-    buyer_customerId String // buyer
-    Shop     Shop     @relation(fields: [shopId], references: [id])
-    shopId   String
+    SaleItems         SalesItem[]
+    User              User?       @relation(fields: [seller_userId], references: [id])
+    seller_userId     String? // employee or admin
+    Customer          Customer    @relation(fields: [buyer_customerId], references: [id])
+    buyer_customerId  String // buyer
+    Shop              Shop        @relation(fields: [shopId], references: [id])
+    shopId            String
+    Absent            Absent?     @relation(fields: [employee_absentId], references: [id])
+    employee_absentId Int?
 }
 
 model SalesItem {
@@ -173,26 +180,53 @@ model SalesItem {
 //     updatedAt DateTime @updatedAt
 // }
 
+enum ROLE_USER {
+    USER
+    ADMIN
+    EMPLOYEE
+}
+
 model User {
-    id        String   @id @default(uuid())
+    id        String    @id @default(uuid())
     name      String /// @zod.string.min(1)
-    email     String   @unique
+    email     String    @unique
     password  String /// @zod.string.min(1)
-    role      String   @default("USER") /// @zod.string.min(1)
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt
+    role      ROLE_USER // @zod.string.min(1)
+    createdAt DateTime  @default(now())
+    updatedAt DateTime  @updatedAt
     // employee
-    phone   String?
-    address String?
-    img     String?
-    active  Boolean @default(false)
+    phone     String?
+    address   String?
+    img       String?
+    active    Boolean   @default(false)
     //
 
     Customer      Customer? // as buyer
     Sale          Sale[]
     PreOrder      PreOrder[]
+    Absent Absent[]
     Shop          Shop?      @relation(fields: [workIn_shopId], references: [id])
     workIn_shopId String? // as work when EMPLOYEE
+}
+
+enum STATUS_ABSENT {
+    Present
+    Absent
+    Late
+}
+
+model Absent {
+    id            Int           @id @default(autoincrement())
+    datetime      DateTime
+    status_absent STATUS_ABSENT
+    sold          Int
+    revenue       Int
+    Sale          Sale[]
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+    User      User     @relation(fields: [userId], references: [id])
+    userId    String
 }
 
 model Shop {
