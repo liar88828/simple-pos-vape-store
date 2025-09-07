@@ -12,7 +12,7 @@ generator client {
 
 generator zod {
     provider                         = "zod-prisma-types"
-    output = "../lib/validation"
+    output                           = "../lib/validation"
     // output                           = "./generated/zod_types" // default is ./generated/zod
     useMultipleFiles                 = true // default is false
     // writeBarrelFiles                 = false // default is true
@@ -60,11 +60,11 @@ datasource db {
 }
 
 model Product {
-    id         String  @id @default(uuid())
+    id             String      @id @default(uuid())
     category       String /// @zod.string.min(1)
     name           String /// @zod.string.min(1)
     price          Int /// @zod.number.min(1)
-    stock      Int     @default(0) /// @zod.number.min(0)
+    stock          Int         @default(0) /// @zod.number.min(0)
     minStock       Int         @default(5)
     sold           Int         @default(0)
     image          String /// @zod.string.min(1)
@@ -72,7 +72,7 @@ model Product {
     type           String /// @zod.string.min(1)
     description    String /// @zod.string.min(1)
     nicotineLevel  String? // nullable
-    fluidLevel String? // nullable
+    fluidLevel     String? // nullable
     flavor         String? // nullable
     cottonSize     String?
     batterySize    String?
@@ -85,7 +85,7 @@ model Product {
 }
 
 model Customer {
-    id String @id @default(uuid())
+    id            String   @id @default(uuid())
     name          String /// @zod.string.min(1)
     age           Int      @default(0) /// @zod.number.max(80)
     totalPurchase Int      @default(0) /// @zod.number.min(0)
@@ -112,29 +112,32 @@ model PreOrder {
     // customerId    Int
 
     quantity      Int /// @zod.number.min(1)
-    priceNormal   Int /// @zod.number.min(1)
-    priceSell     Int /// @zod.number.min(1)
+    priceOriginal Int /// @zod.number.min(1)
     estimatedDate DateTime? //@default(now())
     expired       DateTime?
-    status STATUS_PREORDER // @zod.string.min(1) // Pending, Terima
+    status        STATUS_PREORDER // @zod.string.min(1) // Pending, Terima
 
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt
 
-    User          User    @relation(fields: [userId], references: [id])
-    userId        String
-    Product       Product @relation(fields: [productId], references: [id])
-    productId     String
-    Shop          Shop    @relation(fields: [sellIn_shopId], references: [id])
-    // @zod.string.nullable()
-    sellIn_shopId String // as sell a product
+    User            User    @relation(fields: [userId], references: [id])
+    ///
+    userId          String // can null
+    Product         Product @relation(fields: [productId], references: [id])
+    productId       String // can null
+    Market          Market  @relation(fields: [marketId_sellIn], references: [id])
+    market_name     String
+    marketId_sellIn String // as sell a product// can null
+
+    SalesItem SalesItem[]
 }
 
 model Sale {
-    id    String   @id @default(uuid())
-    date  DateTime
-    total Int /// @zod.number.min(1)
-    items Int /// @zod.number.min(1)
+    id           String    @id @default(uuid())
+    date_buy     DateTime
+    date_confirm DateTime?
+    total        Int /// @zod.number.min(1)
+    items        Int /// @zod.number.min(1)
 
     /// @zod.string.min(1)
     statusTransaction String //@default("Pending") // Pending , Accept
@@ -149,24 +152,25 @@ model Sale {
     seller_userId     String? // employee or admin
     Customer          Customer    @relation(fields: [buyer_customerId], references: [id])
     buyer_customerId  String // buyer
-    Shop              Shop        @relation(fields: [shopId], references: [id])
-    shopId            String
+    Market            Market      @relation(fields: [marketId], references: [id])
+    marketId          String
     Absent            Absent?     @relation(fields: [employee_absentId], references: [id])
     employee_absentId Int?
 }
 
 model SalesItem {
-    id String @id @default(uuid())
+    id         String @id @default(uuid())
     quantity   Int /// @zod.number.min(1)
     priceAtBuy Int /// @zod.number.min(1)
 
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt
-
-    product   Product @relation(fields: [productId], references: [id])
-    productId String
-    sale      Sale    @relation(fields: [saleId], references: [id])
-    saleId    String
+    createdAt  DateTime @default(now())
+    updatedAt  DateTime @updatedAt
+    PreOrder   PreOrder @relation(fields: [preorderId], references: [id])
+    preorderId String
+    Product    Product  @relation(fields: [productId], references: [id])
+    productId  String
+    Sale       Sale     @relation(fields: [saleId], references: [id])
+    saleId     String
 }
 
 // model MemberTier {
@@ -201,12 +205,12 @@ model User {
     active    Boolean   @default(false)
     //
 
-    Customer      Customer? // as buyer
-    Sale          Sale[]
-    PreOrder      PreOrder[]
-    Absent Absent[]
-    Shop          Shop?      @relation(fields: [workIn_shopId], references: [id])
-    workIn_shopId String? // as work when EMPLOYEE
+    Customer        Customer? // as buyer
+    Sale            Sale[]
+    PreOrder        PreOrder[]
+    Absent          Absent[]
+    Market          Market?    @relation(fields: [marketId_workIn], references: [id])
+    marketId_workIn String? // as work when EMPLOYEE
 }
 
 enum STATUS_ABSENT {
@@ -222,14 +226,13 @@ model Absent {
     sold          Int
     revenue       Int
     Sale          Sale[]
-
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt
-    User      User     @relation(fields: [userId], references: [id])
-    userId    String
+    createdAt     DateTime      @default(now())
+    updatedAt     DateTime      @updatedAt
+    User          User          @relation(fields: [userId], references: [id])
+    userId        String
 }
 
-model Shop {
+model Market {
     id        String     @id @default(uuid())
     name      String
     location  String
@@ -255,20 +258,21 @@ model Store {
 }
 
 model PaymentSetting {
-    id       String  @id @default(uuid())
-    isCod    Boolean @default(false)
-    isTax    Boolean @default(false)
-    valueCod Int     @default(0) /// @zod.number.min(0)
-    valueTax Int     @default(0) /// @zod.number.min(0)
+    id          String               @id @default(uuid())
+    isCod       Boolean              @default(false)
+    isTax       Boolean              @default(false)
+    valueCod    Int                  @default(0) /// @zod.number.min(0)
+    valueTax    Int                  @default(0) /// @zod.number.min(0)
     PaymentList PaymentSettingList[]
 }
 
 model PaymentSettingList {
-    id      String          @id @default(uuid())
+    id        String          @id @default(uuid())
     title     String /// @zod.string.min(1)
     value     String /// @zod.string.min(1)
     fee       Int /// @zod.number.min(0)
-    Payment PaymentSetting? @relation(fields: [paymentId], references: [id])
+    rekening  String
+    Payment   PaymentSetting? @relation(fields: [paymentId], references: [id])
     paymentId String?
 }
 
@@ -281,19 +285,19 @@ model InventorySetting {
 }
 
 model ShippingSetting {
-    id           String               @id @default(uuid())
+    id                    String                @id @default(uuid())
     freeShippingThreshold Int /// @zod.number.min(0)
     handlingFee           Int /// @zod.number.min(0)
     internationalShipping Boolean
     internationalRate     Int /// @zod.number.min(0)
-    ShippingList ShippingSettingList[]
+    ShippingList          ShippingSettingList[]
 }
 
 model ShippingSettingList {
-    id       String           @id @default(uuid())
+    id         String           @id @default(uuid())
     name       String /// @zod.string.min(1)
     price      Int /// @zod.number.min(0)
     rates      Int /// @zod.number.min(0)
-    Shipping ShippingSetting? @relation(fields: [shippingId], references: [id])
+    Shipping   ShippingSetting? @relation(fields: [shippingId], references: [id])
     shippingId String?
 }

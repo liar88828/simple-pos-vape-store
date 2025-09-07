@@ -1,7 +1,8 @@
 'use client'
 import {
     Archive,
-    BarChart3, Box,
+    BarChart3,
+    Box,
     Briefcase,
     FlaskConical,
     History,
@@ -24,6 +25,7 @@ export type NavItems<T> = {
     description: string;
     badge?: string,
     badgeVariant?: string
+    separator?: boolean
 }
 export const adminNavItems: NavItems<Route>[] = [
     {
@@ -145,6 +147,7 @@ export const employeeNavItems: NavItems<Route>[] = [
         icon: Box,
         href: "/employee/stock",
         description: "Stock Management",
+        separator: true,
         // badge: "Live",
     },
 

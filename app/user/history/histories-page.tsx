@@ -1,7 +1,6 @@
 "use client"
 
-import { _getSaleById, } from "@/action/product-action";
-import { deleteSale } from "@/app/user/user-action";
+import { confirmSale, deleteSale, GetHistoriesUser, getHistoriesUserDetail } from "@/app/user/user-action";
 import { InvoiceLetter } from "@/components/page/invoice-letter";
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -15,39 +14,58 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog";
+import {
+    Select,
+    SelectContent,
+    SelectGroup,
+    SelectItem,
+    SelectLabel,
+    SelectTrigger,
+    SelectValue
+} from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { ModalProps, SaleCustomers } from "@/interface/actionType"
+import { ModalProps, SaleCustomers, SessionEmployeePayload, SessionUserPayload } from "@/interface/actionType"
 import { STATUS_PREORDER } from "@/lib/constants";
 import { formatDateIndo, formatRupiah } from "@/lib/formatter";
-import { toastResponse } from "@/lib/helper";
-import { useQuery } from "@tanstack/react-query";
+import { getRoleEmployeePage, toastResponse } from "@/lib/helper";
+import { useSaleStore } from "@/store/use-sale-store";
 import { Eye, ReceiptText } from "lucide-react"
-import React, { useRef, useState } from "react"
+import React, { useEffect, useRef, useState, useTransition } from "react"
 import { useReactToPrint } from "react-to-print";
 
 export function HistoriesPage(
     {
+        session,
         title,
         histories,
     }: {
+        session: SessionUserPayload
         title: string
-        histories: SaleCustomers[]
+        histories: GetHistoriesUser[],
     }) {
-    // const contentRef = useRef<HTMLDivElement>(null)
-    const [ isSale, setIsSale ] = useState<SaleCustomers | null>(null)
-    const [ isSaleOpen, setIsSaleOpen ] = useState(false)
-    const [ saleData, setSaleData ] = useState<SaleCustomers | null>(null)
+
+    const [ isHistory, setIsHistory ] = useState<GetHistoriesUser | null>(null)
+    const [ isHistoryOpen, setIsHistoryOpen ] = useState(false)
+    const [ saleData, setSaleData ] = useState<GetHistoriesUser | null>(null)
     const [ isSaleData, setIsSaleData ] = useState(false)
+
     return (
         <div className="p-6 max-w-7xl mx-auto">
-            <ModalInvoice sale={ isSale } isOpen={ isSaleOpen } setOpenAction={ setIsSaleOpen }/>
+            { isHistory &&
+					<ModalInvoice
+							history={ isHistory }
+							isOpen={ isHistoryOpen }
+							setOpenAction={ setIsHistoryOpen }
+					/>
+            }
 
-            { saleData
-                ? <ModalSalesDetail
-                    sale={ saleData }
-                    isOpen={ isSaleData }
-                    setOpenAction={ setIsSaleData }
-                /> : null
+            { saleData &&
+					<ModalSalesDetail
+							session={ session }
+							history={ saleData }
+							isOpen={ isSaleData }
+							setOpenAction={ setIsSaleData }
+					/>
             }
 
             <div className="flex justify-between items-center mb-6">
@@ -79,9 +97,7 @@ export function HistoriesPage(
                         <TableBody>
                             { histories.map((sale, index) => (
                                 <TableRow key={ index }>
-                                    <TableCell>
-                                        { formatDateIndo(sale.date) }
-                                    </TableCell>
+                                    <TableCell>{ formatDateIndo(sale.date_buy) }</TableCell>
                                     {/*<TableCell>{ sale.Customer.name }</TableCell>*/ }
                                     <TableCell>{ sale.items }</TableCell>
                                     <TableCell>{ formatRupiah(sale.total) }</TableCell>
@@ -102,8 +118,8 @@ export function HistoriesPage(
                                             disabled={ sale.statusTransaction === STATUS_PREORDER.PENDING }
                                             size="sm" variant="outline"
                                             onClick={ () => {
-                                                setIsSaleOpen(true)
-                                                setIsSale(sale)
+                                                setIsHistoryOpen(true)
+                                                setIsHistory(sale)
                                             } }
                                         >
                                             <ReceiptText className="h-3 w-3"/>
@@ -116,30 +132,47 @@ export function HistoriesPage(
                     </Table>
                 </CardContent>
             </Card>
-
-
         </div>
     )
 }
 
-export function useLoading() {
-    const [ loading, setLoading ] = useState(false)
-    return { loading, setLoading }
-}
-
 export function ModalSalesDetail(
-    { sale, isOpen, setOpenAction }: {
-        sale: SaleCustomers,
+    {
+        history, isOpen, setOpenAction, session
+    }: {
+        session: SessionEmployeePayload | SessionUserPayload,
+        history: GetHistoriesUser,
         isOpen: boolean
         setOpenAction: (open: boolean) => void
     }) {
-    const { loading, setLoading } = useLoading()
+    const [ isPending, startTransition ] = useTransition()
+    const { dataSaleDetail, isLoading, getDataSaleDetail,confirmSaleEmployee,removeSale } = useSaleStore()
+    const [ statusTransaction, setStatusTransaction ] = useState<string>(dataSaleDetail?.statusTransaction ?? STATUS_PREORDER.PENDING)
+
+    useEffect(() => {
+        getDataSaleDetail(history.id).then()
+    }, [ history.id, getDataSaleDetail ]);
+
     const handleDelete = async () => {
-        toastResponse({
-            onFinish: () => setLoading(false),
-            onStart: () => setLoading(true),
-            response: await deleteSale(sale.id)
+        startTransition(async () => {
+            toastResponse({
+                response: await removeSale(history.id),
+                onSuccess: () => setOpenAction(false)
+            })
         })
+    }
+
+    const handleConfirmEmployee = async () => {
+        startTransition(async () => {
+            toastResponse({
+                response: await confirmSaleEmployee(history.id, statusTransaction),
+                onSuccess: () => setOpenAction(false)
+            })
+        })
+    }
+
+    if (!history || !dataSaleDetail||isLoading) {
+        return <NotFoundDialog isOpen={ isOpen } setOpenAction={ setOpenAction }/>
     }
 
     return (
@@ -156,69 +189,82 @@ export function ModalSalesDetail(
                 <DialogHeader>
                     <DialogTitle>Detail Transaksi</DialogTitle>
                     <DialogDescription>
-                        Transaksi oleh { sale.Customer.name } pada { formatDateIndo(sale.date) }
+                        Transaksi oleh { dataSaleDetail.Customer.name } pada { formatDateIndo(dataSaleDetail.date_buy) }
                     </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-2 text-sm">
-                    <p><strong>Nama Pelanggan:</strong> { sale.Customer.name }</p>
-                    <p><strong>Tanggal:</strong> { formatDateIndo(sale.date) }</p>
-                    <p><strong>Total Pembelian:</strong> { formatRupiah(sale.total) }</p>
-                    <p><strong>Jumlah Barang:</strong> { sale.items } item</p>
+                    <p><strong>Nama Pelanggan:</strong> { dataSaleDetail.Customer.name }</p>
+                    <p><strong>Tanggal:</strong> { formatDateIndo(dataSaleDetail.date_buy) }</p>
+                    <p><strong>Total Pembelian:</strong> { formatRupiah(dataSaleDetail.total) }</p>
+                    <p><strong>Jumlah Barang:</strong> { dataSaleDetail.items } item</p>
                 </div>
                 <div className="mt-4 space-y-2 text-sm">
                     <p><strong>Daftar Produk:</strong></p>
                     <ul className="space-y-1">
-                        { sale.SaleItems.map((item) => (
+                        { dataSaleDetail.SaleItems.map((item) => (
                             <li key={ item.id } className="flex justify-between">
-                                <span>{ item.product.name } : { item.quantity } × { formatRupiah(item.priceAtBuy) }</span>
+                                <span>{ item.Product.name } : { item.quantity } × { formatRupiah(item.priceAtBuy) }</span>
                                 <span>{ formatRupiah(item.priceAtBuy * item.quantity) }</span>
                             </li>
                         )) }
                     </ul>
                     <div className="flex justify-between font-semibold pt-2 border-t">
                         <span>Total</span>
-                        <span>{ formatRupiah(sale.total) }</span>
+                        <span>{ formatRupiah(dataSaleDetail.total) }</span>
                     </div>
                 </div>
                 <DialogFooter>
+                    <Select defaultValue={ statusTransaction } onValueChange={ setStatusTransaction }>
+                        <SelectTrigger>
+                            <SelectValue placeholder={ 'Select Transaction' }/>
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectGroup>
+                                <SelectLabel>Transaction Status</SelectLabel>
+                                { [ STATUS_PREORDER.SUCCESS, STATUS_PREORDER.PENDING ].map((item) => (
+                                    <SelectItem key={ item } value={ item }>{ item }</SelectItem>
+                                )) }
+                            </SelectGroup>
+                        </SelectContent>
+                    </Select>
+                    { getRoleEmployeePage(session.role) &&
+							<Button disabled={ isPending }
+									onClick={ handleConfirmEmployee }>Confirm
+							</Button>
+                    }
 
-                    <DialogClose asChild>
-                        <Button variant="outline">Tutup</Button>
-                    </DialogClose>
                     {
-                        sale.statusTransaction === STATUS_PREORDER.PENDING
+                        dataSaleDetail.statusTransaction === STATUS_PREORDER.PENDING
                             ? <DialogClose asChild>
-                                <Button disabled={ loading } onClick={ handleDelete }>Batal</Button>
+                                <Button disabled={ isPending }
+                                        variant={ 'destructive' }
+                                        onClick={ handleDelete }>Delete</Button>
                             </DialogClose>
                             : null
                     }
+
+                    <DialogClose asChild>
+                        <Button variant="outline">Tutup</Button>
+                    </DialogClose>
+
                 </DialogFooter>
 
             </DialogContent>
         </Dialog>
     );
-
 }
 
-export function ModalInvoice({ sale, isOpen, setOpenAction }: { sale: SaleCustomers | null } & ModalProps) {
+export function ModalInvoice({ history, isOpen, setOpenAction }: { history: GetHistoriesUser } & ModalProps) {
     const contentRef = useRef<HTMLDivElement>(null);
     const reactToPrintFn = useReactToPrint({ contentRef });
 
-    if (!sale) {
-        return <Dialog
-            onOpenChange={ setOpenAction }
-            open={ isOpen }
-        >
-            <DialogContent
-                className="w-full max-w-sm sm:max-w-xl md:max-w-4xl xl:max-w-6xl h-[90vh] overflow-y-scroll px-0 sm:px-4"
-            >
-                <DialogHeader>
-                    <DialogTitle>Invoice Not Found</DialogTitle>
-                </DialogHeader>
+    const { dataSaleDetail, isLoading, getDataSaleDetail } = useSaleStore()
+    useEffect(() => {
+        getDataSaleDetail(history.id).then()
+    }, [ history.id, getDataSaleDetail ]);
 
-                Data is not found
-            </DialogContent>
-        </Dialog>
+    if (!history || !dataSaleDetail || isLoading) {
+        return <NotFoundDialog isOpen={ isOpen } setOpenAction={ setOpenAction }/>
     }
 
     return (
@@ -237,13 +283,12 @@ export function ModalInvoice({ sale, isOpen, setOpenAction }: { sale: SaleCustom
             >
                 <DialogHeader>
                     <DialogTitle>Invoice</DialogTitle>
-                    <p className="text-sm text-muted-foreground">
-                        Transaksi pada { formatDateIndo(sale.date) } oleh { sale.Customer.name }
-                    </p>
+                    <DialogDescription>Transaksi
+                        pada { formatDateIndo(dataSaleDetail.date_buy) } oleh { dataSaleDetail.Customer.name }</DialogDescription>
                 </DialogHeader>
 
                 <div ref={ contentRef }>
-                    <InvoiceLetter invoiceData={ sale }/>
+                    <InvoiceLetter invoiceData={ dataSaleDetail }/>
                 </div>
 
                 <DialogFooter>
@@ -259,66 +304,29 @@ export function ModalInvoice({ sale, isOpen, setOpenAction }: { sale: SaleCustom
     );
 }
 
-export function ModalInvoiceFetch({ saleId, isOpen, setOpenAction }: { saleId: number } & ModalProps) {
-    const contentRef = useRef<HTMLDivElement>(null);
-    const reactToPrintFn = useReactToPrint({ contentRef });
-
-    const { data, isLoading, isError } = useQuery({
-        queryKey: [ 'sale', saleId ],
-        gcTime: 30 * 60 * 24,
-        queryFn: () => _getSaleById(saleId as number),
-        enabled: !!saleId, // only fetch if idProduct is truthy
-    });
-
-    if (!data || !data.data || isLoading) {
-        return <Dialog
-            onOpenChange={ setOpenAction }
-            open={ isOpen }
-        >
-            <DialogContent
-                className="w-full max-w-sm sm:max-w-xl md:max-w-4xl xl:max-w-6xl h-[90vh] overflow-y-scroll px-0 sm:px-4"
-            >
-                <DialogHeader>
-                    <DialogTitle>Invoice Not Found</DialogTitle>
-                </DialogHeader>
-                Data is not found
-            </DialogContent>
-        </Dialog>
-    }
-    const { data: sale } = data
+export function NotFoundDialog(
+    {
+        desc = 'Data is not found',
+        title = 'Data Not Found',
+        isOpen, setOpenAction
+    }: {
+        title?: string,
+        desc?: string,
+        isOpen: boolean,
+        setOpenAction: (value: boolean) => void
+    }) {
     return (
         <Dialog
             onOpenChange={ setOpenAction }
             open={ isOpen }
         >
-            {/*<DialogTrigger asChild>*/ }
-            {/*    <Button size="sm" variant="outline">*/ }
-            {/*        <ReceiptText className="h-3 w-3" />*/ }
-            {/*    </Button>*/ }
-            {/*</DialogTrigger>*/ }
-
             <DialogContent
                 className="w-full max-w-sm sm:max-w-xl md:max-w-4xl xl:max-w-6xl h-[90vh] overflow-y-scroll px-0 sm:px-4"
             >
                 <DialogHeader>
-                    <DialogTitle>Invoice</DialogTitle>
-                    <p className="text-sm text-muted-foreground">
-                        Transaksi pada { formatDateIndo(sale.date) } oleh { sale.Customer.name }
-                    </p>
+                    <DialogTitle>{ title }</DialogTitle>
+                    <DialogDescription>{ desc }</DialogDescription>
                 </DialogHeader>
-
-                <div ref={ contentRef }>
-                    <InvoiceLetter invoiceData={ sale }/>
-                </div>
-
-                <DialogFooter>
-                    <DialogClose asChild>
-                        <Button onClick={ reactToPrintFn }>Print</Button>
-                    </DialogClose>
-                    <DialogClose asChild>
-                        <Button variant="outline">Tutup</Button>
-                    </DialogClose>
-                </DialogFooter>
             </DialogContent>
         </Dialog>
     );

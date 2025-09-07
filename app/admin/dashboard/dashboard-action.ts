@@ -7,7 +7,7 @@ import { STATUS_PREORDER } from "@prisma/client";
 export async function lastBuyerPending(): Promise<SaleCustomers[]> {
     const data = prisma.sale.findMany({
         take: 10,
-        orderBy: { date: "desc" },
+        orderBy: { date_buy: "desc" },
         where: {
             statusTransaction: STATUS_PREORDER.Pending
         },
@@ -15,7 +15,7 @@ export async function lastBuyerPending(): Promise<SaleCustomers[]> {
             Customer: true,
             SaleItems: {
                 include: {
-                    product: true,
+                    Product: true,
                 },
             },
         },
@@ -37,13 +37,13 @@ export async function getTodayVsYesterdaySales() {
     const today = await prisma.sale.aggregate({
 
         _sum: { total: true },
-        where: { date: { gte: startOfToday, lt: startOfTomorrow } },
+        where: { date_buy: { gte: startOfToday, lt: startOfTomorrow } },
     });
 
     const yesterday = await prisma.sale.aggregate({
 
         _sum: { total: true },
-        where: { date: { gte: startOfYesterday, lt: endOfYesterday } },
+        where: { date_buy: { gte: startOfYesterday, lt: endOfYesterday } },
     });
 
     const todayTotal = today._sum.total ?? 0;

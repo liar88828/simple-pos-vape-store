@@ -3,10 +3,8 @@ import React from 'react';
 
 function Loading() {
     return (
-        <div>
-            <LoadingSpinPage/>
-
-            Loading...
+        <div className="p-4">
+            <LoadingSpinPage/> Loading...
         </div>
     );
 }

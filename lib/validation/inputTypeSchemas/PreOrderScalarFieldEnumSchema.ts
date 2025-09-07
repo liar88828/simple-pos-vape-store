@@ -1,5 +1,5 @@
 import { z } from 'zod';
 
-export const PreOrderScalarFieldEnumSchema = z.enum([ 'id', 'quantity', 'priceNormal', 'priceSell', 'estimatedDate', 'expired', 'status', 'createdAt', 'updatedAt', 'userId', 'productId', 'sellIn_shopId' ]);
+export const PreOrderScalarFieldEnumSchema = z.enum(['id','quantity','priceOriginal','estimatedDate','expired','status','createdAt','updatedAt','userId','productId','market_name','marketId_sellIn']);
 
 export default PreOrderScalarFieldEnumSchema;

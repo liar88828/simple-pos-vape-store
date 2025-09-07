@@ -1,25 +1,18 @@
 import { z } from 'zod';
-import {
-    PaymentSettingWithRelationsSchema,
-    PaymentSettingPartialWithRelationsSchema,
-    PaymentSettingOptionalDefaultsWithRelationsSchema
-} from './PaymentSettingSchema'
-import type {
-    PaymentSettingWithRelations,
-    PaymentSettingPartialWithRelations,
-    PaymentSettingOptionalDefaultsWithRelations
-} from './PaymentSettingSchema'
+import { PaymentSettingWithRelationsSchema, PaymentSettingPartialWithRelationsSchema, PaymentSettingOptionalDefaultsWithRelationsSchema } from './PaymentSettingSchema'
+import type { PaymentSettingWithRelations, PaymentSettingPartialWithRelations, PaymentSettingOptionalDefaultsWithRelations } from './PaymentSettingSchema'
 
 /////////////////////////////////////////
 // PAYMENT SETTING LIST SCHEMA
 /////////////////////////////////////////
 
 export const PaymentSettingListSchema = z.object({
-    id: z.string().uuid(),
-    title: z.string().min(1),
-    value: z.string().min(1),
-    fee: z.number().min(0),
-    paymentId: z.string().nullish(),
+  id: z.string().uuid(),
+  title: z.string().min(1),
+  value: z.string().min(1),
+  fee: z.number().min(0),
+  rekening: z.string(),
+  paymentId: z.string().nullish(),
 })
 
 export type PaymentSettingList = z.infer<typeof PaymentSettingListSchema>
@@ -37,7 +30,7 @@ export type PaymentSettingListPartial = z.infer<typeof PaymentSettingListPartial
 /////////////////////////////////////////
 
 export const PaymentSettingListOptionalDefaultsSchema = PaymentSettingListSchema.merge(z.object({
-    id: z.string().uuid().optional(),
+  id: z.string().uuid().optional(),
 }))
 
 export type PaymentSettingListOptionalDefaults = z.infer<typeof PaymentSettingListOptionalDefaultsSchema>
@@ -47,13 +40,13 @@ export type PaymentSettingListOptionalDefaults = z.infer<typeof PaymentSettingLi
 /////////////////////////////////////////
 
 export type PaymentSettingListRelations = {
-    Payment?: PaymentSettingWithRelations | null;
+  Payment?: PaymentSettingWithRelations | null;
 };
 
 export type PaymentSettingListWithRelations = z.infer<typeof PaymentSettingListSchema> & PaymentSettingListRelations
 
 export const PaymentSettingListWithRelationsSchema: z.ZodType<PaymentSettingListWithRelations> = PaymentSettingListSchema.merge(z.object({
-    Payment: z.lazy(() => PaymentSettingWithRelationsSchema).nullish(),
+  Payment: z.lazy(() => PaymentSettingWithRelationsSchema).nullish(),
 }))
 
 /////////////////////////////////////////
@@ -61,15 +54,13 @@ export const PaymentSettingListWithRelationsSchema: z.ZodType<PaymentSettingList
 /////////////////////////////////////////
 
 export type PaymentSettingListOptionalDefaultsRelations = {
-    Payment?: PaymentSettingOptionalDefaultsWithRelations | null;
+  Payment?: PaymentSettingOptionalDefaultsWithRelations | null;
 };
 
-export type PaymentSettingListOptionalDefaultsWithRelations =
-    z.infer<typeof PaymentSettingListOptionalDefaultsSchema>
-    & PaymentSettingListOptionalDefaultsRelations
+export type PaymentSettingListOptionalDefaultsWithRelations = z.infer<typeof PaymentSettingListOptionalDefaultsSchema> & PaymentSettingListOptionalDefaultsRelations
 
 export const PaymentSettingListOptionalDefaultsWithRelationsSchema: z.ZodType<PaymentSettingListOptionalDefaultsWithRelations> = PaymentSettingListOptionalDefaultsSchema.merge(z.object({
-    Payment: z.lazy(() => PaymentSettingOptionalDefaultsWithRelationsSchema).nullish(),
+  Payment: z.lazy(() => PaymentSettingOptionalDefaultsWithRelationsSchema).nullish(),
 }))
 
 /////////////////////////////////////////
@@ -77,31 +68,25 @@ export const PaymentSettingListOptionalDefaultsWithRelationsSchema: z.ZodType<Pa
 /////////////////////////////////////////
 
 export type PaymentSettingListPartialRelations = {
-    Payment?: PaymentSettingPartialWithRelations | null;
+  Payment?: PaymentSettingPartialWithRelations | null;
 };
 
-export type PaymentSettingListPartialWithRelations =
-    z.infer<typeof PaymentSettingListPartialSchema>
-    & PaymentSettingListPartialRelations
+export type PaymentSettingListPartialWithRelations = z.infer<typeof PaymentSettingListPartialSchema> & PaymentSettingListPartialRelations
 
 export const PaymentSettingListPartialWithRelationsSchema: z.ZodType<PaymentSettingListPartialWithRelations> = PaymentSettingListPartialSchema.merge(z.object({
-    Payment: z.lazy(() => PaymentSettingPartialWithRelationsSchema).nullish(),
+  Payment: z.lazy(() => PaymentSettingPartialWithRelationsSchema).nullish(),
 })).partial()
 
-export type PaymentSettingListOptionalDefaultsWithPartialRelations =
-    z.infer<typeof PaymentSettingListOptionalDefaultsSchema>
-    & PaymentSettingListPartialRelations
+export type PaymentSettingListOptionalDefaultsWithPartialRelations = z.infer<typeof PaymentSettingListOptionalDefaultsSchema> & PaymentSettingListPartialRelations
 
 export const PaymentSettingListOptionalDefaultsWithPartialRelationsSchema: z.ZodType<PaymentSettingListOptionalDefaultsWithPartialRelations> = PaymentSettingListOptionalDefaultsSchema.merge(z.object({
-    Payment: z.lazy(() => PaymentSettingPartialWithRelationsSchema).nullish(),
+  Payment: z.lazy(() => PaymentSettingPartialWithRelationsSchema).nullish(),
 }).partial())
 
-export type PaymentSettingListWithPartialRelations =
-    z.infer<typeof PaymentSettingListSchema>
-    & PaymentSettingListPartialRelations
+export type PaymentSettingListWithPartialRelations = z.infer<typeof PaymentSettingListSchema> & PaymentSettingListPartialRelations
 
 export const PaymentSettingListWithPartialRelationsSchema: z.ZodType<PaymentSettingListWithPartialRelations> = PaymentSettingListSchema.merge(z.object({
-    Payment: z.lazy(() => PaymentSettingPartialWithRelationsSchema).nullish(),
+  Payment: z.lazy(() => PaymentSettingPartialWithRelationsSchema).nullish(),
 }).partial())
 
 export default PaymentSettingListSchema;

@@ -1,5 +1,6 @@
 'use server'
-import { getSessionUserPage } from "@/action/auth-action";
+import { getSessionEmployeeTransaction, getSessionUserPage } from "@/action/auth-action";
+import { ProductPending } from "@/app/user/home/page";
 import {
     ActionResponse,
     CartItem,
@@ -10,7 +11,7 @@ import {
 import { ERROR, STATUS_PREORDER } from "@/lib/constants";
 import { logger } from "@/lib/logger";
 import { prisma } from "@/lib/prisma";
-import { SalesItemOptionalDefaults } from "@/lib/validation";
+import { Sale, SalesItemOptionalDefaults } from "@/lib/validation";
 import { Prisma } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { isRedirectError } from "next/dist/client/components/redirect-error";
@@ -19,8 +20,8 @@ import { redirect } from "next/navigation";
 const PrismaClientKnownRequestError = Prisma.PrismaClientKnownRequestError
 
 export async function createTransactionUserAction(
-    product: CartItem[],
-    shopId: string
+    cartItem: CartItem[],
+    marketId: string,
 ): Promise<ActionResponse> {
 
     try {
@@ -35,32 +36,31 @@ export async function createTransactionUserAction(
         const dataTransaction = await prisma.$transaction(async (tx) => {
             const saleDB = await tx.sale.create({
                 data: {
-                    shopId: shopId,
+                    marketId,
                     seller_userId: null,
-                    buyer_customerId:
-                    customer.id,
-                    items: product.length,
-                    total: product.reduce((a, b) => a + (b.price * b.quantity), 0),
-                    date: new Date(),
+                    buyer_customerId: customer.id,
+                    items: cartItem.length,
+                    total: cartItem.reduce((a, b) => a + (b.price * b.quantity), 0),
+                    date_buy: new Date(),
                     statusTransaction:
                     STATUS_PREORDER.PENDING,
                     typeTransaction: 'Sistem Dev'//'Cash'
                 }
             })
             // console.log('execute saleItemList')
-            const saleItemList = product.map(item => {
+            const saleItemList = cartItem.map(item => {
                 return {
+                    preorderId:item.preorderId,
                     saleId: saleDB.id,
                     productId: item.id,
-                    quantity: item.quantity, // from origin product
-                    priceAtBuy: item.price,// from origin product
-
+                    quantity: item.quantity, // from origin cartItem
+                    priceAtBuy: item.price,// from origin cartItem
                     // category: item.category,
                 } satisfies Omit<SalesItemOptionalDefaults, 'id'>
             })
             const saleItemDB = await tx.salesItem.createMany({ data: saleItemList })
 
-            // console.log('execute product.update')
+            // console.log('execute cartItem.update')
             for (const item of saleItemList) {
                 await tx.product.update({
                     where: { id: item.productId },
@@ -115,6 +115,43 @@ export async function createTransactionUserAction(
         }
     }
 }
+
+export async function confirmSale(saleId: string, status: string): Promise<ActionResponse> {
+    const { absent } = await getSessionEmployeeTransaction()
+    const response = await prisma.$transaction(async (tx) => {
+        // Update Sale
+        const saleDB = await tx.sale.update({
+            include: { SaleItems: true },
+            where: { id: saleId },
+            data: {
+                employee_absentId: absent.id,
+                statusTransaction: status,
+                date_confirm: new Date(),
+            }
+        })
+        saleDB.SaleItems.map(async (item) => {
+            // Update Product
+            const product = await tx.product.update({
+                select: { PreOrders: true },
+                where: { id: item.productId },
+                data: { stock: { decrement: item.quantity } },
+            })
+
+            await tx.preOrder.update({
+                where: { id: item.preorderId },
+                data: { quantity: { decrement: item.quantity } }
+            })
+
+        })
+    })
+    revalidatePath('/')
+    return {
+        message: `Successfully confirmed`,
+        data: response,
+        success: true
+    }
+}
+
 
 export async function deleteSale(saleId: string): Promise<ActionResponse> {
     try {
@@ -216,7 +253,7 @@ export async function createTransactionUserPendingAction(
                 data: {
                     items: product.length,
                     total: product.reduce((a, b) => a + (b.price * b.quantity), 0),
-                    date: new Date(),
+                    date_buy: new Date(),
                 }
             })
             await tx.salesItem.deleteMany({ where: { saleId: saleDB.id } })
@@ -229,6 +266,7 @@ export async function createTransactionUserPendingAction(
                     productId: item.productId,
                     quantity: item.quantity, // from origin product
                     priceAtBuy: item.priceAtBuy,// from origin product
+                    preorderId: item.preorderId
                 } satisfies Omit<SalesItemOptionalDefaults, 'id'>
             })
 
@@ -252,7 +290,7 @@ export async function createTransactionUserPendingAction(
                     productId: item.id,
                     quantity: item.quantity, // from origin product
                     priceAtBuy: item.price,// from origin product
-
+                    preorderId: item.preorderId
                     // category: item.category,
                 } satisfies Omit<SalesItemOptionalDefaults, 'id'>
             })
@@ -306,7 +344,6 @@ export async function createTransactionUserPendingAction(
                 error: ERROR.DATABASE,
                 message: error.message
             }
-
         }
 
         return {
@@ -317,44 +354,96 @@ export async function createTransactionUserPendingAction(
     }
 }
 
-export async function getHistoriesUser(session: SessionUserPayload): Promise<SaleCustomers[]> {
+export type GetHistoriesUser = Sale & {
+    // Customer: Customer
+    // SaleItems: (SalesItem & { product: Product })[]
+};
+
+export async function getHistoriesUser(session: SessionUserPayload): Promise<GetHistoriesUser[]> {
     const customer = await prisma.customer.findUnique({
-        where: {
-            buyer_userId: session.userId
-        }
+        where: { buyer_userId: session.userId }
     })
     if (!customer) {
         redirect('/login')
     }
 
     return prisma.sale.findMany({
-        orderBy: { date: "desc" },
+        orderBy: { date_buy: "desc" },
         where: {
             buyer_customerId: customer.id
         },
         include: {
-            Customer: true,
-            SaleItems: {
-                include: {
-                    product: true
-                }
-            },
+            // Customer: true,
+            // SaleItems: {
+            //     include: {
+            //         product: true
+            //     }
+            // },
         }
     })
 }
 
-export async function getHistoriesEmployee(session: SessionEmployeePayload): Promise<SaleCustomers[]> {
-
-    return prisma.sale.findMany({
-        orderBy: { date: "desc" },
-        where: { shopId: session.shopId, },
+export async function getHistoriesUserDetail(historyId: string): Promise<SaleCustomers | null> {
+    return prisma.sale.findUnique({
+        where: { id: historyId },
         include: {
             Customer: true,
             SaleItems: {
                 include: {
-                    product: true
+                    Product: true
                 }
             },
         }
     })
 }
+
+
+export async function getHistoriesEmployee(session: SessionEmployeePayload): Promise<SaleCustomers[]> {
+
+    return prisma.sale.findMany({
+        orderBy: { date_buy: "desc" },
+        where: { marketId: session.shopId, },
+        include: {
+            Customer: true,
+            SaleItems: {
+                include: {
+                    Product: true
+                }
+            },
+        }
+    })
+}
+
+export const currentProductUser = async (session: SessionUserPayload) => await prisma.sale.findFirst({
+    orderBy: { date_buy: "desc" },
+    where: {
+        statusTransaction: STATUS_PREORDER.PENDING,
+        Customer: { buyer_userId: session?.userId },
+    },
+    include: {
+        Customer: true,
+        SaleItems: {
+            include: {
+                Product: true
+            }
+        },
+
+    }
+}).then((item): ProductPending => {
+    // console.log('currentProduct ' + item)
+    if (item) {
+        return {
+            current: item.SaleItems.map(i => ({
+                ...i.Product,
+                quantity: i.quantity,
+                preorderId:i.preorderId
+            })),
+            data: item,
+            isPending: true
+        }
+    }
+    return {
+        current: [],
+        isPending: false
+    }
+})

@@ -1,6 +1,6 @@
 "use client"
 
-import { ProductPaging, ProductPreorder } from "@/action/product-action";
+import { getBrands, ProductPaging, ProductPreorder } from "@/action/product-action";
 import { upsertProductAction } from "@/app/admin/products/product-action";
 import { FilterSelect } from "@/components/mini/filter-input";
 import { InputDateForm, InputForm, InputNumForm, SelectForm, TextareaForm } from "@/components/mini/form-hook";
@@ -31,18 +31,19 @@ import {
 import { formatRupiah, getNumberSmall, truncateText } from "@/lib/formatter";
 import { getBadgeVariant, getStockLabel, newParam, toastResponse } from "@/lib/helper";
 import { ProductOptionalDefaultsSchema } from "@/lib/validation";
+import { useSettingStore } from "@/store/use-setting-store";
 import { zodResolver } from "@hookform/resolvers/zod"
 import { ChevronLeft, ChevronRight, Eye, FilterIcon, Pencil, Plus, XIcon } from "lucide-react"
 import { useRouter } from "next/navigation";
-import React, { useEffect, useState } from "react"
+import React, { useEffect, useState, useTransition } from "react"
 import { FormProvider, useForm } from "react-hook-form";
-import { toast } from "sonner";
 import { z } from "zod";
-import { v4 as uuidv4 } from 'uuid';
 
 export const productDataSchema = ProductOptionalDefaultsSchema.merge(z.object({
-    priceNormal: z.number().min(1).nullish(),
+    priceOriginal: z.number().min(1).nullish(),
+    priceSell: z.number().min(1).nullish(),
     expired: z.date().nullish(),
+    sellIn_marketId: z.string(),
 }))
 
 export type ProductData = z.infer<typeof productDataSchema>
@@ -61,6 +62,7 @@ export function ProductsPage({ products }: { products: ProductPaging }) {
                     <Plus className="h-4 w-4 mr-2"/>
                     Tambah Produk
                 </Button>
+
                 { openCreate &&
 						<ModalProductForm setOpenAction={ setOpenCreate } isOpen={ openCreate } product={ null }/>
                 }
@@ -68,9 +70,8 @@ export function ProductsPage({ products }: { products: ProductPaging }) {
                 { isProduct &&
 						<ModalProductForm setOpenAction={ setOpenUpdate } isOpen={ openUpdate } product={ {
                             ...isProduct,
-                            expired: isProduct.PreOrders[0].expired ?? new Date(),
-                            price: isProduct.PreOrders[0].priceSell,
-                            priceNormal: isProduct.PreOrders[0].priceNormal,
+                            sellIn_marketId: '',
+
 
                         } }/>
                 }
@@ -78,7 +79,7 @@ export function ProductsPage({ products }: { products: ProductPaging }) {
 						<ProductDetailDialogOnly isDelete={ true }
 												 product={ isProduct }
 												 isOpen={ openDetail }
-                                         setOpenAction={ setOpenDetail }/>
+												 setOpenAction={ setOpenDetail }/>
                 }
             </div>
 
@@ -87,7 +88,7 @@ export function ProductsPage({ products }: { products: ProductPaging }) {
                 {/* Filters */ }
                 <CardHeader>
                     <CardTitle>Filter Produk</CardTitle>
-                    <ProductsFilter products={ products }/>
+                    <ProductsFilter products={ products.data }/>
                 </CardHeader>
 
                 {/* Products Table */ }
@@ -131,8 +132,12 @@ export function ProductsPage({ products }: { products: ProductPaging }) {
                                         </div>
                                     </TableCell>
                                     <TableCell>{ product.category }</TableCell>
-                                    <TableCell>{ formatRupiah(product.price) }</TableCell>
-                                    <TableCell>{ getNumberSmall(product.stock) }</TableCell>
+                                    <TableCell>
+                                        { formatRupiah(product.price) }
+                                    </TableCell>
+                                    <TableCell>
+                                        { getNumberSmall(product.stock) }
+                                    </TableCell>
                                     <TableCell>
                                         <Badge variant={ getBadgeVariant(product.stock, product.minStock) }>
                                             { getStockLabel(product.stock, product.minStock) }
@@ -167,9 +172,11 @@ export function ProductsPage({ products }: { products: ProductPaging }) {
     )
 }
 
-export function ProductsFilter({ products, customerName }: { customerName?: string, products: ProductPaging, }) {
+export function ProductsFilter({ products, customerName }: { customerName?: string, products: ProductPreorder[], }) {
 
     const router = useRouter()
+
+    const [ brands, setBrands ] = useState<string[]>([]);
 
     // Pagination
     const [ itemsPerPage, setItemsPerPage ] = useState(10);
@@ -207,6 +214,7 @@ export function ProductsFilter({ products, customerName }: { customerName?: stri
             productLimit: String(itemsPerPage),
             productPage: String(page),
         };
+
         // Only push if at least one filter has value
         const hasAnyFilter = Object.values(filters).some(Boolean);
 
@@ -217,7 +225,11 @@ export function ProductsFilter({ products, customerName }: { customerName?: stri
         }
     }, [ productNameDebounce, router, productBrand, productCategory, productTypeDevice, productNicotine, itemsPerPage, page, productResistant, productCoil, productBattery, productCotton, customerNameDebounce, productFluid ]);
 
-    const totalPages = Math.ceil(products.total / itemsPerPage);
+    useEffect(() => {
+        getBrands().then(setBrands)
+    }, []);
+
+    const totalPages = Math.ceil(products.length / itemsPerPage);
 
     const onReset = () => {
         // console.log('will execute start')
@@ -295,10 +307,7 @@ export function ProductsFilter({ products, customerName }: { customerName?: stri
                                 value={ productBrand }
                                 onChangeAction={ setProductBrand }
                                 placeholder="Semua Merk"
-                                options={ products.brands.map(item => ({
-                                    label: item.brand ?? "-",
-                                    value: item.brand ?? "-"
-                                })) }
+                                options={ brands.map(item => ({ label: item, value: item })) }
                             />
 
                             <FilterSelect
@@ -393,16 +402,22 @@ export function ProductsFilter({ products, customerName }: { customerName?: stri
 }
 
 export function ModalProductForm({ isOpen, setOpenAction, product }: ModalProps & { product: ProductData | null }) {
+    const [ isPending, startTransition ] = useTransition()
     const [ _selectCategory, setSelectCategory ] = useState<string | null>(null);
     // console.log(product)
+
+    const { isLoading, markets, getMarkets } = useSettingStore()
+    useEffect(() => {
+        getMarkets().then()
+    }, [ getMarkets ]);
 
     const methods = useForm<ProductData>({
         resolver: zodResolver(productDataSchema),
             defaultValues: product ?? {
-                id: uuidv4(),
                 name: "",
                 category: "device",
                 price: 0,
+                priceOriginal: 0,
                 stock: 0,
                 brand: '-',
                 minStock: 5,
@@ -416,9 +431,9 @@ export function ModalProductForm({ isOpen, setOpenAction, product }: ModalProps 
                 cottonSize: '-',
                 resistanceSize: '-',
                 batterySize: '-',
-                priceNormal: 0,
                 fluidLevel: '-',
                 expired: null,
+                sellIn_marketId: '',
             } satisfies ProductData
         }
     );
@@ -432,27 +447,20 @@ export function ModalProductForm({ isOpen, setOpenAction, product }: ModalProps 
     }, [ product, methods ]);
 
     const onSubmit = methods.handleSubmit(async (data) => {
-        toastResponse({
-            response: await upsertProductAction(data),
-                onSuccess: () => {
-                    setOpenAction(false); // ✅ Close the dialog
-                    methods.reset()
-                }, onFailure: () => {
-                    toast("You submitted the following values", {
-                        description: (
-                            <pre className="mt-2 w-[320px] rounded-md bg-neutral-950 p-4">
-                                        <code className="text-white">{ JSON.stringify(data, null, 2) }</code>
-                                        <code
-                                            className="text-white">{ JSON.stringify(methods.formState.errors, null, 2) }</code>
-                                </pre>
-                        )
-                    })
-                }
-            }
-        )
+        startTransition(async () => {
 
+            toastResponse({
+                response: await upsertProductAction(data, markets.find(m => m.id === data.sellIn_marketId)!),
+                onSuccess: () => {
+                    setOpenAction(false);
+                    methods.reset()
+                },
+
+            })
+        })
     });
 
+    console.log(methods.formState.errors)
     return (
         <ResponsiveModalOnly isOpen={ isOpen }
                              setOpenAction={ setOpenAction }
@@ -460,6 +468,7 @@ export function ModalProductForm({ isOpen, setOpenAction, product }: ModalProps 
                              footer={
                                  <DialogFooter>
                                      <Button
+                                         disabled={ isPending }
                                          onClick={ onSubmit }>{ product ? 'Update Produk' : 'Simpan Produk' }</Button>
                                  </DialogFooter>
                              }
@@ -476,52 +485,50 @@ export function ModalProductForm({ isOpen, setOpenAction, product }: ModalProps 
                         <div className="grid grid-cols-2 gap-4">
                             <InputForm title='Merk' name="brand" placeholder="Nama Merk"/>
 
-                            <SelectForm
+                            <SelectForm name="category"
                                 onChangeAction={ setSelectCategory }
-                                name="category"
                                 label="Kategori"
                                 placeholder="Pilih kategori"
                                 options={ categoryOption }
                             />
 
 
+                            { product ? null :
+                                <InputNumForm name="priceOriginal" title="Harga Normal" placeholder="0" type="number"/>
+                            }
                             <InputNumForm name="price" title="Harga Jual" placeholder="0" type="number"/>
-                            <InputNumForm name="priceNormal" title="Harga Normal" placeholder="0" type="number"/>
-                            <InputForm name="stock" title="Stok Awal" placeholder="0" type="number"/>
+                            { product ? null :
+                                <InputForm name="stock" title="Stok Awal" placeholder="0" type="number"/>
+                            }
                             <InputForm name="minStock" title="Minimum Stok" placeholder="0" type="number"/>
 
 
-                            <SelectForm
-                                name="type"
+                            <SelectForm name="type"
                                 label="Tipe Device"
                                 placeholder="Tipe Device"
                                 options={ typeDeviceOption }
                             />
 
 
-                            <SelectForm
-                                name="resistanceSize"
+                            <SelectForm name="resistanceSize"
                                 label="Resistansi (ohm)"
                                 placeholder="Ukuran Resistensi"
                                 options={ resistanceSizeOption }
                             />
 
-                            <SelectForm
-                                name="coilSize"
+                            <SelectForm name="coilSize"
                                 label="Coil"
                                 placeholder="Ukuran Coil"
                                 options={ coilSizeOption }
                             />
 
-                            <SelectForm
-                                name="cottonSize"
+                            <SelectForm name="cottonSize"
                                 label="Cotton"
                                 placeholder="Ukuran Cotton"
                                 options={ cottonSizeOption }
                             />
 
-                            <SelectForm
-                                name="batterySize"
+                            <SelectForm name="batterySize"
                                 label="Arus & Kapasitas (mAh)"
                                 placeholder="Ukuran Kapasitas"
                                 options={ batterySizeOptions }
@@ -538,15 +545,13 @@ export function ModalProductForm({ isOpen, setOpenAction, product }: ModalProps 
                                        title="Rasa (untuk liquid)"
                                        placeholder="Rasa liquid"/>
 
-                            <SelectForm
-                                name="nicotineLevel"
+                            <SelectForm name="nicotineLevel"
                                 label="Level Nikotin (untuk liquid)"
                                 placeholder="Pilih level"
                                 options={ nicotineLevelsOptions }
                             />
 
-                            <SelectForm
-                                name="fluidLevel"
+                            <SelectForm name="fluidLevel"
                                 label="Volume ml (untuk liquid)"
                                 placeholder="Pilih level"
                                 options={ fluidLevelsOptions }
@@ -565,6 +570,17 @@ export function ModalProductForm({ isOpen, setOpenAction, product }: ModalProps 
                         {/*<DialogFooter className="pt-4">*/ }
                         {/*    <Button type="submit">Simpan Produk</Button>*/ }
                         {/*</DialogFooter>*/ }
+
+                        { isLoading && markets.length === 0 ? null :
+                            <SelectForm name="sellIn_marketId"
+                                        label="Market"
+                                        placeholder="Select a market"
+                                        options={ markets.map((s) => ({
+                                            label: s.name,
+                                            value: s.id,
+                                        })) }
+                            />
+                        }
                     </form>
                 </FormProvider>
             </div>

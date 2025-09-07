@@ -10,7 +10,8 @@ export type ActionResponse<T = any> = {
 
 
 export type CartItem = Product & {
-    quantity: number
+    quantity: number,
+    preorderId:string
 }
 
 export type ProductParam = {
@@ -52,7 +53,7 @@ export type ChartData = { name: string, desktop: number }
 
 export type SaleCustomers = Sale & {
     Customer: Customer
-    SaleItems: (SalesItem & { product: Product })[]
+    SaleItems: (SalesItem & { Product: Product })[]
 };
 
 // session

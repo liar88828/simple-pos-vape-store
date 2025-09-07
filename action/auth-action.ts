@@ -77,7 +77,7 @@ export async function loginAction(rawData: LoginFormData): Promise<ActionRespons
         name: user.name,
         shopId: user.role === ROLE_USER.USER
             ? ''
-            : user.workIn_shopId ? user.workIn_shopId
+            : user.marketId_workIn ? user.marketId_workIn
                 : ''
     });
     const refreshToken = await signRefreshJwt({ userId: user.id });
@@ -149,7 +149,7 @@ export async function refreshTokenAction() {
             email: true,
             role: true,
             name: true,
-            workIn_shopId: true,
+            marketId_workIn: true,
         }
     })
     if (!user) {
@@ -162,7 +162,7 @@ export async function refreshTokenAction() {
         userId: user.id, email: user.email, role: user.role, name: user.name,
         shopId: user.role === ROLE_USER.USER
             ? ''
-            : user.workIn_shopId ? user.workIn_shopId
+            : user.marketId_workIn ? user.marketId_workIn
                 : ''
 
     });
@@ -231,4 +231,25 @@ export async function getSessionEmployeePage() {
     return session as SessionEmployeePayload
 }
 
+export async function getSessionEmployeeTransaction() {
+    const session = await getSessionEmployeePage();
 
+    // get today's date range (00:00:00 → 23:59:59)
+    const start = new Date();
+    start.setHours(0, 0, 0, 0);
+
+    const end = new Date();
+    end.setHours(23, 59, 59, 999);
+
+    const response = await prisma.absent.findFirst({
+        where: {
+            userId: session.userId,
+            datetime: { gte: start, lte: end, },
+        },
+    });
+    if (!response) {
+        redirect("/employee");
+    }
+
+    return { absent: response, session }
+}

@@ -60,8 +60,8 @@ export async function getMonthlySalesChange(range: RangeStats) {
     const thisPeriod = await prisma.salesItem.aggregate({
         _sum: { priceAtBuy: true },
         where: {
-            sale: {
-                date: {
+            Sale: {
+                date_buy: {
                     gte: startCurrent,
                     lt: endCurrent,
                 },
@@ -72,8 +72,9 @@ export async function getMonthlySalesChange(range: RangeStats) {
     const lastPeriod = await prisma.salesItem.aggregate({
         _sum: { priceAtBuy: true },
         where: {
-            sale: {
-                date: {
+
+            Sale: {
+                date_buy: {
                     gte: startPrevious,
                     lt: endPrevious,
                 },
@@ -132,9 +133,9 @@ export async function getSaleCustomers(range: RangeStats): Promise<SaleCustomers
 
     const data = await prisma.sale.findMany({
         take: 10,
-        orderBy: { date: "desc" },
+        orderBy: { date_buy: "desc" },
         where: {
-            date: {
+            date_buy: {
                 gte: startDate,
             },
         },
@@ -142,7 +143,7 @@ export async function getSaleCustomers(range: RangeStats): Promise<SaleCustomers
             Customer: true,
             SaleItems: {
                 include: {
-                    product: true,
+                    Product: true,
                 },
             },
         },
@@ -212,23 +213,23 @@ export async function getDashboardStats(range: RangeStats) {
     // 1. Total sales current period
     const currentSales = await prisma.sale.aggregate({
         _sum: { total: true },
-        where: { date: { gte: startCurrent, lt: endCurrent } },
+        where: { date_buy: { gte: startCurrent, lt: endCurrent } },
     });
 
     // 2. Total sales previous period
     const previousSales = await prisma.sale.aggregate({
         _sum: { total: true },
-        where: { date: { gte: startPrevious, lt: endPrevious } },
+        where: { date_buy: { gte: startPrevious, lt: endPrevious } },
     });
 
     // 3. Total transactions current period
     const currentTransactionCount = await prisma.sale.count({
-        where: { date: { gte: startCurrent, lt: endCurrent } },
+        where: { date_buy: { gte: startCurrent, lt: endCurrent } },
     });
 
     // 4. Total transactions previous period
     const previousTransactionCount = await prisma.sale.count({
-        where: { date: { gte: startPrevious, lt: endPrevious } },
+        where: { date_buy: { gte: startPrevious, lt: endPrevious } },
     });
 
     // 5. Average transaction current period
@@ -247,7 +248,7 @@ export async function getDashboardStats(range: RangeStats) {
     const topProduct = await prisma.salesItem.groupBy({
         by: [ "productId" ],
         _sum: { quantity: true },
-        where: { sale: { date: { gte: startCurrent, lt: endCurrent } } },
+        where: { Sale: { date_buy: { gte: startCurrent, lt: endCurrent } } },
         orderBy: { _sum: { quantity: "desc" } },
         take: 1,
     });
@@ -256,11 +257,11 @@ export async function getDashboardStats(range: RangeStats) {
     const topProductInfo =
         topProduct.length > 0
             ? {
-                product: await prisma.product.findUnique({ where: { id: topProduct[0].productId } }),
+                Product: await prisma.product.findUnique({ where: { id: topProduct[0].productId } }),
                 unitsSold: topProduct[0]._sum.quantity ?? 0,
             }
             : {
-                product: null,
+                Product: null,
                 unitsSold: 0,
             };
 

@@ -2,10 +2,9 @@
 
 import { InventoryPaging } from "@/app/admin/inventory/inventory-page";
 import { ActionResponse, ContextPage, SaleCustomers } from "@/interface/actionType";
-import { getContextPage } from "@/lib/context-action";
 import { logger } from "@/lib/logger";
 import { prisma } from "@/lib/prisma";
-import { Customer, PreOrder, Product, Shop, } from "@/lib/validation";
+import { Customer, Market, PreOrder, Product, } from "@/lib/validation";
 import { Prisma, } from "@prisma/client";
 import { revalidatePath } from 'next/cache'
 
@@ -15,16 +14,17 @@ export type TopSellingProduct = Product & {
 export type BrandsProps = { brand: string | null }[];
 
 export type ProductPreorder = Product & { PreOrders: PreOrder[] }
+
 export type ProductPreorderShop = Product & {
     PreOrders: (PreOrder & {
-        Shop: Shop
+        Market: Market
     })[]
 };
 
 export type ProductPaging = {
     data: ProductPreorder[],
     total: number,
-    brands: BrandsProps
+    // brands: BrandsProps
 };
 
 export type PreorderProductCustomer = PreOrder & {
@@ -37,80 +37,80 @@ export type PreorderProduct = PreOrder & {
 };
 
 export const getProduct = async (
-    filter:
-    {
-        shopId: string | null,
-        productBrand: string | undefined,
-        productCategory: string | undefined,
-        productTypeDevice: string | undefined,
-        productCotton: string | undefined,
-        productCoil: string | undefined,
-        productBattery: string | undefined,
-        productNicotine: string | undefined,
-        productFluid: string | undefined,
-        productResistant: string | undefined,
-        productName: string | undefined,
-        productLimit: string | undefined,
-        productPage: string | undefined,
-    },
+    context: ContextPage,
+    shopId?: string | null,
 ): Promise<ProductPaging> => {
-    const limit = Number(filter.productLimit ?? 10);
-    const page = Number(filter.productPage ?? 0);
+    const {
+        productName,
+        productBrand,
+        productCategory,
+        productTypeDevice,
+        productNicotine,
+        productResistant,
+        productCoil,
+        productBattery,
+        productCotton,
+        productFluid,
+        productLimit,
+        productPage,
+    } = await context.searchParams
+
+    const limit = Number(productLimit ?? 10);
+    const page = Number(productPage ?? 0);
 
     const where: Prisma.ProductWhereInput = {
 
-        name: filter.productName && filter.productName !== '-'
-            ? { contains: filter.productName, }
+        name: productName && productName !== '-'
+            ? { contains: productName, }
             : undefined,
 
-        resistanceSize: filter.productResistant && filter.productResistant !== '-'
-            ? { contains: filter.productResistant, }
+        resistanceSize: productResistant && productResistant !== '-'
+            ? { contains: productResistant, }
             : undefined,
 
-        cottonSize: filter.productCotton && filter.productCotton !== '-'
-            ? { contains: filter.productCotton, }
+        cottonSize: productCotton && productCotton !== '-'
+            ? { contains: productCotton, }
             : undefined,
 
-        batterySize: filter.productBattery && filter.productBattery !== '-'
-            ? { contains: filter.productBattery, }
+        batterySize: productBattery && productBattery !== '-'
+            ? { contains: productBattery, }
             : undefined,
 
-        brand: filter.productBrand && filter.productBrand !== '-'
-            ? { contains: filter.productBrand, }
+        brand: productBrand && productBrand !== '-'
+            ? { contains: productBrand, }
             : undefined,
 
-        category: filter.productCategory && filter.productCategory !== '-'
-            ? { contains: filter.productCategory, }
+        category: productCategory && productCategory !== '-'
+            ? { contains: productCategory, }
             : undefined,
 
-        coilSize: filter.productCoil && filter.productCoil !== '-'
-            ? { contains: filter.productCoil, }
+        coilSize: productCoil && productCoil !== '-'
+            ? { contains: productCoil, }
             : undefined,
 
-        type: filter.productTypeDevice && filter.productTypeDevice !== '-'
-            ? { contains: filter.productTypeDevice, }
+        type: productTypeDevice && productTypeDevice !== '-'
+            ? { contains: productTypeDevice, }
             : undefined,
 
-        nicotineLevel: filter.productNicotine && filter.productNicotine !== '-'
-            ? { contains: filter.productNicotine, }
+        nicotineLevel: productNicotine && productNicotine !== '-'
+            ? { contains: productNicotine, }
             : undefined,
 
-        fluidLevel: filter.productFluid && filter.productFluid !== '-'
-            ? { contains: filter.productFluid, }
+        fluidLevel: productFluid && productFluid !== '-'
+            ? { contains: productFluid, }
             : undefined,
 
-        PreOrders: filter.shopId
-            ? { every: { sellIn_shopId: filter.shopId } }
+        PreOrders: shopId
+            ? { some: { marketId_sellIn: shopId } }
             : undefined
     }
-    // console.log(where)
+
     const data = await prisma.product.findMany({
         where,
         take: limit,
         skip: page * limit,
         include: {
             PreOrders: {
-                take: 1,
                 orderBy: {
                     updatedAt: 'desc'
                 }
@@ -119,33 +119,33 @@ export const getProduct = async (
         orderBy: { updatedAt: 'desc' },
     })
     logger.info('data : getProduct')
+
     return {
         data,
         total: await prisma.product.count({ where }),
-        brands: await getBrands()
     }
 }
 
-export const getProductPage = async (
-    context: ContextPage,
-    shopId: string | null,
-): Promise<ProductPaging> => {
-    return getProduct({
-        shopId,
-        productName: await getContextPage(context, 'productName'),
-        productBrand: await getContextPage(context, 'productBrand'),
-        productCategory: await getContextPage(context, 'productCategory'),
-        productTypeDevice: await getContextPage(context, 'productTypeDevice'),
-        productNicotine: await getContextPage(context, 'productNicotine'),
-        productResistant: await getContextPage(context, 'productResistant'),
-        productCoil: await getContextPage(context, 'productCoil'),
-        productBattery: await getContextPage(context, 'productBattery'),
-        productCotton: await getContextPage(context, 'productCotton'),
-        productFluid: await getContextPage(context, 'productFluid'),
-        productLimit: await getContextPage(context, 'productLimit'),
-        productPage: await getContextPage(context, 'productPage')
-    })
-}
+// export const getProductPage = async (
+//     context: ContextPage,
+//     shopId: string | null,
+// ): Promise<ProductPaging> => {
+//     return getProduct({
+//         shopId,
+//         productName: await getContextPage(context, 'productName'),
+//         productBrand: await getContextPage(context, 'productBrand'),
+//         productCategory: await getContextPage(context, 'productCategory'),
+//         productTypeDevice: await getContextPage(context, 'productTypeDevice'),
+//         productNicotine: await getContextPage(context, 'productNicotine'),
+//         productResistant: await getContextPage(context, 'productResistant'),
+//         productCoil: await getContextPage(context, 'productCoil'),
+//         productBattery: await getContextPage(context, 'productBattery'),
+//         productCotton: await getContextPage(context, 'productCotton'),
+//         productFluid: await getContextPage(context, 'productFluid'),
+//         productLimit: await getContextPage(context, 'productLimit'),
+//         productPage: await getContextPage(context, 'productPage')
+//     })
+// }
 
 export type LowStockProducts = { stock: number, minStock: number, id: number };
 
@@ -180,9 +180,27 @@ export const deleteProductAction = async (idProduct: Product['id']): Promise<Act
     if (await prisma.product.findUnique({ where: { id: idProduct }, select: { id: true } })) {
         revalidatePath('/') // agar halaman ter-refresh
         logger.info('success : deleteProduct')
+        const product = await prisma.$transaction(async (tx) => {
+
+            await tx.preOrder.deleteMany({
+                where: {
+                    productId: idProduct,
+                }
+            })
+
+            await tx.salesItem.deleteMany({
+                where: {
+                    productId: idProduct
+                }
+            })
+            return tx.product.delete({
+                where: { id: idProduct },
+            })
+        })
+        revalidatePath('/')
         return {
             success: true,
-            data: await prisma.product.delete({ where: { id: idProduct } }),
+            data: product,
             message: 'Success Delete Product'
         }
     }
@@ -196,21 +214,21 @@ export const deleteProductAction = async (idProduct: Product['id']): Promise<Act
 
 export const getBrands = async () => {
     'use cache'
-    const data = await prisma.product.groupBy({ by: 'brand' })
-    logger.info('data : getBrands')
-    return data
+    const response = await prisma.product.groupBy({ by: 'brand' })
+    // logger.info('data : getBrands')
+    return response.map(i => i.brand ?? '')
 }
 
 export const _getProductById = async (id: number): Promise<ActionResponse<ProductPreorder | null>> => {
 
     try {
         'use cache'
-        const response = await fetch(`http://localhost:3000/api/product/${ id }`, {
+        const response = await fetch(`http://localhost:3000/api/product/${id}`, {
             method: "GET",
             // cache:"reload",
             next: {
                 revalidate: 60,
-                tags: [ `product-${ id }` ], // tag used for cache control / revalidation
+                tags: [`product-${id}`], // tag used for cache control / revalidation
             },
         })
 
@@ -231,12 +249,12 @@ export const _getProductById = async (id: number): Promise<ActionResponse<Produc
 export const _getSaleById = async (id: number): Promise<ActionResponse<SaleCustomers | null>> => {
 
     try {
-        const response = await fetch(`http://localhost:3000/api/sale/${ id }`, {
+        const response = await fetch(`http://localhost:3000/api/sale/${id}`, {
             method: "GET",
             // cache:"reload",
             next: {
                 revalidate: 60,
-                tags: [ `sale-${ id }` ], // tag used for cache control / revalidation
+                tags: [`sale-${id}`], // tag used for cache control / revalidation
             },
         })
 
@@ -253,7 +271,6 @@ export const _getSaleById = async (id: number): Promise<ActionResponse<SaleCusto
     }
 }
 
-
 export const getPreorder = async (
     filter: {
         inventoryName: string | undefined,
@@ -263,6 +280,8 @@ export const getPreorder = async (
         inventoryPage: string | undefined,
     },
 ): Promise<InventoryPaging> => {
+// console.log(filter)
+
     const limit = Number(filter.inventoryLimit ?? 10);
     const page = Number(filter.inventoryPage ?? 0);
 

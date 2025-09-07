@@ -1,25 +1,17 @@
 import { z } from 'zod';
-import {
-    ShippingSettingListWithRelationsSchema,
-    ShippingSettingListPartialWithRelationsSchema,
-    ShippingSettingListOptionalDefaultsWithRelationsSchema
-} from './ShippingSettingListSchema'
-import type {
-    ShippingSettingListWithRelations,
-    ShippingSettingListPartialWithRelations,
-    ShippingSettingListOptionalDefaultsWithRelations
-} from './ShippingSettingListSchema'
+import { ShippingSettingListWithRelationsSchema, ShippingSettingListPartialWithRelationsSchema, ShippingSettingListOptionalDefaultsWithRelationsSchema } from './ShippingSettingListSchema'
+import type { ShippingSettingListWithRelations, ShippingSettingListPartialWithRelations, ShippingSettingListOptionalDefaultsWithRelations } from './ShippingSettingListSchema'
 
 /////////////////////////////////////////
 // SHIPPING SETTING SCHEMA
 /////////////////////////////////////////
 
 export const ShippingSettingSchema = z.object({
-    id: z.string().uuid(),
-    freeShippingThreshold: z.number().min(0),
-    handlingFee: z.number().min(0),
-    internationalShipping: z.boolean(),
-    internationalRate: z.number().min(0),
+  id: z.string().uuid(),
+  freeShippingThreshold: z.number().min(0),
+  handlingFee: z.number().min(0),
+  internationalShipping: z.boolean(),
+  internationalRate: z.number().min(0),
 })
 
 export type ShippingSetting = z.infer<typeof ShippingSettingSchema>
@@ -37,7 +29,7 @@ export type ShippingSettingPartial = z.infer<typeof ShippingSettingPartialSchema
 /////////////////////////////////////////
 
 export const ShippingSettingOptionalDefaultsSchema = ShippingSettingSchema.merge(z.object({
-    id: z.string().uuid().optional(),
+  id: z.string().uuid().optional(),
 }))
 
 export type ShippingSettingOptionalDefaults = z.infer<typeof ShippingSettingOptionalDefaultsSchema>
@@ -47,13 +39,13 @@ export type ShippingSettingOptionalDefaults = z.infer<typeof ShippingSettingOpti
 /////////////////////////////////////////
 
 export type ShippingSettingRelations = {
-    ShippingList: ShippingSettingListWithRelations[];
+  ShippingList: ShippingSettingListWithRelations[];
 };
 
 export type ShippingSettingWithRelations = z.infer<typeof ShippingSettingSchema> & ShippingSettingRelations
 
 export const ShippingSettingWithRelationsSchema: z.ZodType<ShippingSettingWithRelations> = ShippingSettingSchema.merge(z.object({
-    ShippingList: z.lazy(() => ShippingSettingListWithRelationsSchema).array(),
+  ShippingList: z.lazy(() => ShippingSettingListWithRelationsSchema).array(),
 }))
 
 /////////////////////////////////////////
@@ -61,15 +53,13 @@ export const ShippingSettingWithRelationsSchema: z.ZodType<ShippingSettingWithRe
 /////////////////////////////////////////
 
 export type ShippingSettingOptionalDefaultsRelations = {
-    ShippingList: ShippingSettingListOptionalDefaultsWithRelations[];
+  ShippingList: ShippingSettingListOptionalDefaultsWithRelations[];
 };
 
-export type ShippingSettingOptionalDefaultsWithRelations =
-    z.infer<typeof ShippingSettingOptionalDefaultsSchema>
-    & ShippingSettingOptionalDefaultsRelations
+export type ShippingSettingOptionalDefaultsWithRelations = z.infer<typeof ShippingSettingOptionalDefaultsSchema> & ShippingSettingOptionalDefaultsRelations
 
 export const ShippingSettingOptionalDefaultsWithRelationsSchema: z.ZodType<ShippingSettingOptionalDefaultsWithRelations> = ShippingSettingOptionalDefaultsSchema.merge(z.object({
-    ShippingList: z.lazy(() => ShippingSettingListOptionalDefaultsWithRelationsSchema).array(),
+  ShippingList: z.lazy(() => ShippingSettingListOptionalDefaultsWithRelationsSchema).array(),
 }))
 
 /////////////////////////////////////////
@@ -77,31 +67,25 @@ export const ShippingSettingOptionalDefaultsWithRelationsSchema: z.ZodType<Shipp
 /////////////////////////////////////////
 
 export type ShippingSettingPartialRelations = {
-    ShippingList?: ShippingSettingListPartialWithRelations[];
+  ShippingList?: ShippingSettingListPartialWithRelations[];
 };
 
-export type ShippingSettingPartialWithRelations =
-    z.infer<typeof ShippingSettingPartialSchema>
-    & ShippingSettingPartialRelations
+export type ShippingSettingPartialWithRelations = z.infer<typeof ShippingSettingPartialSchema> & ShippingSettingPartialRelations
 
 export const ShippingSettingPartialWithRelationsSchema: z.ZodType<ShippingSettingPartialWithRelations> = ShippingSettingPartialSchema.merge(z.object({
-    ShippingList: z.lazy(() => ShippingSettingListPartialWithRelationsSchema).array(),
+  ShippingList: z.lazy(() => ShippingSettingListPartialWithRelationsSchema).array(),
 })).partial()
 
-export type ShippingSettingOptionalDefaultsWithPartialRelations =
-    z.infer<typeof ShippingSettingOptionalDefaultsSchema>
-    & ShippingSettingPartialRelations
+export type ShippingSettingOptionalDefaultsWithPartialRelations = z.infer<typeof ShippingSettingOptionalDefaultsSchema> & ShippingSettingPartialRelations
 
 export const ShippingSettingOptionalDefaultsWithPartialRelationsSchema: z.ZodType<ShippingSettingOptionalDefaultsWithPartialRelations> = ShippingSettingOptionalDefaultsSchema.merge(z.object({
-    ShippingList: z.lazy(() => ShippingSettingListPartialWithRelationsSchema).array(),
+  ShippingList: z.lazy(() => ShippingSettingListPartialWithRelationsSchema).array(),
 }).partial())
 
-export type ShippingSettingWithPartialRelations =
-    z.infer<typeof ShippingSettingSchema>
-    & ShippingSettingPartialRelations
+export type ShippingSettingWithPartialRelations = z.infer<typeof ShippingSettingSchema> & ShippingSettingPartialRelations
 
 export const ShippingSettingWithPartialRelationsSchema: z.ZodType<ShippingSettingWithPartialRelations> = ShippingSettingSchema.merge(z.object({
-    ShippingList: z.lazy(() => ShippingSettingListPartialWithRelationsSchema).array(),
+  ShippingList: z.lazy(() => ShippingSettingListPartialWithRelationsSchema).array(),
 }).partial())
 
 export default ShippingSettingSchema;

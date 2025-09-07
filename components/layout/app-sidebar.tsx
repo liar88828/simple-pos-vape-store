@@ -32,7 +32,7 @@ import { ChevronsUpDown, LogOutIcon, Settings, } from "lucide-react"
 import { Route } from "next";
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import React from "react";
+import React, { Fragment } from "react";
 import { match } from "ts-pattern";
 
 export function AppSidebar(
@@ -91,25 +91,26 @@ export function AppSidebar(
                     </SidebarMenuItem>
                 </SidebarMenu>
             </SidebarHeader>
+
             <SidebarContent>
                 {/* Main Navigation */ }
                 <SidebarGroup>
                     <SidebarGroupLabel
-                        className="text-xs font-semibold uppercase tracking-wider px-3 py-2">
+                        className="text-xs font-semibold uppercase tracking-wider py-2">
                         Main Menu
                     </SidebarGroupLabel>
                     <SidebarGroupContent>
                         <SidebarMenu>
                             { navItems.map((item) => (
-                                <SidebarMenuItem key={ item.href }>
-                                    <SidebarMenuButton asChild isActive={ isActive(item.href) }
-                                                       title={ item.title }>
-
-                                        <Link
-                                            href={ item.href }>
+                                <Fragment key={ item.href }>
+                                    <div className={ item.separator ? 'border-t-2 my-1' : '' }></div>
+                                    <SidebarMenuItem >
+                                        <SidebarMenuButton
+                                            asChild isActive={ isActive(item.href) }
+                                            title={ item.title }>
+                                            <Link href={ item.href }>
                                             <item.icon/>
-                                            <span>  { item.title }</span>
-                                        </Link>
+                                                <span> { item.title }</span></Link>
                                     </SidebarMenuButton>
                                     <SidebarMenuBadge>
                                         {
@@ -119,14 +120,14 @@ export function AppSidebar(
                                             .otherwise(() => null)
                                         }</SidebarMenuBadge>
                                 </SidebarMenuItem>
+                                </Fragment>
+
                             )) }
                         </SidebarMenu>
                     </SidebarGroupContent>
                 </SidebarGroup>
 
-
             </SidebarContent>
-
             <SidebarFooter className={ 'border-t' }>
                 <SidebarMenu>
                     <SidebarMenuItem>

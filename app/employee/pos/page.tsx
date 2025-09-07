@@ -1,5 +1,5 @@
 import { getSessionEmployeePage } from "@/action/auth-action";
-import { getProductPage } from "@/action/product-action";
+import { getProduct } from "@/action/product-action";
 import { getAllCustomers } from "@/app/admin/customers/customers-action";
 import POSPage from "@/app/admin/pos/pos-page";
 import { ContextPage } from "@/interface/actionType";
@@ -12,9 +12,11 @@ export default async function POS(context: ContextPage) {
     const customerName = await getContextPage(context, 'customerName') ?? '';
     logger.info("page : POS page");
 
+
+
     return <POSPage
-        payment={ (await prisma.paymentSetting.findFirst())! }
-        products={ await getProductPage(context, session.shopId) }
+        // payment={ (await prisma.paymentSetting.findFirst())! }
+        products={ await getProduct(context, session.shopId) }
         customers={ await getAllCustomers(customerName) }
     />
 }

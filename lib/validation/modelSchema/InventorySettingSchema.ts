@@ -5,11 +5,11 @@ import { z } from 'zod';
 /////////////////////////////////////////
 
 export const InventorySettingSchema = z.object({
-    id: z.string().uuid(),
-    trackInventory: z.boolean(),
-    lowStockThreshold: z.number().min(0),
-    allowBackorders: z.boolean(),
-    autoReorder: z.boolean(),
+  id: z.string().uuid(),
+  trackInventory: z.boolean(),
+  lowStockThreshold: z.number().min(0),
+  allowBackorders: z.boolean(),
+  autoReorder: z.boolean(),
 })
 
 export type InventorySetting = z.infer<typeof InventorySettingSchema>
@@ -27,7 +27,7 @@ export type InventorySettingPartial = z.infer<typeof InventorySettingPartialSche
 /////////////////////////////////////////
 
 export const InventorySettingOptionalDefaultsSchema = InventorySettingSchema.merge(z.object({
-    id: z.string().uuid().optional(),
+  id: z.string().uuid().optional(),
 }))
 
 export type InventorySettingOptionalDefaults = z.infer<typeof InventorySettingOptionalDefaultsSchema>

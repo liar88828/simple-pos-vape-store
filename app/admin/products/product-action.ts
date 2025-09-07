@@ -5,6 +5,7 @@ import { ActionResponse } from "@/interface/actionType";
 import { logger } from "@/lib/logger";
 import { prisma } from "@/lib/prisma";
 import {
+    Market,
     PreOrderOptionalDefaults,
     PreOrderOptionalDefaultsSchema,
     ProductOptionalDefaults,
@@ -13,18 +14,19 @@ import {
 import { STATUS_PREORDER } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 
-export async function upsertProductAction(formData: ProductData): Promise<ActionResponse> {
-    if (formData.id) return await updateProductAction(formData)
-    else return await addProductAction(formData)
+export async function upsertProductAction(formData: ProductData, market: Market): Promise<ActionResponse> {
+    if (formData.id) return await updateProductAction(formData,market)
+    else return await addProductAdminAction(formData,market)
 }
 
-export async function addProductAction({ priceNormal, expired, ...formData }: ProductData): Promise<ActionResponse> {
+export async function addProductAdminAction({ priceOriginal, expired, ...formData }: ProductData,
+                                            market: Market): Promise<ActionResponse> {
     logger.info('action addProductAction')
 
     try {
-
         const session = await getSessionUserPage()
         const valid = ProductOptionalDefaultsSchema.safeParse(formData)
+
         if (!valid.success) {
             const errorValidation = valid.error.flatten().fieldErrors
             logger.error('error validation addProductAction', errorValidation)
@@ -44,13 +46,13 @@ export async function addProductAction({ priceNormal, expired, ...formData }: Pr
 
             await tx.preOrder.create({
                 data: PreOrderOptionalDefaultsSchema.parse({
-                    sellIn_shopId: "",
+                    marketId_sellIn: market.id,
+                    market_name: market.name,
                     userId: session.userId,
                     productId: productDB.id,
                     quantity: productDB.stock,
                     status: STATUS_PREORDER.Success,
-                    priceSell: productDB.price,
-                    priceNormal: priceNormal ?? 0,
+                    priceOriginal: productDB.price,
                     expired,
                 } satisfies PreOrderOptionalDefaults)
             })
@@ -64,7 +66,8 @@ export async function addProductAction({ priceNormal, expired, ...formData }: Pr
             message: 'Produk berhasil ditambahkan'
         };
     } catch (error) {
-        // console.log(error)
+
+        console.log(error)
         logger.error('error catch addProductAction')
         return {
             data: null,
@@ -74,7 +77,9 @@ export async function addProductAction({ priceNormal, expired, ...formData }: Pr
     }
 }
 
-export async function updateProductAction(formData: ProductOptionalDefaults): Promise<ActionResponse> {
+export async function updateProductAction(
+    formData: ProductOptionalDefaults,
+    market: Market): Promise<ActionResponse> {
     logger.info('action input updateProductAction')
 
     try {
@@ -85,7 +90,7 @@ export async function updateProductAction(formData: ProductOptionalDefaults): Pr
             return {
                 data: valid.data,
                 success: true,
-                message: "Product Tidak Di Temukan",
+                message: "Update product data tidak valid",
 
             };
         }

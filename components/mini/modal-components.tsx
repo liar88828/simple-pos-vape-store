@@ -131,7 +131,7 @@ export function ResponsiveModalOnly(
         </Dialog>)
         : (<Drawer open={ isOpen } onOpenChange={ setOpenAction }>
             <DrawerContent>
-                <div className="mx-auto w-full max-w-sm">
+                <div className="mx-auto w-full ">
                     <DrawerHeader className="text-left">
                         <DrawerTitle>{ title }</DrawerTitle>
                         <DrawerDescription>{ description }</DrawerDescription>

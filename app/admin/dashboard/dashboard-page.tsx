@@ -186,7 +186,7 @@ export function DashboardPage(
                                                 { sale.Customer.name }
                                             </p>
                                             <p className={ "text-sm text-muted-foreground" }>
-                                                { sale.SaleItems.length } items • { formatDateIndo(sale.date) }
+                                                { sale.SaleItems.length } items • { formatDateIndo(sale.date_buy) }
                                             </p>
                                         </div>
                                     </div>
@@ -316,9 +316,9 @@ export function DashboardPage(
                     </CardHeader>
                     <CardContent>
                         <div className="space-y-3">
-                            { topSelling.slice(0, 4).map((product, index) => (
+                            { topSelling.slice(0, 4).map((item, index) => (
                                 <div
-                                    key={ product.product?.id }
+                                    key={ item.Product?.id }
                                     className={ "flex items-center justify-between p-3 bg-muted rounded-lg" }
                                 >
                                     <div className="flex items-center space-x-3">
@@ -328,19 +328,19 @@ export function DashboardPage(
                                         </div>
                                         <picture>
                                             <img
-                                                src={ product.product?.image }
-                                                alt={ product.product?.name }
+                                                src={ item.Product?.image }
+                                                alt={ item.Product?.name }
                                                 className="w-10 h-10 rounded-lg object-cover"
                                             />
                                         </picture>
                                         <div>
-                                            <p className={ "font-medium text-primary" }>{ product.product?.name }</p>
-                                            <p className={ "text-sm text-muted-foreground" }>{ product.product?.category }</p>
+                                            <p className={ "font-medium text-primary" }>{ item.Product?.name }</p>
+                                            <p className={ "text-sm text-muted-foreground" }>{ item.Product?.category }</p>
                                         </div>
                                     </div>
                                     <div className="text-right">
-                                        <p className={ "font-bold text-primary" }>{ product.totalSold } terjual</p>
-                                        <p className={ "text-sm text-muted-foreground" }> { formatRupiah(product.totalPrice) }</p>
+                                        <p className={ "font-bold text-primary" }>{ item.totalSold } terjual</p>
+                                        <p className={ "text-sm text-muted-foreground" }> { formatRupiah(item.totalPrice) }</p>
                                     </div>
                                 </div>
                             )) }

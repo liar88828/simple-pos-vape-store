@@ -1,17 +1,31 @@
 'use client';
 
+import { getSettingPayment, GetSettingPaymentAll, getStoreLoader } from "@/app/admin/setting/setting-action";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle, } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, } from '@/components/ui/table';
 import { SaleCustomers } from '@/interface/actionType';
 import { formatDateIndo, formatRupiah } from "@/lib/formatter";
-import React from 'react';
+import { Store } from "@/lib/validation";
+import React, { useEffect, useState } from 'react';
 
 export function InvoiceLetter({ invoiceData }: { invoiceData: SaleCustomers }) {
+    const [ store, setStore ] = useState<Store | null>(null)
+    const [ payments, setPayments ] = useState<GetSettingPaymentAll | null>()
+
+    useEffect(() => {
+        getStoreLoader().then(setStore)
+        getSettingPayment().then(setPayments)
+    }, []);
+
     const calculateSubtotal = (quantity: number, price: number) => quantity * price;
     // container mx-auto  p-4 md:p-8
+    // if(!store){
+    //     return <LoadingComponentSkeleton count={2}/>
+    // }
+
     return (
-        <Card >
+        <Card className={'w-full'}>
             {/* Header */}
             <CardHeader >
                 <div className="flex flex-col md:flex-row print:flex-row justify-between items-start gap-4">
@@ -21,12 +35,16 @@ export function InvoiceLetter({ invoiceData }: { invoiceData: SaleCustomers }) {
                             Invoice #{invoiceData.id}
                         </CardDescription>
                     </div>
-                    <div className="text-left md:text-right text-sm md:text-base">
-                        <div className="text-2xl font-bold text-primary mb-2">Your Company</div>
-                        <p className="text-muted-foreground">123 Business Street</p>
-                        <p className="text-muted-foreground">Yogyakarta, Indonesia</p>
-                        <p className="text-muted-foreground">Phone: +62 XXX XXXX XXXX</p>
-                    </div>
+                    { !store
+                        ? <div>Loading ...</div>
+                        : <div className="text-left md:text-right text-sm md:text-base">
+                            <div className="text-2xl font-bold text-primary mb-2">{ store.name }</div>
+                            <p className="text-muted-foreground">{ store.address }</p>
+                            {/*<p className="text-muted-foreground">{store.}</p>*/ }
+                            <p className="text-muted-foreground">Phone: { store.phone }</p>
+                        </div>
+                    }
+
                 </div>
             </CardHeader>
             <Separator />
@@ -59,7 +77,7 @@ export function InvoiceLetter({ invoiceData }: { invoiceData: SaleCustomers }) {
                         <div className="space-y-2 text-sm">
                             <div className="flex justify-between">
                                 <span className="text-muted-foreground">Date:</span>
-                                <span>{formatDateIndo(invoiceData.date)}</span>
+                                <span>{formatDateIndo(invoiceData.date_buy)}</span>
                             </div>
                             <div className="flex justify-between">
                                 <span className="text-muted-foreground">Total Items:</span>
@@ -92,16 +110,16 @@ export function InvoiceLetter({ invoiceData }: { invoiceData: SaleCustomers }) {
                                 <TableRow key={item.id} className="whitespace-nowrap">
                                     {/* <TableCell>{index + 1}</TableCell> */}
                                     <TableCell className=" space-y-1">
-                                        <div className="font-medium text-wrap">{index + 1}. {item.product.name}</div>
+                                        <div className="font-medium text-wrap">{index + 1}. {item.Product.name}</div>
                                         <div className="text-muted-foreground ">
-                                            Category: {item.product.category}
+                                            Category: {item.Product.category}
                                         </div>
                                     </TableCell>
                                     <TableCell className=" space-y-1">
-                                        <p>Type: {item.product.type}</p>
-                                        <p className='flex-wrap'>Flavor: {item.product.flavor}</p>
-                                        <p>Nicotine: {item.product.nicotineLevel}</p>
-                                        {/* <p>Description: {item.product.description}</p> */}
+                                        <p>Type: {item.Product.type}</p>
+                                        <p className='flex-wrap'>Flavor: {item.Product.flavor}</p>
+                                        <p>Nicotine: {item.Product.nicotineLevel}</p>
+                                        {/* <p>Description: {item.Product.description}</p> */}
                                     </TableCell>
                                     {/* <TableCell className="text-center">{item.quantity}</TableCell> */}
                                     <TableCell className="text-right space-y-2">
@@ -143,12 +161,23 @@ export function InvoiceLetter({ invoiceData }: { invoiceData: SaleCustomers }) {
             <Separator />
 
             {/* Footer */}
-            <CardFooter className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm  print:grid-cols-2 ">
-                <div>
-                    <h4 className="font-semibold mb-1">Payment Information:</h4>
-                    <p className="text-muted-foreground">Please make payment within 30 days of invoice date.</p>
-                    <p className="text-muted-foreground">Bank Transfer: Account XXX-XXXX-XXXX</p>
-                </div>
+            <CardFooter className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm  print:grid-cols-3 ">
+                { !payments
+                    ? <div>Loading ...</div>
+                    : <div className={'space-y-2'}>
+                        <h4 className="font-semibold mb-1">Payment Information:</h4>
+                        <p className="text-muted-foreground">Please make payment within 30 days of invoice date.</p>
+                        <p>Bank Transfer: </p>
+                        <ul className="list-disc list-inside text-muted-foreground space-y-1">
+                            {payments.PaymentList.map((item) => (
+                                <li key={item.id} className="flex justify-between   ">
+                                    <p> {item.title} ({formatRupiah(item.fee)}) </p> <p><b> {item.rekening}</b></p>
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+
+                }
                 <div>
                     <h4 className="font-semibold mb-1">Thank You!</h4>
                     <p className="text-muted-foreground">

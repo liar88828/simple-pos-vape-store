@@ -6,13 +6,13 @@ import { redirect } from "next/navigation";
 export default async function EmployeePage(context: PageProps<'/admin/employee/[id]'>) {
     const employee = await getEmployee((await context.params).id)
     // console.log("employee", employee)
-    if (!employee || !employee.workIn_shopId) {
+    if (!employee || !employee.marketId_workIn) {
         redirect('/admin/employee')
     }
 
     const products = await prisma.product.findMany({
         take: 100,
-        where: { PreOrders: { every: { sellIn_shopId: employee.workIn_shopId } } }
+        where: { PreOrders: { every: { marketId_sellIn: employee.marketId_workIn } } }
     })
     const absent = await prisma.absent.findMany({})
 

@@ -5,7 +5,7 @@ export * from './SaleSchema';
 export * from './SalesItemSchema';
 export * from './UserSchema';
 export * from './AbsentSchema';
-export * from './ShopSchema';
+export * from './MarketSchema';
 export * from './StoreSchema';
 export * from './PaymentSettingSchema';
 export * from './PaymentSettingListSchema';

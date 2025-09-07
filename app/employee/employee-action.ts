@@ -22,7 +22,9 @@ export const absent = async (userId: string) => await prisma.absent.findMany({
     where: { userId }
 })
 
-export const products = async (workIn_shopId: string) => prisma.product.findMany({
+export const products = async (marketId_sellIn: string) => prisma.product.findMany({
     take: 100,
-    where: { PreOrders: { every: { sellIn_shopId: workIn_shopId } } }
+    where: { PreOrders: { every: { marketId_sellIn } } }
 })
+
+

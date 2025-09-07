@@ -1,12 +1,7 @@
 'use client'
-import {
-    createEmployee,
-    EmployeeProps,
-    EmployeesAll,
-    getShopAllApi,
-    updateEmployee
-} from "@/app/admin/employee/employee-action";
+import { createEmployee, EmployeeProps, EmployeesAll, updateEmployee } from "@/app/admin/employee/employee-action";
 import { InputForm, SelectForm } from "@/components/mini/form-hook";
+import { LoadingComponentSkeleton } from "@/components/mini/loading-component";
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,8 +9,8 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, } from "@/components/ui/dialog"
 import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow, } from "@/components/ui/table"
 import { ROLE_USER_LIST } from "@/lib/constants";
-import { Shop } from "@/lib/validation";
 import ROLE_USERSchema from "@/lib/validation/inputTypeSchemas/ROLE_USERSchema";
+import { useSettingStore } from "@/store/use-setting-store";
 import { zodResolver } from "@hookform/resolvers/zod"
 import { ROLE_USER } from "@prisma/client";
 import Link from "next/link";
@@ -24,39 +19,7 @@ import { FormProvider, useForm } from "react-hook-form"
 import { toast } from "sonner"
 import { z } from "zod"
 
-const _employees = [
-    {
-        id: 1,
-        name: "Alice Johnson",
-        role: "Software Engineer",
-        email: "alice@example.com",
-        location: "New York",
-        active: true
-    },
-    {
-        id: 2,
-        name: "Bob Smith",
-        role: "Product Manager",
-        email: "bob@example.com",
-        location: "San Francisco",
-        active: false
-    },
-    {
-        id: 3,
-        name: "Charlie Davis",
-        role: "UI/UX Designer",
-        email: "charlie@example.com",
-        location: "Chicago",
-        active: true
-    },
-]
-
-export default function EmployeePage(
-    {
-        employees,
-    }: {
-        employees: EmployeesAll[],
-    }) {
+export default function EmployeePage({ employees }: { employees: EmployeesAll[] }) {
     const [ dialogOpen, setDialogOpen ] = useState(false)
     const [ selectedEmployee, setSelectedEmployee ] = useState<EmployeeProps | undefined>(undefined)
 
@@ -110,8 +73,8 @@ export default function EmployeePage(
 
                                     </TableCell>
                                     <TableCell>
-                                        <p className={ 'font-bold' }>{ emp?.Shop?.name ?? '' }</p>
-                                        <p>{ emp?.Shop?.location ?? '' }</p>
+                                        <p className={ 'font-bold' }>{ emp?.Market?.name ?? '' }</p>
+                                        <p>{ emp?.Market?.location ?? '' }</p>
                                     </TableCell>
 
                                     <TableCell className="flex gap-2 ">
@@ -138,7 +101,7 @@ export default function EmployeePage(
 
             <EmployeeDialog
                 open={ dialogOpen }
-                onOpenChange={ setDialogOpen }
+                onOpenChangeAction={ setDialogOpen }
                 employee={ selectedEmployee }
             />
         </div>
@@ -150,7 +113,7 @@ const employeeSchema = z.object({
     name: z.string().min(1, "Name is required"),
     role: ROLE_USERSchema,
     address: z.string().min(1, "Location is required"),
-    workIn_shopId: z.string().min(1, "Shop is required"),
+    sellIn_marketId: z.string().min(1, "Shop is required"),
     email: z.string().min(1, "Email is required").email("Invalid email"),
     phone: z.string().min(1, "Phone is required"),
     img: z.string().min(1, "Img is required"),
@@ -159,25 +122,16 @@ const employeeSchema = z.object({
 
 export type EmployeeFormData = z.infer<typeof employeeSchema>
 
-export function EmployeeDialog(
-    {
-        open,
-        onOpenChange,
-        employee,
-    }: {
-        open: boolean
-        onOpenChange: (open: boolean) => void
-        employee?: EmployeeProps
-    }) {
+export function EmployeeDialog({ open, onOpenChangeAction, employee, }: {
+    employee?: EmployeeProps
+    onOpenChangeAction: (open: boolean) => void
+    open: boolean
+}) {
 
-    const [ shop, setShop ] = useState<Shop[]>([])
-
+    const { isLoading, markets, getMarkets } = useSettingStore()
     useEffect(() => {
-        getShopAllApi().then(data => {
-            setShop(data.data)
-        })
-        console.log('render')
-    }, []);
+        getMarkets().then()
+    }, [ getMarkets ]);
 
     const methods = useForm<EmployeeFormData>({
         resolver: zodResolver(employeeSchema),//
@@ -186,7 +140,7 @@ export function EmployeeDialog(
             name: "",
             role: ROLE_USER.USER,
             address: "",
-            workIn_shopId: "",
+            sellIn_marketId: "",
             email: "",
             phone: "",
             img: "",
@@ -200,7 +154,7 @@ export function EmployeeDialog(
                 ...employee,
                 phone: employee.phone ?? '',
                 address: employee.address ?? '',
-                workIn_shopId: employee.workIn_shopId ?? '',
+                sellIn_marketId: employee.marketId_workIn ?? '',
                 img: employee.img ?? '',
             })
         } else {
@@ -209,7 +163,7 @@ export function EmployeeDialog(
                 name: "",
                 role: ROLE_USER.USER,
                 address: "",
-                workIn_shopId: "",
+                sellIn_marketId: "",
                 email: "",
                 phone: "",
                 img: "",
@@ -228,7 +182,7 @@ export function EmployeeDialog(
                 toast.success("Employee created successfully")
             }
             methods.reset()
-            onOpenChange(false)
+            onOpenChangeAction(false)
         } catch (err) {
             toast.error("Failed to save employee")
             console.error(err)
@@ -236,7 +190,7 @@ export function EmployeeDialog(
     })
 
     return (
-        <Dialog open={ open } onOpenChange={ onOpenChange }>
+        <Dialog open={ open } onOpenChange={ onOpenChangeAction }>
             <DialogContent>
                 <DialogHeader>
                     <DialogTitle>
@@ -244,6 +198,7 @@ export function EmployeeDialog(
                     </DialogTitle>
                 </DialogHeader>
 
+                { isLoading ? <LoadingComponentSkeleton/> :
                 <FormProvider { ...methods }>
                     <form className="space-y-4">
                         <InputForm name="name" title="Name" placeholder="Employee name"/>
@@ -268,11 +223,10 @@ export function EmployeeDialog(
                         { employee || employee !== ROLE_USER.ADMIN ?
                             null
                             :
-                            <SelectForm
-                                name="workIn_shopId"
+                            <SelectForm name="workIn_shopId"
                                 label="Shop"
                                 placeholder="Select a shop"
-                                options={ shop.map((s) => ({
+                                        options={ markets.map((s) => ({
                                     label: s.name,
                                     value: s.id,
                                 })) }
@@ -296,9 +250,10 @@ export function EmployeeDialog(
                         }
                     </form>
                 </FormProvider>
+                }
 
                 <DialogFooter>
-                    <Button variant="outline" onClick={ () => onOpenChange(false) }>
+                    <Button variant="outline" onClick={ () => onOpenChangeAction(false) }>
                         Cancel
                     </Button>
                     <Button onClick={ onSubmit }>
@@ -309,3 +264,30 @@ export function EmployeeDialog(
         </Dialog>
     )
 }
+
+const _employees = [
+    {
+        id: 1,
+        name: "Alice Johnson",
+        role: "Software Engineer",
+        email: "alice@example.com",
+        location: "New York",
+        active: true
+    },
+    {
+        id: 2,
+        name: "Bob Smith",
+        role: "Product Manager",
+        email: "bob@example.com",
+        location: "San Francisco",
+        active: false
+    },
+    {
+        id: 3,
+        name: "Charlie Davis",
+        role: "UI/UX Designer",
+        email: "charlie@example.com",
+        location: "Chicago",
+        active: true
+    },
+]

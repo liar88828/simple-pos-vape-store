@@ -1,43 +1,27 @@
 import { z } from 'zod';
-import {
-    PreOrderWithRelationsSchema,
-    PreOrderPartialWithRelationsSchema,
-    PreOrderOptionalDefaultsWithRelationsSchema
-} from './PreOrderSchema'
-import type {
-    PreOrderWithRelations,
-    PreOrderPartialWithRelations,
-    PreOrderOptionalDefaultsWithRelations
-} from './PreOrderSchema'
-import {
-    SalesItemWithRelationsSchema,
-    SalesItemPartialWithRelationsSchema,
-    SalesItemOptionalDefaultsWithRelationsSchema
-} from './SalesItemSchema'
-import type {
-    SalesItemWithRelations,
-    SalesItemPartialWithRelations,
-    SalesItemOptionalDefaultsWithRelations
-} from './SalesItemSchema'
+import { PreOrderWithRelationsSchema, PreOrderPartialWithRelationsSchema, PreOrderOptionalDefaultsWithRelationsSchema } from './PreOrderSchema'
+import type { PreOrderWithRelations, PreOrderPartialWithRelations, PreOrderOptionalDefaultsWithRelations } from './PreOrderSchema'
+import { SalesItemWithRelationsSchema, SalesItemPartialWithRelationsSchema, SalesItemOptionalDefaultsWithRelationsSchema } from './SalesItemSchema'
+import type { SalesItemWithRelations, SalesItemPartialWithRelations, SalesItemOptionalDefaultsWithRelations } from './SalesItemSchema'
 
 /////////////////////////////////////////
 // PRODUCT SCHEMA
 /////////////////////////////////////////
 
 export const ProductSchema = z.object({
-    id: z.string().uuid(),
+  id: z.string().uuid(),
   category: z.string().min(1),
   name: z.string().min(1),
   price: z.number().min(1),
-    stock: z.number().min(0),
+  stock: z.number().min(0),
   minStock: z.number().int(),
   sold: z.number().int(),
   image: z.string().min(1),
-    brand: z.string().min(1).nullish(),
+  brand: z.string().min(1).nullish(),
   type: z.string().min(1),
   description: z.string().min(1),
   nicotineLevel: z.string().nullish(),
-    fluidLevel: z.string().nullish(),
+  fluidLevel: z.string().nullish(),
   flavor: z.string().nullish(),
   cottonSize: z.string().nullish(),
   batterySize: z.string().nullish(),
@@ -62,8 +46,8 @@ export type ProductPartial = z.infer<typeof ProductPartialSchema>
 /////////////////////////////////////////
 
 export const ProductOptionalDefaultsSchema = ProductSchema.merge(z.object({
-    id: z.string().uuid().optional(),
-    stock: z.number().min(0).optional(),
+  id: z.string().uuid().optional(),
+  stock: z.number().min(0).optional(),
   minStock: z.number().int().optional(),
   sold: z.number().int().optional(),
   createdAt: z.date().optional(),

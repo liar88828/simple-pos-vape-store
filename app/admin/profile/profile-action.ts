@@ -7,7 +7,7 @@ import { Customer, Product, Sale, SalesItem } from "@/lib/validation";
 export type CustomerComplete = Customer & {
     Sales: (Sale & {
         SaleItems: (SalesItem & {
-            product: Product
+            Product: Product
         })[]
     })[]
 };
@@ -25,11 +25,11 @@ export const getDataCustomer = async (customerId: string): Promise<CustomerCompl
                 include: {
                     SaleItems: {
                         include: {
-                            product: true,
+                            Product: true,
                         },
                     },
                 },
-                orderBy: { date: 'desc' },
+                orderBy: { date_buy: 'desc' },
             },
         },
     });

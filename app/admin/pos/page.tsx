@@ -1,4 +1,4 @@
-import { getProductPage } from "@/action/product-action";
+import { getProduct } from "@/action/product-action";
 import { getAllCustomers } from "@/app/admin/customers/customers-action";
 import POSPage from "@/app/admin/pos/pos-page";
 import { getSettingPaymentFirst } from "@/app/admin/setting/setting-action";
@@ -16,8 +16,7 @@ export default async function POS(context: ContextPage) {
     }
 
     return <POSPage
-        payment={ payment }
-        products={ await getProductPage(context, null) }
+        products={ await getProduct(context, null) }
         customers={ await getAllCustomers(customerName) }
     />
 }

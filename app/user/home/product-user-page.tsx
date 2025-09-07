@@ -1,79 +1,83 @@
 "use client"
 
 import { ProductPaging, ProductPreorder } from "@/action/product-action";
-import { getShopAllApi } from "@/app/admin/employee/employee-action";
 import { ProductsFilter } from "@/app/admin/products/products-page";
 import { ProductPending } from "@/app/user/home/page"
-import { createTransactionUserAction, createTransactionUserPendingAction } from "@/app/user/user-action";
-import { SelectForm } from "@/components/mini/form-hook";
 import { ProductDetailDialogOnly } from "@/components/page/product-detail-dialog-only";
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { useCartStore } from "@/hooks/use-cart";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuLabel,
+    DropdownMenuRadioGroup,
+    DropdownMenuRadioItem,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger
+} from "@/components/ui/dropdown-menu";
 import { CartItem, SessionUserPayload } from "@/interface/actionType";
 import { formatRupiah } from "@/lib/formatter";
 import { toastResponse } from "@/lib/helper";
-import { Shop } from "@/lib/validation";
+import { Market } from "@/lib/validation";
+import { useCartStore } from "@/store/use-cart-store";
+import { useSaleStore } from "@/store/use-sale-store";
 import { MinusIcon, Plus, PlusIcon, ShoppingCart, Trash2 } from "lucide-react"
-import React, { useEffect, useState } from "react"
+import { useRouter } from "next/navigation";
+import React, { useCallback, useEffect, useState, useTransition } from "react"
 
 export function ProductUserPage(
     {
+        marketIdProps,
         productPending,
         session,
         products,
-
+        markets
     }: {
+        marketIdProps?: string;
+        markets: Market[],
         productPending: ProductPending
         session: SessionUserPayload
         products: ProductPaging,
 
     }) {
-    const [ loading, setLoading ] = useState(false)
+    const router = useRouter()
+    const [ isPending, startTransition ] = useTransition()
     const [ isProduct, setIsProduct ] = useState<ProductPreorder | null>(null)
     const [ isOpen, setIsOpen ] = useState(false)
-
-
-    // Zustand state/actions
-    const { cartItems, incrementItem, decrementItem, removeFromCart, addToCart, setCartItems } =
-        useCartStore();
-
-    const [ shops, setShops ] = useState<Shop[]>([])
-    const [ shopId, setShopId ] = useState('')
-
-    useEffect(() => {
-        getShopAllApi().then(data => {
-            setShops(data.data)
-        })
-        console.log('render')
-    }, []);
-
-    // ✅ initialize cart items from productPending.current
+    const [ marketId, setMarketId ] = useState<string | undefined>(marketIdProps)
+    const currentMarket = markets.find(i => i.id === marketId)
+    const {
+        cartItems,
+        incrementItem,
+        decrementItem,
+        removeFromCart,
+        addToCart,
+        setCartItems,
+        calculateCart
+    } = useCartStore();
+    const { createSaleUserPending, createSaleUserAction } = useSaleStore()
+    const { total } = calculateCart()
     useEffect(() => {
         if (productPending?.current) {
             setCartItems(productPending.current);
         }
     }, [ productPending, setCartItems ]);
 
-    const getTotalCart = () => {
-        return cartItems.reduce((total, item) => total + item.price * item.quantity, 0)
-    }
-
     async function onTransaction() {
-        setLoading(true)
-        if (productPending.isPending) {
-            if (productPending.data) {
-                toastResponse({ response: await createTransactionUserPendingAction(cartItems, productPending.data), })
+        startTransition(async () => {
+            if (productPending.isPending) {
+                if (productPending.data) {
+                    toastResponse({ response: await createSaleUserPending(cartItems, productPending.data), })
+                }
+            } else if (marketId) {
+                toastResponse({ response: await createSaleUserAction(cartItems, marketId) })
             }
-        } else {
-            toastResponse({ response: await createTransactionUserAction(cartItems, shopId) })
-        }
-        setLoading(false)
+        })
     }
 
-    const getProductStock = (id: string) => {
+    const getProductStock = useCallback((id: string) => {
         return products.data.find(product => product.id === id)?.stock || 0;
-    };
+    }, [ products ])
 
     return (
         <div className="p-6 max-w-7xl mx-auto">
@@ -90,22 +94,45 @@ export function ProductUserPage(
                     } }
 			/>
             }
-            <h1 className="text-3xl font-bold mb-6">User Home { session.name }</h1>
+            <div className="flex justify-between">
+                <h1 className="text-3xl font-bold mb-6">User Home { session.name }</h1>
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button>Market { currentMarket?.name ?? '' }</Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent>
+                        <DropdownMenuLabel>Select Market</DropdownMenuLabel>
+                        <DropdownMenuSeparator/>
+                        <DropdownMenuRadioGroup value={ marketId } onValueChange={ setMarketId }>
+                            { markets.map(i => (
+                                <DropdownMenuRadioItem key={ i.id }
+                                                       value={ i.id }
+                                                       onClick={ () => {
+                                                           router.push(`/user/home?shopId=${ i.id }`)
+                                                       } }
+                                >{ i.name } - { i.location }</DropdownMenuRadioItem>
+                            )) }
+                        </DropdownMenuRadioGroup>
+                    </DropdownMenuContent>
+                </DropdownMenu>
+
+            </div>
 
             <div className="grid grid-cols-1 xl:grid-cols-3 space-y-6  xl:space-y-0 xl:space-x-6  ">
-
                 {/* Product Selection */ }
                 <div className="lg:col-span-2 ">
                     <Card>
                         <CardHeader>
                             <CardTitle>Pilih Produk</CardTitle>
-                            <ProductsFilter products={ products }/>
+                            <ProductsFilter products={ products.data }/>
                         </CardHeader>
                         <CardContent>
                             <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-4">
                                 { products.data.map((product) => {
+                                    const actualStockProduct = product.PreOrders.reduce((sum, item) => sum + item.quantity, 0)
                                     const cartItem = cartItems.find(item => item.id === product.id);
-                                    const remainingStock = cartItem ? product.stock - cartItem.quantity : product.stock;
+                                    // const remainingStock = cartItem ? product.stock - cartItem.quantity : product.stock;
+                                    const remainingStock = cartItem ? actualStockProduct - cartItem.quantity : actualStockProduct;
 
                                     return (
                                         <Card key={ product.id }
@@ -113,9 +140,7 @@ export function ProductUserPage(
                                             <picture>
                                                 <img
                                                     onClick={ () => {
-                                                        setIsOpen(prev => {
-                                                            return !prev
-                                                        })
+                                                        setIsOpen(prev => !prev)
                                                         setIsProduct(product)
                                                     } }
                                                     src={ product.image }
@@ -127,17 +152,22 @@ export function ProductUserPage(
                                                 <h3 className="font-medium text-sm mb-1">{ product.name }</h3>
                                                 <p className="text-xs text-muted-foreground mb-2">{ product.category }</p>
                                                 <div className="flex justify-between items-center">
-                                                                <span
-                                                                    className="font-bold text-sm">{ formatRupiah(product.price) }</span>
+                                                            <span
+                                                                className="font-bold text-sm">{ formatRupiah(product.price) }</span>
                                                     <Button size="sm"
                                                             onClick={ () => addToCart(product) }
                                                             disabled={ remainingStock <= 0 }
-
                                                     >
                                                         <Plus className="h-3 w-3"/>
                                                     </Button>
                                                 </div>
                                                 <p className="text-xs text-muted-foreground mt-1">Stok: { remainingStock }</p>
+                                                {/*<div className={ 'flex flex-wrap gap-1' }>{ product.PreOrders.map(i =>*/ }
+                                                {/*    <Badge*/ }
+                                                {/*        key={ i.id }> { i.Shop.name }: { i.quantity }*/ }
+                                                {/*    </Badge>*/ }
+                                                {/*) }*/ }
+                                                {/*</div>*/ }
                                             </CardContent>
                                         </Card>
                                     )
@@ -164,30 +194,30 @@ export function ProductUserPage(
                                 <div className="border-t pt-4">
                                     <div className="flex justify-between items-center font-bold">
                                         <span>Total:</span>
-                                        <span>{ formatRupiah(getTotalCart()) }</span>
+                                        <span>{ formatRupiah(total) }</span>
                                     </div>
                                 </div>
 
 
-                                <SelectForm
-                                    name="workIn_shopId"
-                                    label="Shop"
-                                    placeholder="Select a shop"
-                                    onChangeAction={ (e) => setShopId(e) }
-                                    options={ shops.map((s) => ({
-                                        label: s.name,
-                                        value: s.id,
-                                    })) }
-                                />
+                                {/*<SelectOption*/ }
+                                {/*    name="workIn_shopId"*/ }
+                                {/*    label="Shop"*/ }
+                                {/*    placeholder="Select a shop"*/ }
+                                {/*    value={ shopId }*/ }
+                                {/*    onChangeAction={ (e) => setShopId(e) }*/ }
+                                {/*    options={ shops.map((s) => ({*/ }
+                                {/*        label: s.name,*/ }
+                                {/*        value: s.id,*/ }
+                                {/*    })) }*/ }
+                                {/*/>*/ }
 
                                 <Button className="w-full" size="lg"
-                                        disabled={ loading }
+                                        disabled={ isPending }
                                         onClick={ onTransaction }
-
                                 >
                                     <ShoppingCart
                                         className="h-4 w-4 mr-2"/>
-                                    { loading ? "Loading ...." : 'Checkout' }
+                                    { isPending ? "Loading ...." : 'Checkout' }
                                 </Button>
                             </div>
                         </CardContent>
@@ -219,10 +249,13 @@ export function ProductCart(
     }
     return cartItems.map((product) => {
             return (
+
                 <div key={ product.id }
                      className="flex justify-between items-center py-2 border-b xl:flex-col xl:items-start">
                     <div className="flex-1">
-                        <p className="font-medium text-sm">{ product.name }</p>
+
+
+                    <p className="font-medium text-sm">{ product.name }</p>
                         <p className="text-xs text-muted-foreground">
                             { product.quantity } x { formatRupiah(product.price) }
                         </p>

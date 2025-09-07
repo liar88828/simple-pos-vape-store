@@ -1,4 +1,5 @@
 import { ActionResponse } from "@/interface/actionType";
+import { ROLE_USER } from "@/lib/constants";
 import { STATUS_ABSENT } from "@prisma/client";
 import { toast } from "sonner";
 import { match } from "ts-pattern";
@@ -28,7 +29,7 @@ export const toastResponse = (
         toast.success(response.message)
         onSuccess(response.message)
     } else {
-        toast.error(response.message)
+        toast.error(response.message,)
         onFailure(response.message)
     }
         onFinish('Finished successfully.')
@@ -101,4 +102,19 @@ export function statusAbsent(
     } else if (nowMinutes < presentMinutes) {
         return STATUS_ABSENT.Present
     } else return STATUS_ABSENT.Late
+}
+
+// delay helper
+export const delay = (ms: number = 1000) => new Promise(resolve => setTimeout(resolve, ms));
+
+export function generateRekening(length: number = 10): string {
+    let result = "";
+    for (let i = 0; i < length; i++) {
+        result += Math.floor(Math.random() * 10); // random digit 0–9
+    }
+    return result;
+}
+
+export function getRoleEmployeePage(role: string) {
+    return [ ROLE_USER.ADMIN, ROLE_USER.EMPLOYEE ].includes(role)
 }

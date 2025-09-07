@@ -25,7 +25,9 @@ export function ProductDetailDialogOnly({ product, isOpen, setOpenAction, onAdd,
     isAdd?: boolean,
     isDelete?: boolean,
 } & ModalProps) {
+
     const preOrder = product.PreOrders[0];
+
     return (
         <Dialog
             open={ isOpen }
@@ -36,7 +38,7 @@ export function ProductDetailDialogOnly({ product, isOpen, setOpenAction, onAdd,
                 {/*<DialogDescription className="mb-4 text-sm text-muted-foreground">*/ }
                 {/*    Kategori: <span className="font-medium text-primary">{ product.category } </span>*/ }
                 {/*</DialogDescription>*/ }
-
+ccccc
                 <div className="space-y-6 overflow-y-scroll h-[60vh]">
                     <div className="">
                         <picture>
@@ -51,7 +53,7 @@ export function ProductDetailDialogOnly({ product, isOpen, setOpenAction, onAdd,
                     <div className="grid grid-cols-2 sm:gap-4 gap-2">
 
                         <DetailItem label="Harga Jual" value={ formatRupiah(product.price) }/>
-                        <DetailItem label="Harga Normal" value={ formatRupiah(product.PreOrders[0].priceNormal) }/>
+                        {/*<DetailItem label="Harga Normal" value={ formatRupiah(product.PreOrders[0].priceNormal) }/>*/}
                         <DetailItem label="Kategori" value={ product.category }/>
 
                         <DetailItem label="Stok" value={ product.stock }/>

@@ -4,20 +4,20 @@ import { EmployeeFormData } from "@/app/admin/employee/employee-page";
 import { Prettify } from "@/interface/generic";
 import { statusAbsent } from "@/lib/helper";
 import { prisma } from "@/lib/prisma";
-import { Shop, User } from "@/lib/validation";
+import { Market, User } from "@/lib/validation";
 import { ROLE_USER } from "@prisma/client";
 import bcrypt from "bcrypt";
 import { revalidatePath } from "next/cache";
 
-export type EmployeesAll = (EmployeeProps & { Shop: Shop | null })
+export type EmployeesAll = (EmployeeProps & { Market: Market | null })
 export const employeesAll = async (): Promise<EmployeesAll[]> => await prisma.user.findMany({
-    include: { Shop: true },
+    include: { Market: true },
     where: {
         role: { in: [ ROLE_USER.EMPLOYEE, ROLE_USER.ADMIN ], }
     }
 })
 
-export type GetEmployee = User & { Shop: Shop | null }
+export type GetEmployee = User & { Market: Market | null }
 
 export async function getEmployee(userId: string): Promise<GetEmployee | null> {
     return prisma.user.findUnique({
@@ -27,7 +27,7 @@ export async function getEmployee(userId: string): Promise<GetEmployee | null> {
                 in: [ ROLE_USER.EMPLOYEE, ROLE_USER.ADMIN, ]
             }
         },
-        include: { Shop: true }
+        include: { Market: true }
     })
 }
 
@@ -40,7 +40,7 @@ export type EmployeeProps = Pick<User,
     "phone" |
     "address" |
     "img" |
-    "workIn_shopId" |
+    "marketId_workIn" |
     'active' |
     "createdAt" |
     "updatedAt"
@@ -54,7 +54,7 @@ export type EmployeeForm = Prettify<Pick<User,
     "phone" |
     "address" |
     "img" |
-    "workIn_shopId" |
+    "marketId_workIn" |
     'active'
 > & { id?: string | undefined }>
 
@@ -71,7 +71,7 @@ export async function createEmployee(
             address: employeeForm.address,
             img: employeeForm.img,
             active: false,
-            workIn_shopId: employeeForm.workIn_shopId
+            marketId_workIn: employeeForm.sellIn_marketId
         },
     })
     // revalidatePath('/admin/employee')
@@ -86,7 +86,7 @@ export async function updateEmployee(
     const employee = await prisma.user.update({
         where: { id },
         data: {
-            workIn_shopId: employeeForm.workIn_shopId,
+            marketId_workIn: employeeForm.sellIn_marketId,
             ...(employeeForm.name && { name: employeeForm.name }),
             ...(employeeForm.email && { email: employeeForm.email }),
             ...(employeeForm.role && { role: employeeForm.role }),
@@ -100,7 +100,7 @@ export async function updateEmployee(
     return employee
 }
 
-export const getShopAllApi = async () => {
+export const _getShopAllApi = async () => {
     const response = await fetch(
         `${ process.env.CURRENT_HOST }/api/shop`, {
             method: "GET",
@@ -119,7 +119,7 @@ export const getShopAllApi = async () => {
     }
 
     try {
-        const body: { data: Shop[] } = await response.json();
+        const body: { data: Market[] } = await response.json();
 
         // console.log(body);
         return {
@@ -134,8 +134,8 @@ export const getShopAllApi = async () => {
         };
     }
 }
-export const getShopAll = async (): Promise<Shop[]> => {
-    return prisma.shop.findMany()
+export const getShopAll = async (): Promise<Market[]> => {
+    return prisma.market.findMany()
 }
 
 export const handlerAbsent = async () => {

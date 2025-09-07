@@ -6,8 +6,9 @@ import { InventoryPaging } from "@/app/admin/inventory/inventory-page";
 import { ActionResponse, ContextPage } from "@/interface/actionType";
 import { getContextPage } from "@/lib/context-action";
 import { logger } from "@/lib/logger";
+import { PreOrderForm } from "@/lib/preorder-schema";
 import { prisma } from "@/lib/prisma";
-import { PreOrderOptionalDefaults } from "@/lib/validation";
+import { Market, PreOrderOptionalDefaults } from "@/lib/validation";
 import { STATUS_PREORDER } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 
@@ -32,10 +33,11 @@ export const getExpiredProduct = async (): Promise<PreorderProduct[]> => {
     return data
 }
 
-export async function preOrderProductAction(
-    preorder: PreOrderOptionalDefaults
+export async function createPreOrderProductEmployeeAction(
+    { id, ...preorder }: PreOrderOptionalDefaults
 ): Promise<ActionResponse> {
-    // logger.info(`input data preOrderProductAction`)
+
+    logger.info(`input data createPreOrderProductEmployeeAction xxx`)
 
     try {
         const session = await getSessionEmployeePage()
@@ -43,9 +45,8 @@ export async function preOrderProductAction(
             const preOrderDB = await tx.preOrder.create({
                 data: {
                     ...preorder,
-                    sellIn_shopId: session.shopId,
+                    marketId_sellIn: session.shopId,
                     userId: session.userId,
-                    status: STATUS_PREORDER.Pending,
                 },
             })
             const productDB = await tx.product.update({
@@ -72,17 +73,61 @@ export async function preOrderProductAction(
     }
 }
 
+export async function createAddPreOrderProductAdmin(
+    { id, ...preorder }: PreOrderForm,
+    // product: Product,
+    market: Market
+): Promise<ActionResponse> {
+    logger.info(`input data preOrderProductAction xxx`)
+    // console.log(preorder)
+    try {
+        const session = await getSessionEmployeePage()
+        await prisma.$transaction(async (tx) => {
+
+            const preOrderDB = await tx.preOrder.create({
+                data: {
+                    ...preorder,
+                    status: preorder.status ?? STATUS_PREORDER.Pending,
+                    userId: session.userId,
+                    marketId_sellIn: market.id,
+                    market_name: market.name,
+                },
+            })
+            // console.log("preOrderDB success", data)
+            const productDB = await tx.product.update({
+                where: { id: preorder.productId },
+                data: { stock: { increment: preorder.quantity } }
+            })
+            return { preOrderDB, productDB }
+        })
+
+        revalidatePath('/')
+        // console.log('success preOrderProductAction')
+        logger.info(`success : preOrderProductAction`)
+        return {
+            success: true,
+            message: "Successfully ordered",
+            // data: dataPreorder
+        }
+    } catch (error) {
+        logger.error(`error catch : ${ error }`)
+        return {
+            success: false,
+            message: 'Something went wrong preOrderProduct'
+        }
+    }
+}
+
 export async function preOrderAction(
     preorder_new: PreOrderOptionalDefaults,
-    preorder_old: PreorderProduct
+    preorder_old: PreorderProduct,
+    market: Market
 ): Promise<ActionResponse> {
-    // console.log(preorder_new)
-    // console.log("preorder_new")
-    // console.log(preorder_new)
-    // console.log("preorder_old")
-    // console.log(preorder_old)
+
+    // console.log(`preorder_new :`,preorder_new)
+    // console.log(`preorder_old :`,preorder_old)
     try {
-        const session = getSessionEmployeePage()
+        const session = await getSessionEmployeePage()
 
         await prisma.$transaction(async (tx) => {
 
@@ -91,19 +136,9 @@ export async function preOrderAction(
                 select: { stock: true },
             });
 
-            const beforeStock = product.stock;
             const oldQty = preorder_old.quantity ?? 0;
             const newQty = preorder_new.quantity;
             const diff = oldQty - newQty; // final adjustment
-            const quantityDiff = preorder_new.quantity - (preorder_old.quantity ?? 0);
-
-            // console.log({
-            //     beforeStock,
-            //     oldQty,
-            //     newQty,
-            //     diff,
-            //     expectedStock: beforeStock + diff
-            // });
 
             await tx.product.update({
                 where: { id: preorder_new.productId },
@@ -115,7 +150,12 @@ export async function preOrderAction(
             })
             await tx.preOrder.update({
                 where: { id: preorder_new.id },
-                data: preorder_new
+                data: {
+                    ...preorder_new,
+                    marketId_sellIn: market.id,
+                    market_name: market.name,
+                    userId: session.userId
+                }
             })
         })
 
@@ -127,6 +167,7 @@ export async function preOrderAction(
             // data: dataPreorder
         }
     } catch (error) {
+
         logger.error(`error catch preOrderAction : ${ error }`,)
         return {
             success: false,
@@ -135,36 +176,64 @@ export async function preOrderAction(
     }
 }
 
-export async function deletePreorderProduct(id: string): Promise<ActionResponse> {
+export async function deletePreorderProduct(preorderId: string): Promise<ActionResponse> {
+    try {
 
-    const dataFind = await prisma.preOrder.findUnique({
-        where: { id }
-    })
-    if (!dataFind) {
+        const dataFind = await prisma.preOrder.findUnique({
+            where: { id: preorderId }
+        })
+        if (!dataFind) {
+            return {
+                success: false,
+                message: "Preorder Is not found",
+            }
+        }
+
+        const response = await prisma.$transaction(async (tx) => {
+
+            const salesItemMany = await tx.salesItem.deleteMany({ where: { preorderId: preorderId } })
+            console.log(salesItemMany)
+
+            const preOrderDB = await tx.preOrder.delete({ where: { id: preorderId } })
+            console.log(preOrderDB)
+
+            const product = await tx.product.findUnique({ where: { id: preOrderDB.productId } })
+            if (!product) {
+                return {
+                    success: false,
+                    message: "Product Is not found",
+                }
+            }
+            await tx.product.update({
+                where: { id: preOrderDB.productId },
+                data: {
+                    stock: { decrement: preOrderDB.quantity }
+                },
+            })
+            return preOrderDB
+        })
+
+        revalidatePath('/')
+        return {
+            success: true,
+            message: "Successfully ordered",
+            data: response
+        }
+
+    } catch (error) {
+        console.log(`error catch : ${ error }`,)
+        if (error instanceof Error) {
+            return {
+                success: false,
+                message: 'Server sibuk'
+            }
+        }
         return {
             success: false,
-            message: "Preorder Is not found",
+            message: 'Something went wrong deletePreorderProduct'
         }
     }
 
-    const response = await prisma.$transaction(async (tx) => {
-        const preOrderDB = await tx.preOrder.delete({ where: { id } })
-        await prisma.product.update({
-            where: { id: preOrderDB.productId },
-            data: {
-                stock: { decrement: preOrderDB.quantity }
-            },
-        })
-
-        return preOrderDB
-    })
-
-    revalidatePath('/')
-    return {
-        success: true,
-        message: "Successfully ordered",
-        data: response
-    }
 }
 
 export const getPreorderPage = async (context: ContextPage): Promise<InventoryPaging> => {

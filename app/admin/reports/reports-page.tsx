@@ -13,7 +13,6 @@ import {
     Dialog,
     DialogClose,
     DialogContent,
-    DialogDescription,
     DialogFooter,
     DialogHeader,
     DialogTitle,
@@ -68,17 +67,17 @@ export function ReportsPage({ range, sales, stats, topSellers, }: ReportsPagePro
             sale.SaleItems.forEach((item, index) => {
                 rows.push({
                     SaleID: sale.id === prevSaleId ? '' : sale.id, // add '' if same sale id
-                    Date: sale.id === prevSaleId ? '' : formatDateIndo(sale.date),
+                    Date: sale.id === prevSaleId ? '' : formatDateIndo(sale.date_buy),
                     "Customer Name": sale.id === prevSaleId ? '' : sale.Customer.name,
                     "Customer Status": sale.id === prevSaleId ? '' : sale.Customer.status,
-                    "Product Name": item.product.name,
-                    Category: item.product.category,
+                    "Product Name": item.Product.name,
+                    Category: item.Product.category,
                     Quantity: item.quantity,
                     "Unit Price": item.priceAtBuy.toLocaleString('en-US'),      // comma thousands separator
                     "Total Price": (item.quantity * item.priceAtBuy).toLocaleString('en-US'), // comma thousands separator
-                    "Nicotine": item.product.nicotineLevel,
-                    Flavor: item.product.flavor,
-                    Type: item.product.type,
+                    "Nicotine": item.Product.nicotineLevel,
+                    Flavor: item.Product.flavor,
+                    Type: item.Product.type,
                 });
 
                 prevSaleId = sale.id;
@@ -105,13 +104,13 @@ export function ReportsPage({ range, sales, stats, topSellers, }: ReportsPagePro
         const topProdukRows = topSellingProducts.map((item, index) => ({
             No: index + 1,
             "Product ID": item.productId,
-            "Product Name": item.product?.name || "-",
+            "Product Name": item.Product?.name || "-",
             "Total Sold": item.totalSold,
             "Total Price": item.totalPrice.toLocaleString('en-US'),
-            Category: item.product?.category || "-",
-            Flavor: item.product?.flavor || "-",
-            // "Nicotine Level": item.product?.nicotineLevel || "-",
-            Type: item.product?.type || "-",
+            Category: item.Product?.category || "-",
+            Flavor: item.Product?.flavor || "-",
+            // "Nicotine Level": item.Product?.nicotineLevel || "-",
+            Type: item.Product?.type || "-",
         }));
 
         const worksheetProduk = XLSX.utils.json_to_sheet(topProdukRows);
@@ -228,7 +227,7 @@ export function ReportsPage({ range, sales, stats, topSellers, }: ReportsPagePro
                     <CardContent>
                         {/*truncate*/ }
                         <div className="text-xs sm:text-lg font-bold ">
-                            { stats.topProduct.product?.name }
+                            { stats.topProduct.Product?.name }
                         </div>
                         <p className="text-sm text-muted-foreground">
                             { stats.topProduct.unitsSold } unit terjual
@@ -258,7 +257,7 @@ export function ReportsPage({ range, sales, stats, topSellers, }: ReportsPagePro
                             { sales.map((sale, index) => (
                                 <TableRow key={ index }>
                                     <TableCell>{ formatDateIndo(
-                                        sale.date,
+                                        sale.date_buy,
                                         range === 'today' ? 'time' : 'long') }
                                     </TableCell>
                                     <TableCell>{ sale.Customer.name }</TableCell>
@@ -268,7 +267,7 @@ export function ReportsPage({ range, sales, stats, topSellers, }: ReportsPagePro
                                     <TableCell>
                                         <Badge variant="default">{ sale.statusTransaction }</Badge>
                                     </TableCell>
-                                    <TableCell className={ 'space-x-2' }>
+                                    <TableCell className={ 'flex items-center gap-2' }>
                                         <Button size="sm" variant="outline"
                                                 onClick={ () => {
                                                     setIsSale(sale)
@@ -308,16 +307,16 @@ export function ReportsPage({ range, sales, stats, topSellers, }: ReportsPagePro
                                     <TableCell>{ index + 1 }</TableCell>
                                     <TableCell className={ 'min-w-32 ' }>
                                         <div className="text-wrap">
-                                            { item.product?.name }
+                                            { item.Product?.name }
                                         </div>
                                     </TableCell>
                                     <TableCell>
-                                        { item.product?.image ? (
+                                        { item.Product?.image ? (
                                             <picture>
 
                                                 <img
-                                                    src={ item.product.image }
-                                                    alt={ item.product.name }
+                                                    src={ item.Product.image }
+                                                    alt={ item.Product.name }
                                                     className="h-12 w-12 rounded object-cover"
                                                 />
                                             </picture>
@@ -330,7 +329,7 @@ export function ReportsPage({ range, sales, stats, topSellers, }: ReportsPagePro
                                     <TableCell>
                                         <p>Terjual { item.totalSold }</p>
                                         <p> {
-                                            // formatRupiah(item.totalSold * (item.product?.price ?? 1))
+                                            // formatRupiah(item.totalSold * (item.Product?.price ?? 1))
                                             formatRupiah(item.totalPrice)
                                         }
                                         </p>
@@ -339,7 +338,7 @@ export function ReportsPage({ range, sales, stats, topSellers, }: ReportsPagePro
                                         <Button size={ 'sm' }
                                                 variant="outline"
                                                 onClick={ () => {
-                                                    setIsProduct(item.product ?? null)
+                                                    setIsProduct(item.Product ?? null)
                                                     setIsProductModal(true)
                                                 } }>
                                             <Eye/>
@@ -357,101 +356,13 @@ export function ReportsPage({ range, sales, stats, topSellers, }: ReportsPagePro
     )
 }
 
-export function ModalSalesDetailOld({ sale, isOpen, setOpenAction }: { sale: SaleCustomers | null } & ModalProps) {
-    const [ selectStatus, setSelectStatus ] = useState(sale?.statusTransaction)
-
-    if (!sale) {
-        return <Dialog open={ isOpen } onOpenChange={ setOpenAction }>
-            <DialogContent>
-                <DialogHeader>
-                    Data is Not Found
-                </DialogHeader>
-                <DialogFooter>
-                    <DialogClose asChild>
-                        <Button variant="outline">Tutup</Button>
-                    </DialogClose>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
-    }
-
-    return (
-        <Dialog open={ isOpen } onOpenChange={ setOpenAction }>
-            <DialogContent>
-                <DialogHeader>
-                    <DialogTitle>Detail Transaksi : { sale.id }
-                    </DialogTitle>
-                    <DialogDescription>
-                        Transaksi oleh { sale.Customer.name } pada { formatDateIndo(sale.date) }
-                    </DialogDescription>
-
-                    <Select value={ selectStatus } onValueChange={ setSelectStatus }>
-                        <SelectTrigger>
-                            <SelectValue placeholder="Pilih rentang waktu"/>
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="Pending">Pending</SelectItem>
-                            <SelectItem value="Success">Success</SelectItem>
-                            {/* <SelectItem value="year"></SelectItem> */ }
-                        </SelectContent>
-                    </Select>
-
-                </DialogHeader>
-                <div className="space-y-2 text-sm">
-                    <p><strong>Nama Pelanggan:</strong> { sale.Customer.name }</p>
-                    <p><strong>Tanggal:</strong> { formatDateIndo(sale.date) }</p>
-                    <p><strong>Total Pembelian:</strong> { formatRupiah(sale.total) }</p>
-                    <p><strong>Jumlah Barang:</strong> { sale.items } item</p>
-                </div>
-                <div className="mt-4 space-y-2 text-sm">
-                    <p><strong>Daftar Produk:</strong></p>
-                    <ul className="space-y-3">
-                        { sale.SaleItems.map((item) => (
-                            <li key={ item.id } className="flex justify-between">
-                                <span className={ 'w-auto' }>{ item.product.name }</span>
-                                <div className={ 'text-end' }>
-                                    <div
-                                        className={ 'text-nowrap' }>{ item.quantity } × { formatRupiah(item.priceAtBuy) }</div>
-
-                                    <div>{ formatRupiah(item.priceAtBuy * item.quantity) }</div>
-                                </div>
-                            </li>
-                        )) }
-                    </ul>
-                    <div className="flex justify-between font-semibold pt-2 border-t">
-                        <span>Total</span>
-                        <span>{ formatRupiah(sale.total) }</span>
-                    </div>
-                </div>
-                <Button variant="default"
-                        onClick={ async () => {
-                            if (selectStatus) {
-                                // toastResponse({ response: await transactionStatusAction(selectStatus, sale) })
-                            }
-                        } }>
-                    Simpan
-                </Button>
-                <DialogFooter>
-                    <DialogClose asChild>
-                        <Button variant="outline">Tutup</Button>
-                    </DialogClose>
-                </DialogFooter>
-
-
-            </DialogContent>
-        </Dialog>
-    );
-}
-
 export function ModalSalesDetail({ sale, isOpen, setOpenAction }: { sale: SaleCustomers | null } & ModalProps) {
     const [ selectStatus, setSelectStatus ] = useState(sale?.statusTransaction)
 
     if (!sale) {
         return <Dialog open={ isOpen } onOpenChange={ setOpenAction }>
             <DialogContent>
-                <DialogHeader>
-                    Data is Not Found
-                </DialogHeader>
+                <DialogHeader>Data is Not Found</DialogHeader>
                 <DialogFooter>
                     <DialogClose asChild>
                         <Button variant="outline">Tutup</Button>
@@ -466,7 +377,7 @@ export function ModalSalesDetail({ sale, isOpen, setOpenAction }: { sale: SaleCu
             isOpen={ isOpen }
             setOpenAction={ setOpenAction }
             title={ `Detail Transaksi : ${ sale.id }` }
-            description={ `Transaksi oleh ${ sale.Customer.name } pada ${ formatDateIndo(sale.date) }` }
+            description={ `Transaksi oleh ${ sale.Customer.name } pada ${ formatDateIndo(sale.date_buy) }` }
             footer={
                 <>
                     <Select value={ selectStatus } onValueChange={ setSelectStatus }
@@ -497,7 +408,7 @@ export function ModalSalesDetail({ sale, isOpen, setOpenAction }: { sale: SaleCu
 
             <div className="space-y-2 text-sm">
                 <p><strong>Nama Pelanggan:</strong> { sale.Customer.name }</p>
-                <p><strong>Tanggal:</strong> { formatDateIndo(sale.date) }</p>
+                <p><strong>Tanggal:</strong> { formatDateIndo(sale.date_buy) }</p>
                 <p><strong>Total Pembelian:</strong> { formatRupiah(sale.total) }</p>
                 <p><strong>Jumlah Barang:</strong> { sale.items } item</p>
             </div>
@@ -506,7 +417,7 @@ export function ModalSalesDetail({ sale, isOpen, setOpenAction }: { sale: SaleCu
                 <ul className="space-y-3">
                     { sale.SaleItems.map((item) => (
                         <li key={ item.id } className="flex justify-between">
-                            <span className={ 'w-auto' }>{ item.product.name }</span>
+                            <span className={ 'w-auto' }>{ item.Product.name }</span>
                             <div className={ 'text-end' }>
                                 <div
                                     className={ 'text-nowrap' }>{ item.quantity } × { formatRupiah(item.priceAtBuy) }</div>
@@ -539,11 +450,11 @@ export function ModalInvoice({ sale }: { sale: SaleCustomers }) {
             </DialogTrigger>
             {/* overflow-scroll  */ }
             {/* min-w-4xl mx-auto  */ }
-            <DialogContent className=" sm:min-w-sm   mx-auto  ">
+            <DialogContent className=" sm:min-w-3xl  mx-auto w-full overflow-y-scroll h-screen sm:h-auto mt-10 sm:mt-0 pb-20 sm:pb-5">
                 <DialogHeader>
                     <DialogTitle>Invoice</DialogTitle>
                     <p className="text-sm text-muted-foreground">
-                        Transaksi pada { formatDateIndo(sale.date) } oleh { sale.Customer.name }
+                        Transaksi pada { formatDateIndo(sale.date_buy) } oleh { sale.Customer.name }
                     </p>
                 </DialogHeader>
                 <div ref={ contentRef }>

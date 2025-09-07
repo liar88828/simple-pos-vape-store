@@ -38,7 +38,7 @@ export async function handlerOrderIn(form: FormData): Promise<string> {
 
         await prisma.$transaction(async (tx) => {
 
-            const { id, userId, quantity, sellIn_shopId, ...preOrderDB } = await tx.preOrder.update({
+            const { id, userId, quantity, marketId_sellIn, ...preOrderDB } = await tx.preOrder.update({
                 where: { id: data.idPreorder },
                 data: { quantity: { decrement: data.quantity } }
             })
@@ -50,7 +50,7 @@ export async function handlerOrderIn(form: FormData): Promise<string> {
                     ...preOrderDB,
                     quantity: data.quantity,
                     userId: session.userId,
-                    sellIn_shopId: session.shopId
+                    marketId_sellIn: session.shopId
                 }
             })
             revalidatePath('/')

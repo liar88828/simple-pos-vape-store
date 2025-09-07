@@ -17,7 +17,7 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow, } from "@/components/ui/table"
 import { formatDateIndo, formatRupiah } from "@/lib/formatter";
-import { Absent, Product } from "@/lib/validation";
+import { Absent, Market, Product } from "@/lib/validation";
 import { STATUS_ABSENT } from "@prisma/client";
 import { Calendar, CheckCircle, DollarSign, Mail, MapPin, Package, Phone, ShoppingBag, XCircle } from "lucide-react"
 import React, { useState, useTransition } from "react"
@@ -236,7 +236,7 @@ export function EmployeeDetailCard({ employee, }: { employee: GetEmployee, }) {
         <>
             <EmployeeDialog
                 open={ isOpen }
-                onOpenChange={ setIsOpen }
+                onOpenChangeAction={ setIsOpen }
                 employee={ employee }
             />
 
@@ -283,11 +283,11 @@ export function EmployeeDetailCard({ employee, }: { employee: GetEmployee, }) {
                     </div>
                     {/* Info Shop */ }
 
-                    { employee.Shop ?
+                    { employee.Market ?
                         <div className="flex-1">
                             <CardHeader className="p-0 mb-4">
-                                <CardTitle>Market: { employee.Shop.name }</CardTitle>
-                                <CardDescription>{ employee.Shop.open
+                                <CardTitle>Market: { employee.Market.name }</CardTitle>
+                                <CardDescription>{ employee.Market.open
                                     ? <Badge variant={ 'default' }>Open</Badge>
                                     : <Badge variant={ 'destructive' }>Close</Badge>
                                 }</CardDescription>
@@ -298,11 +298,11 @@ export function EmployeeDetailCard({ employee, }: { employee: GetEmployee, }) {
 
                                 <div className="flex items-center space-x-2">
                                     <Phone className="h-4 w-4 text-gray-500"/>
-                                    <span>{ employee.Shop.category }</span>
+                                    <span>{ employee.Market.category }</span>
                                 </div>
                                 <div className="flex items-center space-x-2">
                                     <MapPin className="h-4 w-4 text-gray-500"/>
-                                    <span>{ employee.Shop.location }</span>
+                                    <span>{ employee.Market.location }</span>
                                 </div>
 
                             </CardContent>

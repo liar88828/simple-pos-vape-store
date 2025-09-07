@@ -48,7 +48,7 @@ export default function UserProfilePage({ customer }: { customer: CustomerComple
                                         <div>
                                             <p>
                                                 <strong>Date:</strong>{ " " }
-                                                { formatDateIndo(sale.date) }
+                                                { formatDateIndo(sale.date_buy) }
                                             </p>
                                             <p>
                                                 <strong>Total:</strong> { formatRupiah(sale.total) }
@@ -83,7 +83,7 @@ export default function UserProfilePage({ customer }: { customer: CustomerComple
                                             <tbody>
                                             { sale.SaleItems.map((item) => (
                                                 <tr key={ item.id } className="border-b">
-                                                    <td className="py-2 px-4">{ item.product.name }</td>
+                                                    <td className="py-2 px-4">{ item.Product.name }</td>
                                                     <td className="py-2 px-4">{ item.quantity }</td>
                                                     <td className="py-2 px-4">
                                                         { formatRupiah(item.priceAtBuy) }

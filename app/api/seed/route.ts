@@ -1,3 +1,4 @@
+import { generateRekening } from "@/lib/helper";
 import { prisma } from "@/lib/prisma"
 import { ROLE_USER, STATUS_PREORDER } from "@prisma/client";
 import bcrypt from "bcrypt";
@@ -9,20 +10,20 @@ export async function GET() {
             data: {
                 name: "Cloud Vape Store",
                 currency: "IDR",
-                description: "Best vape shop in town",
+                description: "Best vape market in town",
                 phone: "08123456789",
                 address: "Jl. Sudirman No. 123, Jakarta",
                 email: "store@example.com",
             },
         })
 
-        await tx.shop.createMany({
+        await tx.market.createMany({
             data: [
                 { name: "Fresh Mart", location: "New York", category: "Grocery", open: true },
                 { name: "Tech Hub", location: "San Francisco", category: "Electronics", open: false },
                 { name: "Style Corner", location: "Chicago", category: "Fashion", open: true }, ]
         })
-        const shop = await tx.shop.findMany()
+        const market = await tx.market.findMany()
         // ✅ Create Users
         await tx.user.createMany({
             data: [
@@ -32,15 +33,17 @@ export async function GET() {
                     password: await bcrypt.hash('admin@example.com', 10), // hash this in real app
                     role: ROLE_USER.ADMIN,
                     img: "https://randomuser.me/api/portraits/women/1.jpg",
-                    workIn_shopId: null
+                    marketId_workIn: null
                 },
                 {
                     name: "Employee User",
                     email: "employee@example.com",
+                    phone: '+62 2131 1233 123',
+                    address: 'Jl Jelambar Utr Bl C/57 A, Dki Jakarta',
                     img: "https://randomuser.me/api/portraits/women/69.jpg",
                     password: await bcrypt.hash('employee@example.com', 10),
                     role: ROLE_USER.EMPLOYEE,
-                    workIn_shopId: shop[1].id
+                    marketId_workIn: market[1].id
                 },
                 {
                     name: "Regular User 1",
@@ -48,7 +51,7 @@ export async function GET() {
                     img: "https://randomuser.me/api/portraits/women/87.jpg",
                     password: await bcrypt.hash('user1@example.com', 10),
                     role: ROLE_USER.USER,
-                    workIn_shopId: null
+                    marketId_workIn: null
                 },
                 {
                     name: "Regular User 2",
@@ -56,7 +59,7 @@ export async function GET() {
                     img: "https://randomuser.me/api/portraits/women/23.jpg",
                     password: await bcrypt.hash('user2@example.com', 10),
                     role: ROLE_USER.EMPLOYEE,
-                    workIn_shopId: null
+                    marketId_workIn: null
                 },
             ],
         })
@@ -89,6 +92,7 @@ export async function GET() {
         await tx.product.createMany({
             data: [
                 {
+
                     category: "Vape",
                     name: "Starter Kit X1",
                     price: 500000,
@@ -116,8 +120,8 @@ export async function GET() {
                 {
                     category: "Liquid",
                     name: "Cool Mint Ice",
-                    price: 160000,
-                    stock: 180,
+                    price: 200000,
+                    stock: 150,
                     minStock: 20,
                     image: 'https://picsum.photos/200/320',
                     brand: "FreshCloud",
@@ -143,7 +147,7 @@ export async function GET() {
                 {
                     category: "Cotton",
                     name: "Organic Cotton Pack",
-                    price: 30000,
+                    price: 20000,
                     stock: 250,
                     minStock: 30,
                     image: 'https://picsum.photos/200/309',
@@ -155,8 +159,8 @@ export async function GET() {
                 {
                     category: "Battery",
                     name: "18650 Rechargeable Battery",
-                    price: 120000,
-                    stock: 80,
+                    price: 100000,
+                    stock: 50,
                     minStock: 10,
                     image: 'https://picsum.photos/200/389',
                     brand: "PowerCell",
@@ -167,8 +171,8 @@ export async function GET() {
                 {
                     category: "Device",
                     name: "Pod System Lite",
-                    price: 350000,
-                    stock: 60,
+                    price: 200000,
+                    stock: 100,
                     minStock: 5,
                     image: 'https://picsum.photos/200/376',
                     brand: "Podify",
@@ -186,10 +190,10 @@ export async function GET() {
                 {
                     userId: users[0].id,
                     productId: products[0].id,
-                    sellIn_shopId: shop[0].id,
-                    quantity: 2,
-                    priceNormal: 500000,
-                    priceSell: 450000,
+                    marketId_sellIn: market[0].id,
+                    market_name: market[0].name,
+                    quantity: 100,
+                    priceOriginal: 500000,
                     estimatedDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
                     expired: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
                     status: STATUS_PREORDER.Pending,
@@ -197,30 +201,33 @@ export async function GET() {
                 {
                     userId: users[1].id,
                     productId: products[1].id,
-                    sellIn_shopId: shop[1].id,
-                    quantity: 5,
-                    priceNormal: 150000,
-                    priceSell: 140000,
+                    marketId_sellIn: market[1].id,
+                    market_name: market[1].name,
+                    quantity: 50,
+                    priceOriginal: 150000,
                     estimatedDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
                     expired: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000),
                     status: STATUS_PREORDER.Success,
                 },
             ],
         })
+        const preorder=await tx.preOrder.findMany()
 
         // ✅ Create a Sale (linked to Customer)
         const sale = await tx.sale.create({
             data: {
-                shopId: shop[0].id,
+                marketId: market[0].id,
                 seller_userId: users[0].id,
                 buyer_customerId: customers[0].id, // 👈 replace with actual seeded customer ID
-                date: new Date(),
+                date_buy: new Date(),
+                date_confirm: new Date(new Date().getHours() + 1),
                 total: 650000,
                 items: 2,
                 statusTransaction: "Accept",
                 typeTransaction: "Cash",
             },
         })
+
         await tx.salesItem.createMany({
             data: [
                 {
@@ -228,12 +235,14 @@ export async function GET() {
                     productId: products[0].id, // Starter Kit X1
                     quantity: 1,
                     priceAtBuy: 500000,
+                    preorderId:preorder[0].id,
                 },
                 {
                     saleId: sale.id,
-                    productId: products[2].id, // Mango Blast
+                    productId: products[1].id, // Mango Blast
                     quantity: 1,
                     priceAtBuy: 150000,
+                    preorderId:preorder[0].id,
                 },
             ],
         })
@@ -249,10 +258,26 @@ export async function GET() {
         })
         const paymentList = await tx.paymentSettingList.createMany({
             data: [
-                { title: "Cash", value: "CASH", fee: 0, paymentId: payment.id },
-                { title: "Bank Transfer", value: "TRANSFER", fee: 5000, paymentId: payment.id },
-                { title: "E-Wallet", value: "EWALLET", fee: 2500, paymentId: payment.id },
-            ],
+                {
+                    title: "Mandiri",
+                    value: "MANDIRI",
+                    fee: 5000,
+                    rekening: generateRekening(13),
+                    paymentId: payment.id
+                },
+                { title: "BCA", value: "BCA", fee: 5000, rekening: generateRekening(10), paymentId: payment.id },
+                { title: "BRI", value: "BRI", fee: 5000, rekening: generateRekening(15), paymentId: payment.id },
+                { title: "BNI", value: "BNI", fee: 5000, rekening: generateRekening(10), paymentId: payment.id },
+                {
+                    title: "E-Wallet (OVO, Dana, Gopay)",
+                    value: "EWALLET",
+                    fee: 2500,
+                    rekening: generateRekening(12),
+                    paymentId: payment.id
+                },
+                { title: "Cash", value: "CASH", fee: 0, rekening: '-', paymentId: payment.id },
+
+            ]
         })
 
         // ✅ Create Inventory Settings

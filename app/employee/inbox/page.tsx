@@ -8,6 +8,7 @@ export default async function Page() {
 
     return (
         <HistoriesPage
+            session={session}
             title={ 'Inbox Product' }
             histories={ await getHistoriesEmployee(session) }/>
     );

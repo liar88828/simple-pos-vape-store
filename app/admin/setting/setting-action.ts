@@ -1,9 +1,11 @@
 'use server'
 
 import { ActionResponse } from "@/interface/actionType";
+import { delay } from "@/lib/helper";
 import { prisma } from "@/lib/prisma";
 import {
     InventorySetting,
+    PaymentSetting,
     PaymentSettingList,
     PaymentSettingWithRelations,
     ShippingSettingList,
@@ -29,10 +31,6 @@ export async function saveStoreLogo(file: File | null) {
     revalidatePath('/') // optional: revalidate homepage
 
     return { success: true, filePath: '/logo.png' }
-}
-
-export const getStoreLoader = async () => {
-    return prisma.store.findFirst()
 }
 
 export async function saveSettingStore(data: StoreOptionalDefaults): Promise<ActionResponse> {
@@ -74,6 +72,7 @@ export async function saveSettingPayment(
             fee: item.fee,
             value: item.value,
             paymentId: paymentID,
+            rekening:item.rekening
         }))
         // console.log(datas)
 
@@ -86,14 +85,6 @@ export async function saveSettingPayment(
         data: shippingResponse, success: true,
         message: "Successfully updated store"
     }
-}
-
-export async function getSettingPayment() {
-    return prisma.paymentSetting.findFirst({ include: { PaymentList: true } })
-}
-
-export async function getSettingPaymentFirst() {
-    return prisma.paymentSetting.findFirst()
 }
 
 
@@ -139,10 +130,6 @@ export async function saveSettingShipping(
     }
 }
 
-export async function getSettingShipping() {
-    return prisma.shippingSetting.findFirst({ include: { ShippingList: true } })
-}
-
 export async function saveSettingInventory(data: InventorySetting): Promise<ActionResponse> {
     const inventoryDB = await prisma.inventorySetting.findFirst()
     if (!inventoryDB) await prisma.inventorySetting.create({ data })
@@ -156,6 +143,31 @@ export async function saveSettingInventory(data: InventorySetting): Promise<Acti
     }
 }
 
+export async function getSettingPaymentFirst() {
+    return prisma.paymentSetting.findFirst()
+}
+
+export type GetSettingPaymentAll = PaymentSetting & { PaymentList: PaymentSettingList[] }
+
+export async function getSettingPayment(): Promise<GetSettingPaymentAll | null> {
+    const response = await prisma.paymentSetting.findFirst({
+        include: {
+            PaymentList: true
+        }
+    })
+    console.log(response)
+    return response
+}
+
+export async function getSettingShipping() {
+    return prisma.shippingSetting.findFirst({ include: { ShippingList: true } })
+}
+
 export async function getSettingInventory() {
     return prisma.inventorySetting.findFirst()
+}
+
+export const getStoreLoader = async () => {
+    await delay(500);
+    return prisma.store.findFirst()
 }

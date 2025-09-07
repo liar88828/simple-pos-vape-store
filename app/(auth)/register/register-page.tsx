@@ -9,9 +9,11 @@ import { RegisterFormData, registerSchema } from "@/lib/auth-schema";
 import { toastResponse } from "@/lib/helper";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
+import { useTransition } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 
 export default function RegisterPage() {
+    const [ isPending, startTransition ] = useTransition()
     const route = useRouter()
 
     const methods = useForm<RegisterFormData>({
@@ -30,8 +32,11 @@ export default function RegisterPage() {
     } = methods;
 
     const onSubmit = handleSubmit(async (data) => {
+        startTransition(async () => {
+
         console.log("Registering:", data);
         toastResponse({ response: await registerAction(data) })
+        })
     });
 
     return (
@@ -85,10 +90,15 @@ export default function RegisterPage() {
                                         type="password"
                                     />
                                     <CardFooter className="flex-col gap-2 w-full   p-0">
-                                        <Button type="submit" className="w-full" disabled={ isSubmitting }>
-                                            { isSubmitting ? "Registering..." : "Register" }
+                                        <Button
+                                            type="submit"
+                                            className="w-full"
+                                            disabled={ isSubmitting || isPending }>
+                                            { isSubmitting || isPending ? "Registering..." : "Register" }
                                         </Button>
-                                        <Button type="button"
+                                        <Button
+                                            disabled={ isSubmitting || isPending }
+                                            type="button"
                                                 variant={ 'outline' }
                                                 onClick={ () => route.push('/login') } className={ 'w-full' }>
                                             Back

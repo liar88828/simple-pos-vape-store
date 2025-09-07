@@ -20,7 +20,7 @@ export default async function Page({ searchParams }: PageProps<'/employee/stock'
             PreOrders: { some: { quantity: { not: 0 } } },
             name: { contains: nameProduct }
         },
-        include: { PreOrders: { include: { Shop: true } } }
+        include: { PreOrders: { include: { Market: true } } }
     })
 
     // async function handlerOrderIn(form: FormData) {
@@ -98,7 +98,7 @@ export default async function Page({ searchParams }: PageProps<'/employee/stock'
                                 <p className="text-sm font-bold text-primary mt-1">{ formatRupiah(product.price) }</p>
                                 <div className="flex flex-wrap gap-1">
                                     { product.PreOrders.map(i => (
-                                        <Badge key={ i.id }>{ i.Shop.name }</Badge>)) }
+                                        <Badge key={ i.id }>{ i.Market.name }</Badge>)) }
                                 </div>
 
                             </CardContent>

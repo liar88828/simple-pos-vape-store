@@ -1,7 +1,8 @@
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar"
 import { FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Input } from "@/components/ui/input"; // adjust the import path
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label"; // adjust the import path
 import { Popover, PopoverContent, PopoverTrigger, } from "@/components/ui/popover"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch"
@@ -192,11 +193,44 @@ export function TextareaForm({ name, placeholder, title, description }: FormHook
 type SelectHookProps = {
     name: string;
     label: string;
+    value?: string;
     placeholder?: string;
     description?: string;
     onChangeAction?: (value: string) => void;
     options: { label: string; value: string }[];
 };
+
+export function SelectOption(
+    { label, value, placeholder = "Pilih...", options, description, onChangeAction }: SelectHookProps) {
+
+    return (
+        <div>
+
+            <Label>{ label }</Label>
+            <Select
+                onValueChange={ (value) => {
+                    if (onChangeAction) {
+                        onChangeAction(value)
+                    }
+                } }
+                defaultValue={ value }
+                value={ value }
+            >
+                <SelectTrigger className={ 'w-full' }>
+                    <SelectValue placeholder={ placeholder }/>
+                </SelectTrigger>
+                <SelectContent>
+                    { options.map((option) => (
+                        <SelectItem key={ option.value } value={ option.value }>
+                            { option.label }
+                        </SelectItem>
+                    )) }
+                </SelectContent>
+            </Select>
+            <p>{ description }</p>
+        </div>
+    );
+}
 
 export function SelectForm(
     { name, label, placeholder = "Pilih...", options, description, onChangeAction }: SelectHookProps) {
@@ -251,7 +285,6 @@ export function SwitchForm(
     const { control } = useFormContext(); // retrieve control from context
 
     return (
-
         <FormField
             control={ control }
             name={ name }

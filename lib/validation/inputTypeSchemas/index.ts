@@ -6,7 +6,7 @@ export { SaleScalarFieldEnumSchema } from './SaleScalarFieldEnumSchema';
 export { SalesItemScalarFieldEnumSchema } from './SalesItemScalarFieldEnumSchema';
 export { UserScalarFieldEnumSchema } from './UserScalarFieldEnumSchema';
 export { AbsentScalarFieldEnumSchema } from './AbsentScalarFieldEnumSchema';
-export { ShopScalarFieldEnumSchema } from './ShopScalarFieldEnumSchema';
+export { MarketScalarFieldEnumSchema } from './MarketScalarFieldEnumSchema';
 export { StoreScalarFieldEnumSchema } from './StoreScalarFieldEnumSchema';
 export { PaymentSettingScalarFieldEnumSchema } from './PaymentSettingScalarFieldEnumSchema';
 export { PaymentSettingListScalarFieldEnumSchema } from './PaymentSettingListScalarFieldEnumSchema';

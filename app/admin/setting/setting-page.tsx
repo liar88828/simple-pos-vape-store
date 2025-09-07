@@ -14,14 +14,17 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger, } from "@/components/ui/tabs"
 import { toastResponse } from "@/lib/helper";
 import {
-    InventorySetting, InventorySettingSchema, PaymentSettingWithRelations, ShippingSettingWithRelations,
+    InventorySetting,
+    InventorySettingSchema,
+    PaymentSettingWithRelations,
+    ShippingSettingWithRelations,
     Store,
     StoreOptionalDefaults,
     StoreOptionalDefaultsSchema
 } from "@/lib/validation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Package, Plus, Trash2, Upload } from "lucide-react";
-import React, { useState } from "react";
+import React, { useState, useTransition } from "react";
 import { FormProvider, useFieldArray, useForm } from "react-hook-form";
 
 export default function SettingPage(
@@ -161,7 +164,7 @@ export function RenderStoreSection({ data }: { data: Store | null }) {
 }
 
 export function RenderPaymentSection({ data }: { data: PaymentSettingWithRelations | null }) {
-    const [ isLoading, setIsLoading ] = useState(false)
+    const [ isPending, startTransition ] = useTransition()
     const [ isCod, setIsCod ] = useState(data?.isCod ?? false)
     const [ isTax, setIsTax ] = useState(data?.isTax ?? false)
 
@@ -179,6 +182,7 @@ export function RenderPaymentSection({ data }: { data: PaymentSettingWithRelatio
                 id: "",
                 title: "",
                 paymentId: "",
+                rekening: ""
             } ]
             //[ { value: "", fee: 0, id: "", title: "", paymentId: "" } ]
         } satisfies PaymentSettingWithRelations
@@ -190,10 +194,10 @@ export function RenderPaymentSection({ data }: { data: PaymentSettingWithRelatio
     })
 
     const onSubmit = methods.handleSubmit(async (dataPayment) => {
-        toastResponse({
-            response: await saveSettingPayment(dataPayment),
-            onStart: () => setIsLoading(true),
-            onFinish: () => setIsLoading(false)
+        startTransition(async () => {
+            toastResponse({
+                response: await saveSettingPayment(dataPayment),
+            })
         })
     });
 
@@ -218,6 +222,7 @@ export function RenderPaymentSection({ data }: { data: PaymentSettingWithRelatio
                                             title: '',
                                             value: '',
                                             fee: 0,
+                                            rekening: "",
                                             paymentId: '',
                                         }) }>
                                     <Plus className="w-4 h-4 mr-2"/>
@@ -232,7 +237,11 @@ export function RenderPaymentSection({ data }: { data: PaymentSettingWithRelatio
                                         <InputForm name={ `PaymentList.${ index }.title` } title="Name"
                                                    placeholder="Shipping Method"/>
                                         <InputForm name={ `PaymentList.${ index }.value` } title="Rekening"
+
                                                    placeholder="No"/>
+                                        <InputForm name={ `PaymentList.${ index }.rekening` } title="Rekening"
+                                                   placeholder="No"/>
+
                                         <InputForm name={ `PaymentList.${ index }.fee` } title="Biaya"
                                                    type={ 'number' } placeholder="biaya"/>
 
@@ -293,7 +302,8 @@ export function RenderPaymentSection({ data }: { data: PaymentSettingWithRelatio
                 </FormProvider>
             </CardContent>
             <CardFooter>
-                <Button disabled={ isLoading } onClick={ onSubmit }>Save Pembayaran</Button>
+                <Button disabled={ isPending }
+                        onClick={ onSubmit }>Save Pembayaran</Button>
             </CardFooter>
         </Card>
     );

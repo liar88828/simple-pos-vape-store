@@ -71,12 +71,12 @@ export default function StockDialog({ product, session }: {
                             </SelectTrigger>
                             <SelectContent>
                                 { product.PreOrders.map((i) => {
-                                    if (session.shopId === i.Shop.id) {
+                                    if (session.shopId === i.Market.id) {
                                         return null
                                     }
                                     return (
                                         <SelectItem key={ i.id } value={ String(i.id) }>
-                                            { i.Shop.name } : { i.quantity }
+                                            { i.Market.name } : { i.quantity }
                                         </SelectItem>
                                     )
                                 }) }

@@ -5,17 +5,15 @@ import { ActionResponse, CartItem, } from "@/interface/actionType";
 import { ERROR } from "@/lib/constants";
 import { logger } from "@/lib/logger";
 import { prisma } from "@/lib/prisma";
-import { CustomerModelNew, CustomerModelType } from "@/lib/schema";
 import { Customer, SalesItemOptionalDefaults } from "@/lib/validation";
-import { Prisma, ROLE_USER, STATUS_PREORDER } from "@prisma/client";
-import bcrypt from "bcrypt";
+import { Prisma, STATUS_PREORDER } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import PrismaClientKnownRequestError = Prisma.PrismaClientKnownRequestError;
 
 export async function createTransactionAction(
     product: CartItem[],
     customer: Customer | null,
-    shopId: string,
+    marketId: string,
 ): Promise<ActionResponse> {
     // console.log('execute');
 
@@ -35,11 +33,11 @@ export async function createTransactionAction(
 
             const saleDB = await tx.sale.create({
                 data: {
-                    shopId: shopId,
+                    marketId,
                     seller_userId: user.userId,
                     items: product.length,
                     total: product.reduce((a, b) => a + (b.price * b.quantity), 0),
-                    date: new Date(),
+                    date_buy: new Date(),
                     buyer_customerId: customer.id,
                     statusTransaction: STATUS_PREORDER.Pending,
                     typeTransaction: 'Sistem Dev'//'Cash'
@@ -52,7 +50,7 @@ export async function createTransactionAction(
                     productId: item.id,
                     quantity: item.quantity, // from origin product
                     priceAtBuy: item.price,// from origin product
-
+                    preorderId: item.preorderId
                     // category: item.category,
                 } satisfies Omit<SalesItemOptionalDefaults, 'id'>
             })
@@ -108,62 +106,4 @@ export async function createTransactionAction(
             success: false,
         }
     }
-}
-
-// Action
-// Create a new customer
-export async function createCustomerNew(formData: CustomerModelType): Promise<ActionResponse<Customer>> {
-    try {
-        const valid = CustomerModelNew.safeParse(formData);
-        if (!valid.success) {
-            return {
-                data: valid.data,
-                message: "Pelanggan gagal ditambahkan",
-                error: valid.error.flatten().fieldErrors,
-                success: false,
-            };
-        }
-        const customer = await prisma.$transaction(async (tx) => {
-            const name = `${ valid.data.name }@create.com`
-            const userDB = await tx.user.create({
-                data: {
-                    name: valid.data.name,
-                    email: name,
-                    password: await bcrypt.hash(name, 10),
-                    role: ROLE_USER.USER
-
-                }
-            });
-
-            const customerDB = await tx.customer.create({
-            data: {
-                buyer_userId: userDB.id,
-                status: "pending",
-                age: 0,
-                lastPurchase: new Date(),
-                name: valid.data.name,
-                totalPurchase: 0,
-            }
-        });
-            return customerDB;
-        })
-
-
-        revalidatePath("/"); // Refresh halaman agar data baru tampil
-        logger.info("success createCustomerNew ", customer);
-        return {
-            data: customer,
-            success: true,
-            message: "Pelanggan berhasil ditambahkan",
-        };
-    } catch (error) {
-        // console.log(error);
-        logger.error("error createCustomerNew ", error);
-
-        return {
-            success: true,
-            message: "Pelanggan berhasil ditambahkan",
-        };
-    }
-
 }

@@ -1,8 +1,12 @@
 "use client"
 
-import { PreorderProduct, ProductPaging } from "@/action/product-action";
-import { getShopAllApi } from "@/app/admin/employee/employee-action";
-import { deletePreorderProduct, preOrderAction, preOrderProductAction } from "@/app/admin/inventory/inventory-action";
+import { PreorderProduct, ProductPreorder } from "@/action/product-action";
+import {
+    createAddPreOrderProductAdmin,
+    createPreOrderProductEmployeeAction,
+    deletePreorderProduct,
+    preOrderAction
+} from "@/app/admin/inventory/inventory-action";
 import { ProductsFilter } from "@/app/admin/products/products-page";
 import { FilterInput } from "@/components/mini/filter-input";
 import { InputDateForm, InputForm, InputNumForm, SelectForm } from "@/components/mini/form-hook";
@@ -30,7 +34,10 @@ import { ModalProps } from "@/interface/actionType";
 import { pageSizeOptions, statusPreordersOptions } from "@/lib/constants";
 import { formatDateIndo, formatRupiah } from "@/lib/formatter";
 import { newParam, toastResponse } from "@/lib/helper";
-import { PreOrderOptionalDefaults, PreOrderOptionalDefaultsSchema, Product, Shop } from "@/lib/validation";
+import { preOrderForm, PreOrderForm } from "@/lib/preorder-schema";
+import { PreOrderOptionalDefaults, PreOrderOptionalDefaultsSchema, Product } from "@/lib/validation";
+import { useProductFilter } from "@/store/use-product-filter";
+import { useSettingStore } from "@/store/use-setting-store";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { STATUS_PREORDER } from "@prisma/client";
 import {
@@ -45,7 +52,7 @@ import {
     Trash
 } from "lucide-react"
 import { useRouter } from "next/navigation";
-import React, { useEffect, useState } from "react"
+import React, { useEffect, useState, useTransition } from "react"
 import { FormProvider, useForm } from "react-hook-form";
 import { toast } from "sonner";
 
@@ -56,15 +63,19 @@ export type InventoryPaging = {
 
 export function FilterInventory() {
     const router = useRouter()
+    const {
+        setPage,
+        setItemsPerPage,
+        itemsPerPage,
+        isLowStock,
+        page,
+        setIsLowStock,
+        isLowExpired,
+        setIsLowExpired,
+        isNameProduct,
+        reset,
+    } = useProductFilter()
 
-    // Pagination
-    const [ itemsPerPage, setItemsPerPage ] = useState(10);
-    const [ page, setPage ] = useState(0);
-
-    // Filters
-    const [ isLowStock, setIsLowStock ] = useState('-')
-    const [ isLowExpired, setIsLowExpired ] = useState('-')
-    const [ isNameProduct, setIsNameProduct ] = useState('')
     const productNameDebounce = useDebounce(isNameProduct);
 
     useEffect(() => {
@@ -85,13 +96,6 @@ export function FilterInventory() {
             console.log('Filters applied:', filters);
         }
     }, [ productNameDebounce, router, itemsPerPage, page, isLowStock, isLowExpired ]);
-
-    const onReset = () => {
-        // console.log('will execute start')
-        setIsNameProduct("")
-        setIsLowStock("-")
-        setIsLowExpired("-")
-    }
 
     return (
         <DropdownMenu>
@@ -142,10 +146,9 @@ export function FilterInventory() {
                 <DropdownMenuLabel inset>Pilih Stock</DropdownMenuLabel>
                 <DropdownMenuRadioGroup value={ isLowStock } onValueChange={ setIsLowStock }>
                     { [
-                        // { label: 'Pilih Stock', value: '-' },
                         { label: 'Stock Low', value: 'low' },
                         { label: 'Stock High', value: 'high' }
-                    ].map((item, index) => {
+                    ].map((item) => {
                         return <DropdownMenuRadioItem key={ item.value }
                                                       value={ item.value }>{ item.label }</DropdownMenuRadioItem>
                     }) }
@@ -155,17 +158,16 @@ export function FilterInventory() {
                 <DropdownMenuLabel inset>Pilih Expired</DropdownMenuLabel>
                 <DropdownMenuRadioGroup value={ isLowExpired } onValueChange={ setIsLowExpired }>
                     { [
-                        // { label: 'Pilih Expired', value: '-' },
                         { label: 'Expired Low', value: 'low' },
                         { label: 'Expired High', value: 'high' }
-                    ].map((item, index) => {
+                    ].map((item) => {
                         return <DropdownMenuRadioItem key={ item.value }
                                                       value={ item.value }>{ item.label }</DropdownMenuRadioItem>
                     }) }
                 </DropdownMenuRadioGroup>
 
                 <DropdownMenuSeparator/>
-                <DropdownMenuItem variant={ 'destructive' } onClick={ onReset }>Reset to Default</DropdownMenuItem>
+                <DropdownMenuItem variant={ 'destructive' } onClick={ reset }>Reset to Default</DropdownMenuItem>
             </DropdownMenuContent>
         </DropdownMenu>
     );
@@ -175,14 +177,16 @@ export function InventoryFilter({ inventory }: { inventory: InventoryPaging }) {
 
     const router = useRouter()
 
-    // Pagination
-    const [ itemsPerPage, setItemsPerPage ] = useState(10);
-    const [ page, setPage ] = useState(0);
+    const {
+        setPage,
+        setIsNameProduct,
+        itemsPerPage,
+        isLowStock,
+        isLowExpired,
+        page,
+        isNameProduct,
+    } = useProductFilter()
 
-    // Filters
-    const [ isLowStock, setIsLowStock ] = useState('-')
-    const [ isLowExpired, setIsLowExpired ] = useState('-')
-    const [ isNameProduct, setIsNameProduct ] = useState('')
     const productNameDebounce = useDebounce(isNameProduct);
 
     useEffect(() => {
@@ -206,13 +210,6 @@ export function InventoryFilter({ inventory }: { inventory: InventoryPaging }) {
 
     const totalPages = Math.ceil(inventory.total / itemsPerPage);
 
-    const onReset = () => {
-        // console.log('will execute start')
-        setIsNameProduct("")
-        setIsLowStock("-")
-        setIsLowExpired("-")
-    }
-
     return (
         <div className={ 'space-y-2 sm:space-y-4' }>
             <div className="flex gap-2 flex-col">
@@ -223,57 +220,11 @@ export function InventoryFilter({ inventory }: { inventory: InventoryPaging }) {
                     label={ "" }
                     placeholder={ 'Cari Name Produk' }
                 />
-                {/*<div className="flex gap-2">*/ }
 
-                {/*<FilterSelect*/ }
-                {/*    label=""*/ }
-                {/*    value={ isLowStock }*/ }
-                {/*    onChangeAction={ setIsLowStock }*/ }
-                {/*    placeholder="Pilih Stock"*/ }
-                {/*    options={ [*/ }
-                {/*        { label: 'Pilih Stock', value: '-' },*/ }
-                {/*        { label: 'Stock Low', value: 'low' },*/ }
-                {/*        { label: 'Stock High', value: 'high' }*/ }
-                {/*    ] }*/ }
-                {/*/>*/ }
-
-                {/*<FilterSelect*/ }
-                {/*    label=""*/ }
-                {/*    value={ isLowExpired }*/ }
-                {/*    onChangeAction={ setIsLowExpired }*/ }
-                {/*    placeholder="Pilih Expired"*/ }
-                {/*    options={ [*/ }
-                {/*        { label: 'Pilih Expired', value: '-' },*/ }
-                {/*        { label: 'Expired Low', value: 'low' },*/ }
-                {/*        { label: 'Expired High', value: 'high' }*/ }
-                {/*    ] }*/ }
-                {/*/>*/ }
-                {/*<Button onClick={ onReset } variant="destructive"> Reset <XIcon*/ }
-                {/*    className="size-4"/>*/ }
-                {/*</Button>*/ }
-                {/*</div>*/ }
             </div>
 
             <div className="flex items-center   justify-between">
                 <FilterInventory/>
-
-                {/*<Select*/ }
-                {/*    value={ String(itemsPerPage) }*/ }
-                {/*    onValueChange={ (value) => {*/ }
-                {/*        setItemsPerPage(Number(value));*/ }
-                {/*        setPage(0); // Reset ke halaman pertama*/ }
-                {/*    } }>*/ }
-                {/*    <SelectTrigger>*/ }
-                {/*        <SelectValue placeholder="Tampil"/>*/ }
-                {/*    </SelectTrigger>*/ }
-                {/*    <SelectContent>*/ }
-                {/*        { pageSizeOptions.map((value) => (*/ }
-                {/*            <SelectItem key={ value } value={ value.toString() }>*/ }
-                {/*                { value }*/ }
-                {/*            </SelectItem>*/ }
-                {/*        )) }*/ }
-                {/*    </SelectContent>*/ }
-                {/*</Select>*/ }
                 <section className="flex items-center gap-2 sm:gap-4 ">
                     <Button
                         variant="outline"
@@ -283,7 +234,7 @@ export function InventoryFilter({ inventory }: { inventory: InventoryPaging }) {
                         <ChevronLeft/>
                     </Button>
 
-                    {/*just for text*/ }
+
                     <Button variant="outline" disabled={ true }>
                         { page + 1 } / { totalPages }
                     </Button>
@@ -297,294 +248,205 @@ export function InventoryFilter({ inventory }: { inventory: InventoryPaging }) {
 
                     </Button>
                 </section>
-                </div>
+            </div>
 
         </div>
     );
 }
 
-type InventoryPageProps = {
-    products: ProductPaging,
-    preorders: InventoryPaging
-    lowStockProducts: Product[],
-    expiredProduct: PreorderProduct[],
-};
-
-export function InventoryPage({ products, lowStockProducts, expiredProduct, preorders }: InventoryPageProps) {
-    const [ isLoadingHistoryPreorder, setIsLoadingHistoryPreorder ] = useState(false)
-    // console.log(products)
-    const [ isModalStock, setIsModalStock ] = useState(false)
-    const [ isStock, setIsStock ] = useState<Product | null>(null)
-
-    const [ isModalPreorder, setIsModalPreorder ] = useState(false)
+// History Preorder
+export function ProductPreorderHistory({ preorders }: { preorders: InventoryPaging }) {
+    const [ isPending, startTransition ] = useTransition()
     const [ isPreorder, setIsPreorder ] = useState<PreorderProduct | null>(null)
+    const [ isModalPreorder, setIsModalPreorder ] = useState(false)
+    const handlerDelete = async (item: PreorderProduct) => {
+        startTransition(async () => {
+            if (confirm(`Apakah Anda Yakin Untuk Hapus Data ini ${ item.Product.name } ?`)) {
+                toastResponse({ response: await deletePreorderProduct(item.id) })
+            }
+        })
 
-    const [ isModalExpired, setIsModalExpired ] = useState(false)
-    const [ isPreorderExpired, setIsPreorderExpired ] = useState<PreorderProduct | null>(null)
+    }
 
-    // const [ isLowStock, setIsLowStock ] = useState('-')
-    // const [ isLowExpired, setIsLowExpired ] = useState('-')
-    // const [ isNameProduct, setIsNameProduct ] = useState('')
+    const handlerEdit = (item: PreorderProduct) => {
+        setIsPreorder(item)
+        setIsModalPreorder(true)
+    }
 
     return (
-        <div className="p-4 sm:p-6 max-w-7xl mx-auto">
-
-            <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-6">
-                <h1 className="text-lg sm:text-3xl font-bold">Manajemen Inventori</h1>
-
-                <AddStockModal products={ products }/>
-
-                { isPreorder && isModalPreorder &&
-						<ReorderModal preorderProduct={ isPreorder }
-									  isOpen={ isModalPreorder }
-									  setOpenAction={ setIsModalPreorder }/> }
-                {/*Tambah Stok*/ }
-                { isStock && isModalStock &&
-						<ReorderStockModal isStock={ isStock }
-										   isOpen={ isModalStock }
-										   setOpenAction={ setIsModalStock }/> }
-
-
-                { isPreorderExpired && isModalExpired &&
-						<ReorderModal preorderProduct={ isPreorderExpired }
-									  isOpen={ isModalExpired }
-									  setOpenAction={ setIsModalExpired }/> }
-
-            </div>
-
-            {/* History Preorder */ }
-            <Card className="mb-6">
-                <CardHeader>
-                    <CardTitle className="flex items-center">Produk Preorder History</CardTitle>
-                    <InventoryFilter inventory={ preorders }/>
-                    {/*<FilterInventory inventory={ preorders }/>*/ }
-                </CardHeader>
-                <CardContent>
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Produk</TableHead>
-                                <TableHead>Stok</TableHead>
-                                <TableHead>Expired</TableHead>
-                                {/*<TableHead>Perlu Reorder</TableHead>*/ }
-                                <TableHead>Aksi</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            { preorders.data.map((item) => (
-                                <TableRow key={ item.id }>
-                                    <TableCell>
-                                        <div className="flex items-center space-x-3">
-                                            <picture className={ 'w-10' }>
-                                                <img
-                                                    src={ item.Product.image || "/placeholder.svg" }
-                                                    alt={ item.Product.name }
-                                                    className="w-10 h-10 rounded object-cover"
-                                                />
-                                            </picture>
-                                            <div className="flex flex-col">
-                                                <span
-                                                    className="font-bold truncate w-80">{ item.Product.name }</span>
-                                                <div className="flex gap-2">
-                                                    <span
-                                                        className="font-light">Normal: { formatRupiah(item.priceNormal) }</span>
-                                                    {/*-*/ }
-                                                    {/*<span*/ }
-                                                    {/*    className="font-light">Sell: { formatRupiah(item.Product.price) }</span>*/ }
-                                                    {/*=*/ }
-                                                    {/*<span*/ }
-                                                    {/*    className="font-light">Profit: { formatRupiah(item.priceSell - item.priceNormal) }</span>*/ }
-                                                </div>
-
-                                                <span className="font-light">
-                                                    {/*Total Stock: { item.Product.stock }*/ }
-                                                    {/*<Badge variant={ 'default' }>Order : { item.quantity }</Badge>*/ }
-                                                </span>
-                                            </div>
-                                        </div>
-                                    </TableCell>
-
-                                    <TableCell>
-                                        <div className="flex flex-col gap-2">
-                                            <Badge variant={ 'default' }>Order : { item.quantity }</Badge>
-                                        </div>
-                                    </TableCell>
-                                    <TableCell>{ formatDateIndo(item?.expired) }</TableCell>
-                                    {/*<TableCell>{ product.minStock - product.stock + 10 }</TableCell>*/ }
-                                    <TableCell>
-
-
-                                        <div className="space-x-2">
-                                            <ActionDropdown
-                                                idDisabled={ isLoadingHistoryPreorder }
-                                                onEdit={ () => {
-                                                    setIsPreorder(item)
-                                                    setIsModalPreorder(true)
-                                                } }
-                                                onDelete={ async () => {
-                                                    if (confirm(`Apakah Anda Yakin Untuk Hapus Data ini ${ item.Product.name } ?`)) {
-                                                        console.log('delete')
-                                                        toastResponse({
-                                                            onStart: () => setIsLoadingHistoryPreorder(true),
-                                                            onFinish: () => setIsLoadingHistoryPreorder(false),
-                                                            response: await deletePreorderProduct(item.id),
-                                                        })
-                                                    }
-                                                } }
+        <Card className="mb-6">
+            {/* Ubah */ }
+            { isPreorder && isModalPreorder &&
+					<ReorderModal preorderProduct={ isPreorder }
+								  isOpen={ isModalPreorder }
+								  setOpenAction={ setIsModalPreorder }/> }
+            <CardHeader>
+                <CardTitle className="flex items-center">Produk Preorder History</CardTitle>
+                <InventoryFilter inventory={ preorders }/>
+                {/*<FilterInventory inventory={ preorders }/>*/ }
+            </CardHeader>
+            <CardContent>
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead>Produk</TableHead>
+                            <TableHead>Stok</TableHead>
+                            <TableHead>Expired</TableHead>
+                            {/*<TableHead>Perlu Reorder</TableHead>*/ }
+                            <TableHead>Aksi</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        { preorders.data.map((item) => (
+                            <TableRow key={ item.id }>
+                                <TableCell>
+                                    <div className="flex items-center space-x-3">
+                                        <picture className={ 'w-10' }>
+                                            <img
+                                                src={ item.Product.image || "/placeholder.svg" }
+                                                alt={ item.Product.name }
+                                                className="w-10 h-10 rounded object-cover"
                                             />
+                                        </picture>
+                                        <div className="flex flex-col">
+                                            <span className="font-bold truncate w-40">{ item.Product.name }</span>
+                                            <div className="flex gap-2">
+                                                    <span
+                                                        className="font-light">Normal: { formatRupiah(item.priceOriginal) }</span>
+                                                {/*-*/ }
+                                                {/*<span*/ }
+                                                {/*    className="font-light">Sell: { formatRupiah(item.Product.price) }</span>*/ }
+                                                {/*=*/ }
+                                                {/*<span*/ }
+                                                {/*    className="font-light">Profit: { formatRupiah(item.priceSell - item.priceNormal) }</span>*/ }
+                                            </div>
 
+                                            {/*<span className="font-light">*/ }
+                                            {/*Total Stock: { item.Product.stock }*/ }
+                                            {/*<Badge variant={ 'default' }>Order : { item.quantity }</Badge>*/ }
+                                            {/*        </span>*/ }
                                         </div>
-                                    </TableCell>
-                                </TableRow>
-                            )) }
-                        </TableBody>
-                    </Table>
-                </CardContent>
-            </Card>
+                                    </div>
+                                </TableCell>
+
+                                <TableCell>
+                                    <div className="flex flex-col gap-2">
+                                        <Badge variant={ 'default' }>{ item.status } : { item.quantity }</Badge>
+                                    </div>
+                                </TableCell>
+                                <TableCell>{ formatDateIndo(item?.expired) }</TableCell>
+                                {/*<TableCell>{ product.minStock - product.stock + 10 }</TableCell>*/ }
+                                <TableCell>
 
 
-            {/* Low Stock Alert */ }
-            <Card className="mb-6">
-                <CardHeader>
-                    <CardTitle className="flex items-center">
-                        <AlertTriangle className="h-5 w-5 text-red-500 mr-2"/>
-                        Produk Stok Rendah : { lowStockProducts.length } Produk
-                    </CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Produk</TableHead>
-                                <TableHead>Stok Saat Ini</TableHead>
-                                <TableHead>Minimum Stok</TableHead>
-                                <TableHead>Perlu Reorder</TableHead>
-                                <TableHead>Aksi</TableHead>
+                                    <div className="space-x-2">
+                                        <ActionDropdown
+                                            idDisabled={ isPending }
+                                            onEditAction={ () => handlerEdit(item) }
+                                            onDeleteAction={ () => handlerDelete(item) }
+                                        />
+                                    </div>
+                                </TableCell>
                             </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            { lowStockProducts.map((product) => (
-                                <TableRow key={ product.id }>
-                                    <TableCell>
-                                        <div className="flex items-center space-x-3">
-                                            <picture>
-                                                <img
-                                                    src={ product.image || "/placeholder.svg" }
-                                                    alt={ product.name }
-                                                    className="w-8 h-8 rounded object-cover"
-                                                />
-                                            </picture>
-                                            <span className="font-medium">{ product.name }</span>
-                                        </div>
-                                    </TableCell>
-                                    <TableCell><Badge variant="destructive">{ product.stock }</Badge></TableCell>
-                                    <TableCell>{ product.minStock }</TableCell>
-                                    <TableCell>{ product.minStock - product.stock + 10 }</TableCell>
-                                    <TableCell>
-                                        <Button
-                                            size="sm"
-                                            onClick={ () => {
-                                                setIsStock(product)
-                                                setIsModalStock(true)
-                                            } }
-                                        >
-                                            Reorder
-                                        </Button>
+                        )) }
+                    </TableBody>
+                </Table>
+            </CardContent>
+        </Card>
 
-                                    </TableCell>
-                                </TableRow>
-                            )) }
-                        </TableBody>
-                    </Table>
-                </CardContent>
-            </Card>
-
-
-            {/* Expired Alert */ }
-            <Card className="mb-6">
-                <CardHeader>
-                    <CardTitle className="flex flex-col gap-2">
-                        <div className="flex items-center">
-                            <AlertTriangle className="h-5 w-5 text-red-500 mr-2"/>Produk Expired
-                            : { expiredProduct.length } Produk
-                        </div>
-                        <div className="">Tanggal Sekarang : { formatDateIndo(new Date()) }</div>
-                    </CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Produk</TableHead>
-                                <TableHead>Stok Saat Ini</TableHead>
-                                <TableHead>Expired</TableHead>
-                                {/*<TableHead>Perlu Reorder</TableHead>*/ }
-                                <TableHead>Aksi</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            { expiredProduct.map((item) => (
-                                <TableRow key={ item.id }>
-                                    <TableCell>
-                                        <div className="flex items-center space-x-3">
-                                            <picture>
-                                                <img
-                                                    src={ item.Product.image || "/placeholder.svg" }
-                                                    alt={ item.Product.name }
-                                                    className="w-8 h-8 rounded object-cover"
-                                                />
-                                            </picture>
-                                            <span className="font-medium">{ item.Product.name }</span>
-                                        </div>
-                                    </TableCell>
-                                    <TableCell><Badge variant="destructive">{ item.quantity }</Badge></TableCell>
-                                    <TableCell>{ formatDateIndo(item.expired ?? new Date()) }</TableCell>
-                                    {/*<TableCell>{ product.minStock - product.stock + 10 }</TableCell>*/ }
-                                    <TableCell>
-                                        <Button
-                                            size="sm"
-                                            onClick={ () => {
-                                                setIsPreorderExpired(item)
-                                                setIsModalExpired(true)
-                                            } }
-                                        >
-                                            Sistem Dev
-                                        </Button>
-
-                                    </TableCell>
-                                </TableRow>
-                            )) }
-                        </TableBody>
-                    </Table>
-                </CardContent>
-            </Card>
-
-
-        </div>
-    )
+    );
 }
 
-// const preOrderForm = PreOrderOptionalDefaultsSchema.merge(z.object({ userId: z.string().uuid().optional() }))
-// export type  PreOrderForm = z.infer<typeof preOrderForm>
+// Expired Alert
+export function ProductExpired({ expiredProduct }: { expiredProduct: PreorderProduct[] }) {
+    const [ isModalExpired, setIsModalExpired ] = useState(false)
+    const [ isPreorderExpired, setIsPreorderExpired ] = useState<PreorderProduct | null>(null)
+    return (
+        <Card className="mb-6">
+            { isPreorderExpired && isModalExpired &&
+					<ReorderModal preorderProduct={ isPreorderExpired }
+								  isOpen={ isModalExpired }
+								  setOpenAction={ setIsModalExpired }/> }
+            <CardHeader>
+                <CardTitle className="flex flex-col gap-2">
+                    <div className="flex items-center">
+                        <AlertTriangle className="h-5 w-5 text-red-500 mr-2"/>Produk Expired
+                        : { expiredProduct.length } Produk
+                    </div>
+                    <div className="">Tanggal Sekarang : { formatDateIndo(new Date()) }</div>
+                </CardTitle>
+            </CardHeader>
+            <CardContent>
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead>Produk</TableHead>
+                            <TableHead>Stok Saat Ini</TableHead>
+                            <TableHead>Expired</TableHead>
+                            {/*<TableHead>Perlu Reorder</TableHead>*/ }
+                            <TableHead>Aksi</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        { expiredProduct.map((item) => (
+                            <TableRow key={ item.id }>
+                                <TableCell>
+                                    <div className="flex items-center space-x-3">
+                                        <picture>
+                                            <img
+                                                src={ item.Product.image || "/placeholder.svg" }
+                                                alt={ item.Product.name }
+                                                className="w-8 h-8 rounded object-cover"
+                                            />
+                                        </picture>
+                                        <span className="font-medium">{ item.Product.name }</span>
+                                    </div>
+                                </TableCell>
+                                <TableCell><Badge variant="destructive">{ item.quantity }</Badge></TableCell>
+                                <TableCell>{ formatDateIndo(item.expired ?? new Date()) }</TableCell>
+                                {/*<TableCell>{ product.minStock - product.stock + 10 }</TableCell>*/ }
+                                <TableCell>
+                                    <Button
+                                        size="sm"
+                                        onClick={ () => {
+                                            setIsPreorderExpired(item)
+                                            setIsModalExpired(true)
+                                        } }
+                                    >
+                                        Sistem Dev
+                                    </Button>
 
-export function ReorderModal(
-    { preorderProduct, setOpenAction, isOpen }:
-        { preorderProduct: PreorderProduct } & ModalProps
-) {
+                                </TableCell>
+                            </TableRow>
+                        )) }
+                    </TableBody>
+                </Table>
+            </CardContent>
+        </Card>
+    );
+}
 
-    const [ loading, setLoading ] = useState(false)
+export function ReorderModal({ preorderProduct, setOpenAction, isOpen }: {
+    preorderProduct: PreorderProduct
+} & ModalProps) {
+    const [ isPending, startTransition ] = useTransition()
+    const { isLoading, markets, getMarkets } = useSettingStore()
+
+    useEffect(() => {
+        getMarkets().then()
+    }, [ getMarkets ]);
 
     const methods = useForm<PreOrderOptionalDefaults>({
         resolver: zodResolver(PreOrderOptionalDefaultsSchema),
             defaultValues: {
-                sellIn_shopId: '',
+                market_name: preorderProduct.market_name,
+                marketId_sellIn: preorderProduct.marketId_sellIn,
                 userId: '',
                 id: preorderProduct.id,
                 productId: preorderProduct.productId,
                 quantity: preorderProduct.quantity,
                 status: preorderProduct.status,
-                priceNormal: preorderProduct.priceNormal,
-                priceSell: preorderProduct.priceSell,
+                priceOriginal: preorderProduct.priceOriginal,
                 estimatedDate: new Date(preorderProduct?.estimatedDate ?? new Date()),
                 expired: new Date(preorderProduct?.expired ?? new Date()),
             } satisfies PreOrderOptionalDefaults
@@ -592,32 +454,38 @@ export function ReorderModal(
     );
 
     const onSubmit = methods.handleSubmit(async (data) => {
-        toastResponse({
-            response: await preOrderAction(data, preorderProduct),
-            onStart: () => setLoading(true),
-            onFinish: () => setLoading(false),
-            onSuccess: () => setOpenAction(false)
+        startTransition(async () => {
+            toastResponse({
+                response: await preOrderAction(data, preorderProduct, markets.find(i => i.id === data.marketId_sellIn)!),
+                onSuccess: () => setOpenAction(false)
+            })
         })
     })
 
     console.log(methods.formState.errors)
-    return (
-        <ResponsiveModalOnly title={ 'Ubah Preorder Produk' }
+
+    return (<>
+            <ResponsiveModalOnly title={ 'Ubah Preorder inventory' }
                              isOpen={ isOpen } setOpenAction={ setOpenAction }
-                             footer={ <Button onClick={ onSubmit } disabled={ loading }>Ubah</Button> }
+                                 footer={ <Button onClick={ onSubmit }
+                                                  disabled={ isPending || isLoading }>Ubah</Button> }
         >
             <FormProvider { ...methods }>
                 <form onSubmit={ onSubmit } className={ 'space-y-4' }>
                     <div className="grid grid-cols-2 gap-4">
-                        <InputForm name="quantity" title="Jumlah Tambahan" placeholder="0" type="number"/>
+                        <InputForm name="quantity" title="Jumlah Tambahan" placeholder="0" type="number"
+                                   description={ `Stock Sekarang: ${ preorderProduct.Product.stock }` }
+                        />
                         <SelectForm
                             name="status"
                             label="Status"
                             placeholder="Pilih status"
                             options={ statusPreordersOptions }
                         />
-                        <InputNumForm name={ 'priceNormal' } title={ 'Harga Beli' }/>
-                        <InputNumForm name={ 'priceSell' } title={ 'Harga Jual' }/>
+                        <InputNumForm name={ 'priceOriginal' } title={ 'Harga Normal' }
+                                      description={ 'Harga asli bukan harga jual' }
+                        />
+                        {/*<InputNumForm name={ 'priceSell' } title={ 'Harga Jual' }/>*/ }
                         <InputDateForm name={ 'estimatedDate' }
                                        title={ "Tanggal Beli" }
                                        description={ 'Kapan Tanggal beli' }
@@ -628,38 +496,44 @@ export function ReorderModal(
                                        title={ "Expired" }
                                        description={ 'Kapan Tanggal Kadaluarsa' }
                                        minDate={ false }
+
                         />
+
+
+                        <SelectForm
+                            name="marketId_sellIn"
+                            label="Shop"
+                            placeholder="Select a shop"
+                            options={ markets.map((s) => ({
+                                label: s.name,
+                                value: s.id,
+                            })) }
+                        />
+
                     </div>
                 </form>
             </FormProvider>
         </ResponsiveModalOnly>
+        </>
+
 
     );
 }
 
-{/*Tambah Stok*/
-}
-export function ReorderStockModal({ isStock, setOpenAction, isOpen }: { isStock: Product } & ModalProps) {
-
-    // const [ productToAddStock, setProductToAddStock ] = useState<Product | null>(null)
-    const [ loading, setLoading ] = useState(false)
+// Tambah Stok
+export function ReorderStockModal({ isStock, }: { isStock: Product }) {
+    const [ isModalStock, setIsModalStock ] = useState(false)
+    const [ isPending, startTransition ] = useTransition()
 
     const methods = useForm<PreOrderOptionalDefaults>({
-        resolver: zodResolver(PreOrderOptionalDefaultsSchema
-            // .extend({
-            //     status: PreOrderOptionalDefaultsSchema.shape.status.refine(
-            //         (val) => val !== "-",
-            //         { message: "Status cannot be '-'" }
-            //     )
-            // })
-        ),
+        resolver: zodResolver(PreOrderOptionalDefaultsSchema),
             defaultValues: {
-                sellIn_shopId: "",
+                market_name: '',
+                marketId_sellIn: "",
                 userId: '',
                 status: STATUS_PREORDER.Pending,
                 productId: isStock.id,
-                priceSell: isStock.price,
-                priceNormal: 0,
+                priceOriginal: isStock.price,
                 quantity: 0,
                 estimatedDate: new Date(),
                 expired: new Date(),
@@ -668,54 +542,60 @@ export function ReorderStockModal({ isStock, setOpenAction, isOpen }: { isStock:
     );
 
     const onSubmit = methods.handleSubmit(async (data) => {
-        toastResponse({
-            onStart: () => {
-                setLoading(true)
-                setOpenAction(false)
-            },
-            response: await preOrderProductAction(data),
-            onFinish: () => setLoading(false)
+        startTransition(async () => {
+            console.log('execute : Tambah Stok')
+            toastResponse({
+                response: await createPreOrderProductEmployeeAction(data),
+                onFinish: () => setIsModalStock(false),
+            })
         })
     })
 
-    return (
-        <ResponsiveModalOnly title={ 'Tambah Stok' }
-                             isOpen={ isOpen } setOpenAction={ setOpenAction }
-                             footer={ <Button onClick={ onSubmit } disabled={ loading }>Simpan</Button> }
-        >
-            <FormProvider { ...methods }>
-                <form onSubmit={ onSubmit } className={ 'space-y-4' }>
-                    <div className="grid grid-cols-2 gap-4">
-                        <InputForm name="quantity" title="Jumlah Tambahan" placeholder="0" type="number"/>
-                        <SelectForm
-                            name="status"
-                            label="Status"
-                            placeholder="Pilih status"
-                            options={ statusPreordersOptions }
-                        />
-                        <InputNumForm name={ 'priceNormal' } title={ 'Harga Beli' }/>
-                        <InputNumForm name={ 'priceSell' } title={ 'Harga Jual' }/>
-                        <InputDateForm name={ 'estimatedDate' }
-                                       title={ "Tanggal" }
-                                       description={ 'Tambahkan Tanggal' }
-                                       minDate={ false }
-                        />
+    return (<>
+            <Button size="sm" onClick={ () => setIsModalStock(true) }>Reorder</Button>
+            <ResponsiveModalOnly title={ 'Tambah Stok' }
+                                 isOpen={ isModalStock } setOpenAction={ setIsModalStock }
+                                 footer={ <Button onClick={ onSubmit } disabled={ isPending }>Simpan</Button> }
+            >
+                <FormProvider { ...methods }>
+                    <form onSubmit={ onSubmit } className={ 'space-y-4' }>
+                        <div className="grid grid-cols-2 gap-4">
+                            <InputForm name="quantity" title="Jumlah Tambahan" placeholder="0" type="number"/>
+                            <SelectForm
+                                name="status"
+                                label="Status"
+                                placeholder="Pilih status"
+                                options={ statusPreordersOptions }
+                            />
+                            <InputNumForm name={ 'priceNormal' } title={ 'Harga Normal' }/>
+                            <InputNumForm name={ 'priceSell' } title={ 'Harga Jual' }/>
+                            <InputDateForm name={ 'estimatedDate' }
+                                           title={ "Tanggal" }
+                                           description={ 'Tambahkan Tanggal' }
+                                           minDate={ false }
+                            />
 
-                    </div>
-                </form>
-            </FormProvider>
-        </ResponsiveModalOnly>
+                        </div>
+                    </form>
+                </FormProvider>
+            </ResponsiveModalOnly>
+        </>
 
     );
 }
 
-
-export function AddStockModal({ products }: { products: ProductPaging, }) {
+export function AddStockModal({ preorder, }: { preorder: ProductPreorder[] }) {
     const router = useRouter()
     const [ nameProduct, setNameProduct ] = useState<string>('')
     const [ productData, setProductData ] = useState<Product | null>(null)
     const { value, isLoading } = useDebounceLoad(nameProduct, 1000);
-    const [ shop, setShop ] = useState<Shop[]>([])
+    const [ isPending, startTransition ] = useTransition()
+
+    const { markets, getMarkets } = useSettingStore()
+
+    useEffect(() => {
+        getMarkets().then()
+    }, [ getMarkets ]);
 
     useEffect(() => {
         if (value.trim()) {
@@ -724,67 +604,56 @@ export function AddStockModal({ products }: { products: ProductPaging, }) {
         }
     }, [ value, router ]);
 
-    const methods = useForm<PreOrderOptionalDefaults>({
-        resolver: zodResolver(PreOrderOptionalDefaultsSchema),
+    const methods = useForm<PreOrderForm>({
+        resolver: zodResolver(preOrderForm),
             defaultValues: {
                 status: STATUS_PREORDER.Pending,
                 estimatedDate: new Date(),
                 productId: productData?.id ?? '',
-                priceSell: productData?.price ?? 0,
+                priceOriginal: productData?.price ?? 0,
                 quantity: 0,
-                priceNormal: 0,
                 expired: new Date(),
-                userId: '',
-                sellIn_shopId: ""
-            } satisfies PreOrderOptionalDefaults
+                marketId_sellIn: ''
+            } satisfies PreOrderForm
         }
     );
-    console.log(methods.formState.errors)
+
     useEffect(() => {
         if (productData) {
             methods.reset({
                 ...methods.getValues(),
                 productId: productData.id,
-                priceSell: productData.price,
+                priceOriginal: productData.price,
             });
         }
     }, [ methods, productData ]);
 
-    useEffect(() => {
-        getShopAllApi().then(data => {
-            setShop(data.data)
-        })
-        console.log('render')
-    }, []);
+    const onSubmit = methods.handleSubmit(async (preorder) => {
+        startTransition(async () => {
+            // console.log('execute Tambah Stok Produk ')
+            const market = markets.find(market => market.id === preorder.marketId_sellIn)
+            if (productData && market) {
+                toastResponse({
+                    response: await createAddPreOrderProductAdmin(preorder, market),
+                    onSuccess: () => setNameProduct('')
+                })
 
-
-    const onSubmit = methods.handleSubmit(async (data) => {
-            if (productData) {
-                const product = products.data.find((p) => p.id === productData.id)
-                // && alert(`Stok ${ product.name } ditambah ${ data.quantity }`)
-                if (product) {
-                    toastResponse({
-                        response: await preOrderProductAction(data),
-                        onFinish: () => {
-                            setNameProduct('')
-
-                        }
-                    })
-                }
             } else {
                 toast.error('Please add product')
             }
-        }
-    )
+        })
+    })
+
+    console.log(methods.formState.errors)
 
     return (
         <ResponsiveModal
-            title={ 'Tambah Stok Produk' }
+            title={ 'Tambah Stok Inventory' }
             trigger={ <Button><Plus className="h-4 w-4 mr-2"/>Tambah Stok</Button> }
-            footer={ <Button onClick={ onSubmit } disabled={ !productData }>Simpan</Button> }>
+            footer={ <Button onClick={ onSubmit } disabled={ !productData || isPending }>Simpan</Button> }>
 
             <div className="space-y-4">
-                <ProductsFilter products={ products }/>
+                <ProductsFilter products={ preorder }/>
 
                 <FormProvider { ...methods }>
                     <form
@@ -798,19 +667,12 @@ export function AddStockModal({ products }: { products: ProductPaging, }) {
                                 placeholder="Pilih status"
                                 options={ statusPreordersOptions }
                             />
-                            <SelectForm
-                                name="sellIn_shopId"
-                                label="Shop"
-                                placeholder="Select a shop"
-                                options={ shop.map((s) => ({
-                                    label: s.name,
-                                    value: s.id,
-                                })) }
+
+
+                            <InputNumForm name={ 'priceOriginal' } title={ 'Harga Normal' }
+                                          description={ 'Harga asli bukan harga jual' }
                             />
-
-
-                            <InputNumForm name={ 'priceNormal' } title={ 'Harga Beli' }/>
-                            <InputNumForm name={ 'priceSell' } title={ 'Harga Jual' }/>
+                            {/*<InputNumForm name={ 'priceSell' } title={ 'Harga Jual' }/>*/ }
                             <InputDateForm name={ 'estimatedDate' }
                                            title={ "Tanggal Beli" }
                                            description={ 'Kapan Tanggal beli' }
@@ -822,6 +684,17 @@ export function AddStockModal({ products }: { products: ProductPaging, }) {
                                            description={ 'Kapan Tanggal Kadaluarsa' }
                                            minDate={ false }
                             />
+
+                            <SelectForm
+                                name="marketId_sellIn"
+                                label="Shop"
+                                placeholder="Select a shop"
+                                options={ markets.map((s) => ({
+                                    label: s.name,
+                                    value: s.id,
+                                })) }
+                            />
+
                         </div>
                     </form>
                 </FormProvider>
@@ -856,9 +729,9 @@ export function AddStockModal({ products }: { products: ProductPaging, }) {
                         {
                             isLoading
                                 ? <Card className="flex items-center gap-4 p-4 ">Loading...</Card>
-                                : products.data.length === 0
+                                : preorder.length === 0
                                     ? <Card className="flex items-center gap-4 p-4">Product Is Not Found</Card>
-                                    : products.data
+                                    : preorder
                                     .filter((p) => p.name.toLowerCase().includes(nameProduct.toLowerCase()))
                                     .map((product) => (
                                         <Card key={ product.id }
@@ -884,10 +757,7 @@ export function AddStockModal({ products }: { products: ProductPaging, }) {
                                                 onClick={ () => setProductData(product) }
                                             >
                                                 <Plus/>
-                                                <span className={ 'hidden sm:block' }>
-                                                                        Tambah
-                                                                        </span>
-                                            </Button>
+                                                <span className={ 'hidden sm:block' }>Tambah</span></Button>
                                         </Card>
                                     )) }
                     </div>
@@ -900,14 +770,14 @@ export function AddStockModal({ products }: { products: ProductPaging, }) {
 export default function ActionDropdown(
     {
         idDisabled,
-        onEdit,
-        onDetail,
-        onDelete
+        onEditAction,
+        onDetailAction,
+        onDeleteAction
     }: {
         idDisabled?: boolean;
-        onEdit?: () => void,
-        onDetail?: () => void,
-        onDelete?: () => void;
+        onEditAction?: () => void,
+        onDetailAction?: () => void,
+        onDeleteAction?: () => void;
     }) {
     return (
         <DropdownMenu>
@@ -917,28 +787,28 @@ export default function ActionDropdown(
                 </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-40">
-                { onDetail ?
+                { onDetailAction ?
                     <DropdownMenuItem
                         disabled={ idDisabled }
-                        onClick={ onDetail }>
+                        onClick={ onDetailAction }>
                         <Eye className="stroke-2 size-4"/> Detail
                     </DropdownMenuItem>
                     : null }
-                { onEdit ?
+                { onEditAction ?
                     <DropdownMenuItem
                         disabled={ idDisabled }
-                        onClick={ onEdit }>
+                        onClick={ onEditAction }>
                         <Edit2Icon className="stroke-2 size-4"/> Edit
                     </DropdownMenuItem>
                     : null }
                 {/*<DropdownMenuItem>*/ }
                 {/*    <Share className="stroke-2 size-4" /> Share*/ }
                 {/*</DropdownMenuItem>*/ }
-                { onDelete ? <>
+                { onDeleteAction ? <>
                         <DropdownMenuSeparator/>
                         <DropdownMenuItem
                             disabled={ idDisabled }
-                            onClick={ onDelete }
+                            onClick={ onDeleteAction }
                             variant={ "destructive" }
                         >
                             <Trash className="stroke-2 size-4"/> Delete

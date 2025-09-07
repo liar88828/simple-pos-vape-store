@@ -160,7 +160,7 @@ export function DailySalesReport_x5_english(props: ReportsPageProps) {
                         { props.sales.map((sale) => (
                             <tr key={ sale.id }>
                                 <td className="px-4 py-2">
-                                    #{ sale.id } ({ new Date(sale.date).toLocaleTimeString([], {
+                                    #{ sale.id } ({ new Date(sale.date_buy).toLocaleTimeString([], {
                                     hour: '2-digit',
                                     minute: '2-digit'
                                 }) })
@@ -173,7 +173,7 @@ export function DailySalesReport_x5_english(props: ReportsPageProps) {
                                 <td className="px-4 py-2">
                                     { sale.SaleItems.map(item => (
                                         <span key={ item.id }
-                                              className="block">{ item.product.name } ({ item.quantity } units)</span>
+                                              className="block">{ item.Product.name } ({ item.quantity } units)</span>
                                     )) }
                                 </td>
                             </tr>
@@ -187,15 +187,15 @@ export function DailySalesReport_x5_english(props: ReportsPageProps) {
                 <h2 className="text-xl font-semibold mb-2">Product Performance Analysis</h2>
                 <p><strong>Top Performing Product:</strong> Orlando Dillon (Product ID: 8)</p>
                 {
-                    props.stats.topProduct.product &&
+                    props.stats.topProduct.Product &&
 						<ul className="list-disc list-inside">
-							<li>Category: { props.stats.topProduct.product.category }</li>
+							<li>Category: { props.stats.topProduct.Product.category }</li>
 							<li>Units Sold: { props.stats.topProduct.unitsSold }</li>
 							<li>Price: { formatRupiah(props.stats.topProduct.unitsSold) } per unit</li>
-							<li>Type: { props.stats.topProduct.product.type }</li>
+							<li>Type: { props.stats.topProduct.Product.type }</li>
 							<li>Nicotine Level: { props.stats.topProduct.unitsSold }</li>
-							<li>Current Stock: { props.stats.topProduct.product.stock } units (Below minimum stock
-								level: { props.stats.topProduct.product.minStock } units)
+							<li>Current Stock: { props.stats.topProduct.Product.stock } units (Below minimum stock
+								level: { props.stats.topProduct.Product.minStock } units)
 							</li>
 						</ul>
                 }

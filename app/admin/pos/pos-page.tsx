@@ -1,7 +1,7 @@
 "use client"
 
+import { createCustomerNew } from "@/action/customer-action";
 import { type  ProductPaging, type ProductPreorder } from "@/action/product-action";
-import { createCustomerNew, createTransactionAction } from "@/app/admin/pos/pos-action";
 import { ProductsFilter } from "@/app/admin/products/products-page";
 import { ProductCart } from "@/app/user/home/product-user-page";
 import { InputForm } from "@/components/mini/form-hook";
@@ -19,20 +19,23 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useCartStore } from "@/hooks/use-cart";
 import { formatRupiah } from "@/lib/formatter";
 import { toastResponse } from "@/lib/helper";
 import { CustomerModelNew, CustomerModelType } from "@/lib/schema";
-import { Customer, PaymentSetting, } from "@/lib/validation";
+import { Customer, } from "@/lib/validation";
+import { useCartStore } from "@/store/use-cart-store";
+import { useSaleStore } from "@/store/use-sale-store";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { MinusIcon, Plus, Search, ShoppingCart } from "lucide-react"
 import Link from "next/link";
-import React, { useMemo, useState } from "react"
+import React, { useEffect, useMemo, useState, useTransition } from "react"
 import { FormProvider, useForm } from "react-hook-form";
 
-type POSPageProps = { customers: Customer[], products: ProductPaging, payment: PaymentSetting };
+type POSPageProps = {
+    customers: Customer[], products: ProductPaging,
+};
 
-export default function POSPage({ products, customers, payment }: POSPageProps) {
+export default function POSPage({ products, customers }: POSPageProps) {
     const [ searchCustomer, setSearchCustomer ] = useState("")
     const [ isProduct, setIsProduct ] = useState<ProductPreorder | null>(null)
     const [ isOpen, setIsOpen ] = useState(false)
@@ -55,7 +58,7 @@ export default function POSPage({ products, customers, payment }: POSPageProps) 
                     <Card>
                         <CardHeader>
                             <CardTitle>Pilih Produk</CardTitle>
-                            <ProductsFilter products={ products } customerName={ searchCustomer }/>
+                            <ProductsFilter products={ products.data } customerName={ searchCustomer }/>
                         </CardHeader>
 
 
@@ -106,7 +109,6 @@ export default function POSPage({ products, customers, payment }: POSPageProps) 
                 {/* Cart & Checkout Keranjang Belanja */ }
                 <PosPageCheckOut products={ products }
                                  customers={ customers }
-                                 payment={ payment }
                                  searchCustomer={ searchCustomer }
                                  setSearchCustomer={ setSearchCustomer }
                 />
@@ -116,50 +118,54 @@ export default function POSPage({ products, customers, payment }: POSPageProps) 
 }
 
 // Cart & Checkout Keranjang Belanja
-function PosPageCheckOut({ customers, payment, products, searchCustomer, setSearchCustomer, }: POSPageProps & {
+export function PosPageCheckOut({ customers, products, searchCustomer, setSearchCustomer, }: POSPageProps & {
     searchCustomer: string,
     setSearchCustomer: (v: string) => void,
 }) {
 
+    const [ isPending, startTransition ] = useTransition()
     const [ selectedCustomer, setSelectedCustomer ] = useState<Customer | null>(null)
-    const [ loading, setLoading ] = useState(false)
-
     const [ paymentMethod, setPaymentMethod ] = useState("cod")
-    const [ clientMoney, setClientMoney ] = useState(0)
-    const { setCartItems, removeFromCart, incrementItem, decrementItem, cartItems } = useCartStore()
+    const {
+        clientMoney,
+        setCartItems,
+        removeFromCart,
+        incrementItem,
+        decrementItem,
+        cartItems,
+        calculateCart,
+        getPayment,
+        payment,
+        setField,
+        total, tax, grandTotal
+    } = useCartStore()
+    const { createSaleAdmin } = useSaleStore()
 
-    const getTotalCart = () => {
-        return cartItems.reduce((total, item) => total + item.price * item.quantity, 0)
-    }
+    useEffect(() => {
+        getPayment().then()
+    }, [ getPayment ])
+
+    useEffect(() => {
+        calculateCart()
+    }, [calculateCart]);
 
     const getProductStock = (id: string) => {
         return products.data.find(product => product.id === id)?.stock || 0;
     };
 
-    // 👉 add helpers for tax and total
-    const getTax = () => {
-        if (!payment.isTax) return 0;
-        return (getTotalCart() * payment.valueTax) / 100;
-    };
-
-    const getGrandTotal = () => {
-        return getTotalCart() + getTax();
-    };
-
     async function onTransaction() {
-        setLoading(true)
-        toastResponse({
-            response: await createTransactionAction(cartItems, selectedCustomer, ''),
-            onSuccess: () => {
-                setSearchCustomer('')
-                setPaymentMethod('')
-                setClientMoney(0)
-                setSelectedCustomer(null)
-                setCartItems([])
-            }
+        startTransition(async () => {
+            toastResponse({
+                response: await createSaleAdmin(cartItems, selectedCustomer, ''),
+                onSuccess: () => {
+                    setSearchCustomer('')
+                    setPaymentMethod('')
+                    setField("clientMoney", 0)
+                    setSelectedCustomer(null)
+                    setCartItems([])
+                }
+            })
         })
-        setLoading(false)
-
     }
 
     return (
@@ -245,14 +251,14 @@ function PosPageCheckOut({ customers, payment, products, searchCustomer, setSear
                                     onChange={ (e) => {
                                         // remove non-digits
                                         const raw = e.target.value.replace(/\D/g, "")
-                                        setClientMoney(raw ? Number(raw) : 0)
+                                        setField('clientMoney', raw ? Number(raw) : 0)
                                     } }
                                 />
                                 { clientMoney > 0 && (
                                     <p className="mt-2 text-sm text-gray-600">
                                         Change:{ " " }
                                         <span className="font-semibold">
-                                                { formatRupiah(clientMoney - getTotalCart()) }</span>
+                                                            { formatRupiah(clientMoney - total) }</span>
                                     </p>
                                 ) }
                             </div>
@@ -263,30 +269,30 @@ function PosPageCheckOut({ customers, payment, products, searchCustomer, setSear
                                 { clientMoney > 0 && (
                                     <div className="flex justify-between items-center">
                                         <span>Subtotal:</span>
-                                        <span>{ formatRupiah(getTotalCart()) }</span>
+                                        <span>{ formatRupiah(total) }</span>
                                     </div>
                                 ) }
 
-                                { payment.isTax && (
+                                { (payment && payment.isTax) && (
                                     <div className="flex justify-between items-center">
                                         <span>Tax:</span>
-                                        <span>{ payment.valueTax }% - { formatRupiah(getTax()) }</span>
+                                        <span>{ payment.valueTax }% - { formatRupiah(tax) }</span>
                                     </div>
                                 ) }
 
                                 <div className="flex justify-between items-center font-bold">
                                     <span>Total:</span>
-                                    <span>{ formatRupiah(getGrandTotal()) }</span>
+                                    <span>{ formatRupiah(grandTotal) }</span>
                                 </div>
 
                                 { clientMoney > 0 && (
                                     <div
                                         className={ `flex justify-between items-center ${
-                                            clientMoney - getGrandTotal() < 0 ? "text-red-600" : "text-green-600"
+                                            clientMoney - grandTotal < 0 ? "text-red-600" : "text-green-600"
                                         }` }
                                     >
                                         <span>Change:</span>
-                                        <span>{ formatRupiah(clientMoney - getGrandTotal()) }</span>
+                                        <span>{ formatRupiah(clientMoney - grandTotal) }</span>
                                     </div>
                                 ) }
 
@@ -297,14 +303,14 @@ function PosPageCheckOut({ customers, payment, products, searchCustomer, setSear
                             className="w-full"
                             size="lg"
                             disabled={
-                                loading ||
+                                isPending ||
                                 !selectedCustomer ||
-                                clientMoney < getGrandTotal() // ❌ disable kalau minus
+                                clientMoney < grandTotal
                             }
                             onClick={ onTransaction }
                         >
                             <ShoppingCart className="h-4 w-4 mr-2"/>
-                            { loading ? "Loading ...." : "Checkout" }
+                            { isPending ? "Loading ...." : "Checkout" }
                         </Button>
                     </div>
                 </CardContent>
@@ -331,7 +337,7 @@ export function SelectCustomerDialogButton(
     }) {
     const [ open, setOpen ] = useState(false);
     const [ search, setSearch ] = useState(customerName);
-    const [ loading, setLoading ] = useState(false)
+    const [ isPending, startTransition ] = useTransition()
 
     // const { value, isLoading } = useDebounceLoad(search, 1000);
     // usePushQueryObject({ customerName: value })
@@ -347,8 +353,7 @@ export function SelectCustomerDialogButton(
                 (ageValid ? status !== 'rejected' :
                         // status === 'verified'
                         true
-                )
-            ),
+                )),
         [ customers, search, ageValid ]
     );
 
@@ -360,20 +365,19 @@ export function SelectCustomerDialogButton(
     });
 
     const onSubmit = methods.handleSubmit(async (data) => {
-        setLoading(true)
-        const response = await createCustomerNew(data)
-        toastResponse({
-                response,
-                onSuccess: () => {
-                    if (response.success && response.data) {
-                        onSelectAction(response.data);
-                        setOpen(false)
-                        setLoading(false)
+        startTransition(async () => {
+            const response = await createCustomerNew(data)
+            toastResponse({
+                    response,
+                    onSuccess: () => {
+                        if (response.success && response.data) {
+                            onSelectAction(response.data);
+                            setOpen(false)
+                        }
                     }
                 }
-            }
-        )
-        setLoading(false)
+            )
+        })
     });
 
     return (
@@ -455,8 +459,8 @@ export function SelectCustomerDialogButton(
                                 <InputForm name="name" title="Tambah Pelangan Baru" placeholder="Nama pelanggan"/>
                                 <DialogFooter>
                                     <Button type="submit"
-                                            disabled={ loading }
-                                    >{ loading ? 'Loading...' : "Simpan" }
+                                            disabled={ isPending }
+                                    >{ isPending ? 'Loading...' : "Simpan" }
                                     </Button>
                                 </DialogFooter>
                             </form>

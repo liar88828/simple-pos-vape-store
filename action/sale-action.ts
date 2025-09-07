@@ -13,7 +13,7 @@ export type DashboardStats = {
     avgTransaction: number;  // e.g. 79800
     avgTransactionGrowth: number; // e.g. 3 (percent)
     topProduct: {
-        product: Product | null;          // e.g. "Salt Nic Liquid"
+        Product: Product | null;          // e.g. "Salt Nic Liquid"
         unitsSold: number;     // e.g. 45
     };
 }
@@ -22,7 +22,7 @@ export type TopSellingProducts = {
     productId: string,
     totalSold: number,
     totalPrice: number,
-    product?: ProductPreorder | null,
+    Product?: ProductPreorder | null,
 };
 
 export async function getTopSellingProductsByRangeReport(
@@ -111,7 +111,7 @@ export async function getTopSellingProductsByRangeReport(
         productId: item.productId,
         totalSold: item.totalSold,
         totalPrice: item.totalPrice,
-        product: products.find((p) => p.id === item.productId),
+        Product: products.find((p) => p.id === item.productId),
     }));
 
     logger.info("data : getTopSellingProductsByRangeReport");
@@ -135,7 +135,7 @@ export async function lastBuyer(): Promise<(Customer & {
 export const getTransactionCountToday = async () => {
     return prisma.sale.count({
         where: {
-            date: {
+            date_buy: {
                 gte: new Date(new Date().setHours(0, 0, 0, 0)),
                 lt: new Date(new Date().setHours(24, 0, 0, 0)),
             },
@@ -149,7 +149,7 @@ export const getHistoriesById = async (id: string): Promise<SaleCustomers | null
         Customer: true,
         SaleItems: {
             include: {
-                product: true
+                Product: true
             }
         }
     }

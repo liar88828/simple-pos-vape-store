@@ -8,7 +8,7 @@ import React from 'react';
 export default async function Page() {
     const session = await getSessionEmployeePage()
     const employee = await getEmployee(session.userId)
-    if (!employee || !employee.workIn_shopId) {
+    if (!employee || !employee.marketId_workIn) {
         redirect('/admin/employee')
     }
 
@@ -16,6 +16,6 @@ export default async function Page() {
         todayAbsent={ (await getTodayAbsent(session.userId)).length }
         absent={ await absent(session.userId) }
         employee={ employee }
-        products={ await products(employee.workIn_shopId) }/>
+        products={ await products(employee.marketId_workIn) }/>
 }
 

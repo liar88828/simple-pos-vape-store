@@ -215,7 +215,7 @@ export function CustomerDetailDialog({ customer }: { customer: CustomerRelationa
                                     <TableBody>
                                         { customer.Sales.map((sale) => (
                                             <TableRow key={ sale.id }>
-                                                <TableCell>{ formatDateIndo(sale.date) }</TableCell>
+                                                <TableCell>{ formatDateIndo(sale.date_buy) }</TableCell>
                                                 <TableCell>{ formatRupiah(sale.total) }</TableCell>
                                                 <TableCell>{ sale.items }</TableCell>
                                                 <TableCell>
@@ -353,8 +353,7 @@ export function ModalEditCustomer({ customer }: { customer: CustomerOptionalDefa
                         <InputForm name="totalPurchase" title="Total Pembelian" placeholder="0" type="number"/>
                         <InputDateForm name="lastPurchase" title="Tanggal Pembelian Terakhir"
                         />
-                        <SelectForm
-                            name="status"
+                        <SelectForm name="status"
                             label="Status"
                             placeholder="Pilih status"
                             options={ [

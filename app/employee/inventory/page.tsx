@@ -1,5 +1,5 @@
 import { getSessionEmployeePage } from "@/action/auth-action";
-import { getProductLowStockComplete, getProductPage } from "@/action/product-action";
+import { getProduct, getProductLowStockComplete, } from "@/action/product-action";
 import { getExpiredProduct, getPreorderPage } from "@/app/admin/inventory/inventory-action";
 import { InventoryPage } from "@/app/admin/inventory/inventory-page";
 import { ContextPage } from "@/interface/actionType";
@@ -12,7 +12,7 @@ export default async function Page(context: ContextPage) {
         expiredProduct={ await getExpiredProduct() }
         lowStockProducts={ await getProductLowStockComplete() }
         preorders={ await getPreorderPage(context) }
-        products={ await getProductPage(context, session.shopId) }
+        products={ await getProduct(context, session.shopId) }
     />
 }
 
